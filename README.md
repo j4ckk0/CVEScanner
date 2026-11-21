@@ -63,6 +63,10 @@ Start `cvescanner.bat` or `CVEScanner.exe` (Windows), `cvescanner.sh` (Linux); g
    at once, without scanning again.
 4. **Scan.** Reading a database takes from a few seconds to a minute or two, as its size.
 
+To see it at work first, scan the `examples` folder beside the program: a Maven, a Gradle, an npm and a yarn project
+declaring real packages at vulnerable versions (Log4Shell, Text4Shell, Spring4Shell…), what a scan finds listed in
+[examples/README.md](examples/README.md).
+
 The table sorts by any column and filters as you type: **Search** (every word must match, across the columns and the
 aliases; Ctrl+F, Esc to clear), the **severity** (the coloured counters do the same), the **ecosystem**, *Only with
 CVE ID*, *Hide approximate (≈) versions*, *Hide CVE name matches ⚠*. Its tabs: **Findings**, one row per
@@ -180,7 +184,7 @@ Each system builds its own self-contained distribution into `releases/`: `script
 
 Each holds `cvescanner.jar`, its runtime `jre/` — linked by `jlink` from the JDK that builds: the program's two
 modules, FlatLaf, the JDK's modules they need, the French and English locale data —, the `database/` folder, `LICENSE`,
-`NOTICE`, FlatLaf's licence in `licenses/`, and Java's AOT cache of the program, `cvescanner.aot`, for a faster start:
+`NOTICE`, FlatLaf's licence in `licenses/`, the `examples/` projects, and Java's AOT cache of the program, `cvescanner.aot`, for a faster start:
 the build makes it by running the program once on the samples (it needs a display, or `xvfb-run` on Linux); should that
 fail, the archive goes without it, with a warning.
 
@@ -210,7 +214,8 @@ Two Maven modules, each a jar and a Java module, built in this order by the pare
 | `cvescanner-app/…/` | `Launcher` (the entry point), `MainWindow`, `FindingDetails` (a finding's page, escaped), the table's `Column`, `ListTableModel` and renderers, `Settings`, `Looks`, `HelpMenu`, `I18nLabels` and `I18nLanguageBox`, `NoNetworkResolver` |
 | `cvescanner-app/src/dist/`, `…/src/assembly/` | the distributions' launchers, the `database/` folder, FlatLaf's licence, and what goes in each archive |
 | `*/src/test/` | core: `GoldenTest` (the samples' reports, case by case), `FrenchReportTest`, `CvssReferenceTest` (9,000 vectors scored by another implementation), `HostileReportTest`, the rules' unit tests, `PomParserTest`, `CoreTextsTest`; app: `NoNetworkTest`, `NoNetworkResolverTest`, `HostileAdvisoryTest`, `AppTextsTest` |
-| `samples/` | sample projects and made-up databases, and `make_fixtures.py`, which writes them |
+| `examples/` | Maven, Gradle, npm and yarn projects declaring real packages at vulnerable versions, to scan with a real database; in the distributions too |
+| `samples/` | sample projects and made-up databases, and `make_fixtures.py`, which writes them; for the tests |
 | `.github/workflows/` | `build.yml`, the build and the tests on every push; `release.yml`, the release on a tag `vX.Y` |
 
 ## Licence

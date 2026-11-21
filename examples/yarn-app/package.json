@@ -1,0 +1,17 @@
+{
+  "name": "yarn-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "An example for CVEScanner: dependencies with known vulnerabilities, resolved by yarn.lock (Yarn 1), one under an npm: alias. Not a project to install.",
+  "dependencies": {
+    "async": "^2.6.3",
+    "glob-parent": "^5.1.1",
+    "lodash-legacy": "npm:lodash@4.17.11",
+    "marked": "^1.1.0",
+    "shell-quote": "^1.7.2",
+    "ua-parser-js": "^0.7.21"
+  },
+  "devDependencies": {
+    "ws": "^7.4.5"
+  }
+}

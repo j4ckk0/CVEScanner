@@ -85,6 +85,14 @@ own terms, which bind whoever downloads and uses it:
 The reports CVEScanner writes quote the advisories' identifiers, summaries and links.
 
 
+Example projects
+================
+
+The projects of examples/ are original, written for this project; they fall under the same licence. They name
+packages published by others (Apache Log4j, Spring, lodash…) at versions with known vulnerabilities, without holding
+any of their code: nothing in them is installed or run.
+
+
 Sample files
 ============
 

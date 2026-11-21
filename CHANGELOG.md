@@ -19,3 +19,5 @@ The first version as a project of its own, from the single-file prototype it was
 - **Never reaches the network**: no download, no browser, nothing of a database read as HTML; checked at every build.
 - **French and English**, the window, the command line and `report.md`; FlatLaf's looks, light and dark.
 - **Nothing to install**: the Windows and Linux archives carry their own Java runtime.
+- **Examples to scan first**: a Maven, a Gradle, an npm and a yarn project declaring real packages at vulnerable
+  versions (Log4Shell, Text4Shell, Spring4Shell, lodash…), and what a scan finds in them.

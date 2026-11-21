@@ -30,7 +30,7 @@ for %%a in (releases\cvescanner-*-windows.zip releases\cvescanner-*-linux.tar.gz
 
 rem What each archive must carry: a distribution runs with nothing installed.
 set "WINDOWS=releases\cvescanner-%VERSION%-windows.zip"
-for %%f in (cvescanner.jar CVEScanner.exe cvescanner.bat cvescanner-cli.bat README.md LICENSE NOTICE licenses/FlatLaf-LICENSE.txt database/README.txt jre/bin/javaw.exe jre/legal/java.base/LICENSE) do call :holds "%WINDOWS%" %%f || exit /b 1
+for %%f in (cvescanner.jar CVEScanner.exe cvescanner.bat cvescanner-cli.bat README.md LICENSE NOTICE licenses/FlatLaf-LICENSE.txt database/README.txt examples/README.md jre/bin/javaw.exe jre/legal/java.base/LICENSE) do call :holds "%WINDOWS%" %%f || exit /b 1
 rem the AOT cache: its absence said, not fatal (the program starts slower)
 call :holds "%WINDOWS%" cvescanner.aot 2>nul || echo == WARNING: %WINDOWS% goes without its AOT cache ^(see the build's output^) >&2
 echo == releases\ checked: %WINDOWS%

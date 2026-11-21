@@ -1,0 +1,8 @@
+# The example's version catalog: CVEScanner reads its libraries, their versions given here or by reference.
+[versions]
+netty = "4.1.68.Final"
+
+[libraries]
+guava = "com.google.guava:guava:31.1-jre"
+netty-codec-http = { module = "io.netty:netty-codec-http", version.ref = "netty" }
+protobuf-java = { group = "com.google.protobuf", name = "protobuf-java", version = "3.21.5" }

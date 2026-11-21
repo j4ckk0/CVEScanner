@@ -47,6 +47,11 @@
   </files>
 
   <fileSets>
+    <!-- projects with known vulnerabilities, to scan first (examples/README.md) -->
+    <fileSet>
+      <directory>../examples</directory>
+      <outputDirectory>examples</outputDirectory>
+    </fileSet>
     <!-- the folder of the database zips, loaded at the start by the launchers, with what to put there -->
     <fileSet>
       <directory>src/dist/database</directory>
