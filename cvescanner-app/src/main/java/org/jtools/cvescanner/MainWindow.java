@@ -107,7 +107,6 @@ import org.jtools.cvescanner.engine.Engine;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
 import org.jtools.cvescanner.i18n.Phrase;
-import org.jtools.cvescanner.ignore.IgnoreFile;
 import org.jtools.cvescanner.ignore.IgnoredFinding;
 import org.jtools.cvescanner.ignore.Ignores;
 import org.jtools.cvescanner.model.Finding;
@@ -186,10 +185,6 @@ final class MainWindow extends JFrame {
     private final JTextField dbField = new JTextField(40);
     private final JButton clearDbButton = new JButton();
     private final List<Path> dbFiles = new ArrayList<>();
-    private final JTextField ignoreField = new JTextField(40);
-    private final JButton ownIgnoreButton = new JButton();
-    /** The ignore file to read: null for the folder's own, Ignores.DISABLED for none (Engine.scan). */
-    private Path ignoreChoice;
     private final JCheckBox hideNameMatchBox = new JCheckBox();
     private final JComboBox<Environment> envCombo = new JComboBox<>();
     private final JComboBox<Reach> reachCombo = new JComboBox<>(Reach.values());
@@ -235,8 +230,7 @@ final class MainWindow extends JFrame {
     private final Timer searchTimer = new Timer(200, _ -> applyFilters());
 
     private ScanResult result;
-    /** The ignore file in use, the scan's or the one chosen since; read again after the window writes it. */
-    private Ignores ignores = Ignores.NONE;
+    private final IgnoreActions ignoreActions;
     /** The scan's findings scored for the environment, those the ignore file sets aside apart. */
     private Ignores.Split split = Ignores.Split.none(List.of());
     private boolean busy;   // progress messages arriving after a scan has finished are ignored
@@ -251,7 +245,15 @@ final class MainWindow extends JFrame {
         dirField.setText(opts.scanDir.toAbsolutePath().normalize().toString());
         if (!opts.dbFiles.isEmpty()) dbFiles.addAll(opts.dbFiles);
         else restoreDatabaseChoice();
-        ignoreChoice = opts.ignoreChoice();
+        ignoreActions = new IgnoreActions(this, labels, new IgnoreActions.Host() {
+            public ScanResult result() { return result; }
+            public Ignores.Split split() { return split; }
+            public void reread(List<Phrase> warnings) {
+                refreshFindings();
+                updateStatusTipAfterReread(warnings);
+            }
+            public void say(Supplier<String> message) { MainWindow.this.say(message); }
+        }, opts.ignoreChoice(), () -> Path.of(dirField.getText().strip()));
         restoreScoringChoice();
         cveOnlyBox.setSelected(opts.cveOnly);
         searchTimer.setRepeats(false);
@@ -311,7 +313,6 @@ final class MainWindow extends JFrame {
         // what is shown from data rather than bound to one key: said again in the language chosen
         labels.on(() -> statusLabel.setText(statusMessage.get()));
         labels.on(this::updateDatabaseField);
-        labels.on(this::updateIgnoreField);
         labels.on(this::updateChips);
         showSeverityColors();
         labels.on(this::updateCounts);
@@ -468,24 +469,8 @@ final class MainWindow extends JFrame {
         c.gridx = 3;
         rows.add(clearDbButton, c);
 
-        var chooseIgnore = labels.text(new JButton(), "toolbar.chooseIgnoreFile");
-        chooseIgnore.addActionListener(_ -> chooseIgnoreFile());
-        labels.text(ownIgnoreButton, "toolbar.ownIgnoreFile");
-        ownIgnoreButton.addActionListener(_ -> setIgnoreChoice(null));
-        ignoreField.setEditable(false);
         c.gridy = 2;
-        c.gridx = 0;
-        rows.add(labels.text(new JLabel(), "toolbar.ignoreFile"), c);
-        c.gridx = 1;
-        c.fill = GridBagConstraints.HORIZONTAL;
-        c.weightx = 1;
-        rows.add(ignoreField, c);
-        c.fill = GridBagConstraints.NONE;
-        c.weightx = 0;
-        c.gridx = 2;
-        rows.add(chooseIgnore, c);
-        c.gridx = 3;
-        rows.add(ownIgnoreButton, c);
+        ignoreActions.addRow(rows, c);
         return rows;
     }
 
@@ -814,7 +799,7 @@ final class MainWindow extends JFrame {
         var stop = labels.text(new JMenuItem(), "menu.ignored.stop");
         stop.addActionListener(_ -> {
             var i = selectedIgnored();
-            if (i != null) stopIgnoring(i);
+            if (i != null) ignoreActions.stopIgnoring(i);
         });
         menu.add(stop);
         menu.addSeparator();
@@ -984,7 +969,7 @@ final class MainWindow extends JFrame {
         }
         setBusy(true);
         var databases = List.copyOf(dbFiles);
-        Path ignoreFile = ignoreChoice;
+        Path ignoreFile = ignoreActions.choice();
         new SwingWorker<ScanResult, Void>() {
             @Override
             protected ScanResult doInBackground() throws Exception {
@@ -1027,7 +1012,7 @@ final class MainWindow extends JFrame {
 
     private void showResult(ScanResult r) {
         result = r;
-        ignores = r.ignores();
+        ignoreActions.scanned(r.ignores());
         findingsTable.clearSelection();
         ignoredTable.clearSelection();
         unresolvedModel.setRows(r.unresolved());
@@ -1071,7 +1056,7 @@ final class MainWindow extends JFrame {
         }
         var i = selectedIgnored();
         detailPane.setText(i == null ? FindingDetails.placeholder(result != null)
-                : FindingDetails.page(i.finding(), environment, i.rule(), ignores.shown()));
+                : FindingDetails.page(i.finding(), environment, i.rule(), ignoreActions.ignores().shown()));
         detailPane.setCaretPosition(0);
     }
 
@@ -1084,7 +1069,7 @@ final class MainWindow extends JFrame {
     /** The findings scored for the environment, then set apart by the ignore file: the tables, the chips, the counts. */
     private void refreshFindings() {
         if (result == null) return;
-        split = ignores.split(Scoring.applyAll(result.findings(), environment, preferV4), LocalDate.now());
+        split = ignoreActions.ignores().split(Scoring.applyAll(result.findings(), environment, preferV4), LocalDate.now());
         findingsModel.setRows(split.active());
         ignoredModel.setRows(split.ignored());
         updateChips();
@@ -1108,98 +1093,16 @@ final class MainWindow extends JFrame {
         statusLabel.setToolTipText(tip.isEmpty() ? null : "<html>" + String.join("<br>", tip) + "</html>");
     }
 
-    private void chooseIgnoreFile() {
-        Path start = ignoreChoice != null && ignoreChoice.getParent() != null ? ignoreChoice.getParent() : Path.of(dirField.getText().strip());
-        var chooser = new JFileChooser(start.toFile());
-        chooser.setDialogTitle(I18n.text("ignore.chooser.title"));
-        chooser.setFileFilter(new FileNameExtensionFilter(I18n.text("ignore.chooser.filter"), "csv"));
-        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) setIgnoreChoice(chooser.getSelectedFile().toPath());
-    }
-
-    /** Reads this ignore file from now on: the findings shown are set apart again at once, without a new scan. */
-    private void setIgnoreChoice(Path file) {
-        ignoreChoice = file;
-        updateIgnoreField();
-        if (result == null) return;
-        var warnings = new ArrayList<Phrase>();
-        try {
-            ignores = Ignores.load(result.root(), file, warnings::add);
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, Gui.plain(e.getMessage()), I18n.text("ignore.failed.title"), JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        refreshFindings();
-        updateStatusTipAfterReread(warnings);
-        say(() -> I18n.text("ignore.applied", split.ignored().size()));
-    }
-
-    private void updateIgnoreField() {
-        boolean own = ignoreChoice == null, none = Ignores.DISABLED.equals(ignoreChoice);
-        ignoreField.setText(own ? I18n.text("toolbar.ignoreFile.own", IgnoreFile.NAME)
-                : none ? I18n.text("toolbar.ignoreFile.disabled") : ignoreChoice.toString());
-        ignoreField.setForeground(own || none ? Color.GRAY : UIManager.getColor("TextField.foreground"));
-        ignoreField.setCaretPosition(0);
-        ownIgnoreButton.setEnabled(!own);
-    }
-
-    /** Asks how to set this finding aside, writes the entry, sets the findings apart again; the next row is selected. */
+    /** Ignore… on a finding; once the entry is written, the row now in its place is selected. */
     private void ignore(Finding f) {
-        if (ignores.file() == null) {
-            JOptionPane.showMessageDialog(this, I18n.text("ignore.disabled"), I18n.text("ignore.dialog.title"), JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-        var rule = IgnoreDialog.ask(this, f, ignores.file().toString(),
-                r -> (int) split.active().stream().filter(r::matches).count());
-        if (rule.isEmpty()) return;
         int row = findingsTable.getSelectedRow();
-        try {
-            IgnoreFile.append(ignores.file(), rule.get());
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, Gui.plain(e.getMessage()), I18n.text("ignore.failed.title"), JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        int before = split.ignored().size();
-        rereadIgnores();
+        if (!ignoreActions.ignore(f)) return;
         int rows = findingsTable.getRowCount();
         if (rows > 0) {
             int next = Math.min(Math.max(row, 0), rows - 1);
             findingsTable.setRowSelectionInterval(next, next);
             findingsTable.scrollRectToVisible(findingsTable.getCellRect(next, 0, true));
         }
-        int added = split.ignored().size() - before;
-        say(() -> I18n.text("ignore.done", added, ignores.shown()));
-    }
-
-    /** Takes the entry setting this finding aside out of the file, after asking when it sets others aside too. */
-    private void stopIgnoring(IgnoredFinding i) {
-        long others = split.ignored().stream().filter(x -> x.rule().equals(i.rule())).count() - 1;
-        if (others > 0 && JOptionPane.showConfirmDialog(this, Gui.plain(I18n.text("ignore.stop.others", others, i.rule().line())),
-                I18n.text("ignore.stop.title"), JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE) != JOptionPane.OK_OPTION)
-            return;
-        boolean removed;
-        try {
-            removed = IgnoreFile.remove(ignores.file(), i.rule());
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, Gui.plain(e.getMessage()), I18n.text("ignore.failed.title"), JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        if (!removed)
-            JOptionPane.showMessageDialog(this, Gui.plain(I18n.text("ignore.stop.notFound", ignores.shown())), I18n.text("ignore.stop.title"),
-                    JOptionPane.WARNING_MESSAGE);
-        rereadIgnores();
-        if (removed) say(() -> I18n.text("ignore.stopped", others + 1));
-    }
-
-    /** The ignore file read again, once the window wrote it (or someone edited it), and the findings set apart again. */
-    private void rereadIgnores() {
-        var warnings = new ArrayList<Phrase>();
-        try {
-            ignores = ignores.reload(warnings::add);
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, Gui.plain(e.getMessage()), I18n.text("ignore.failed.title"), JOptionPane.ERROR_MESSAGE);
-        }
-        refreshFindings();
-        updateStatusTipAfterReread(warnings);
     }
 
     // ----------------------------------------------------------------------------- export, misc
