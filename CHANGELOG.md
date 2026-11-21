@@ -3,7 +3,7 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
-## 1.0 — not released yet
+## 1.0 — 2026-11-21
 
 The first version as a project of its own, from the single-file prototype it was.
 
