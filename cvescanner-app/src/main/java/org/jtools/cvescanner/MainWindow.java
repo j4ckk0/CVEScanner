@@ -99,9 +99,6 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import org.jtools.cvescanner.cli.Options;
-import org.jtools.cvescanner.cvss.Environment;
-import org.jtools.cvescanner.cvss.Reach;
-import org.jtools.cvescanner.cvss.Requirement;
 import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.engine.Engine;
 import org.jtools.cvescanner.i18n.I18n;
@@ -125,11 +122,6 @@ import org.jtools.cvescanner.version.Versions;
  * and set again when the language changes; a column or a choice is known by its key, never by the text it shows.
  */
 final class MainWindow extends JFrame {
-
-    /** A choice of a drop list, shown in the language in use. */
-    private record Choice<T>(String key, T value) {
-        @Override public String toString() { return I18n.text(key); }
-    }
 
     private static final List<Column<Finding>> FINDING_COLUMNS = List.of(
             new Column<Finding>("column.severity", Severity.class, 175, Finding::severity),
@@ -186,16 +178,6 @@ final class MainWindow extends JFrame {
     private final JButton clearDbButton = new JButton();
     private final List<Path> dbFiles = new ArrayList<>();
     private final JCheckBox hideNameMatchBox = new JCheckBox();
-    private final JComboBox<Environment> envCombo = new JComboBox<>();
-    private final JComboBox<Reach> reachCombo = new JComboBox<>(Reach.values());
-    private final JComboBox<Requirement> crCombo = new JComboBox<>(Requirement.values());
-    private final JComboBox<Requirement> irCombo = new JComboBox<>(Requirement.values());
-    private final JComboBox<Requirement> arCombo = new JComboBox<>(Requirement.values());
-    private final JComboBox<Choice<Boolean>> cvssCombo = new JComboBox<>(List.of(
-            new Choice<>("environment.cvss4First", true), new Choice<>("environment.cvss3First", false)).toArray(Choice[]::new));
-    private Environment environment = Environment.NONE;
-    private boolean preferV4 = true;
-    private boolean updatingEnvironment;
     private final JButton scanButton = new JButton();
     private final JButton exportButton = new JButton();
     private final HintField searchField = new HintField("", 32);
@@ -230,6 +212,7 @@ final class MainWindow extends JFrame {
     private final Timer searchTimer = new Timer(200, _ -> applyFilters());
 
     private ScanResult result;
+    private final EnvironmentBar environmentBar;
     private final IgnoreActions ignoreActions;
     /** The scan's findings scored for the environment, those the ignore file sets aside apart. */
     private Ignores.Split split = Ignores.Split.none(List.of());
@@ -254,7 +237,10 @@ final class MainWindow extends JFrame {
             }
             public void say(Supplier<String> message) { MainWindow.this.say(message); }
         }, opts.ignoreChoice(), () -> Path.of(dirField.getText().strip()));
-        restoreScoringChoice();
+        environmentBar = new EnvironmentBar(this, labels, settings, opts, () -> {
+            updateSeverityHeader();
+            rescore();
+        });
         cveOnlyBox.setSelected(opts.cveOnly);
         searchTimer.setRepeats(false);
         setJMenuBar(menuBar());
@@ -264,7 +250,7 @@ final class MainWindow extends JFrame {
         // the rows of controls, each group apart: where to scan, how to score, what to show
         north.add(toolbar());
         north.add(separator());
-        north.add(environmentBar());
+        north.add(environmentBar.panel());
         north.add(separator());
         north.add(filterBar());
         north.add(summaryBar());
@@ -317,8 +303,8 @@ final class MainWindow extends JFrame {
         showSeverityColors();
         labels.on(this::updateCounts);
         labels.on(() -> showSelected());
-        labels.on(this::syncEnvironmentControls);
-        labels.on(() -> List.of(severityCombo, ecosystemCombo, cvssCombo, envCombo, reachCombo, crCombo, irCombo, arCombo)
+        labels.on(this::updateSeverityHeader);
+        labels.on(() -> List.of(severityCombo, ecosystemCombo)
                 .forEach(Component::repaint));
         labels.on(() -> List.of(findingsTable, packagesTable, unresolvedTable, ignoredTable).forEach(Component::repaint));
         setSize(1480, 940);
@@ -510,85 +496,15 @@ final class MainWindow extends JFrame {
         return p;
     }
 
-    private JPanel environmentBar() {
-        var p = new JPanel(new WrapLayout(FlowLayout.LEFT, 10, 8));
-        p.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 8));
-        Environment.PRESETS.forEach(envCombo::addItem);
-        labels.tip(envCombo, "environment.preset.tip");
-        labels.tip(reachCombo, "environment.reach.tip");
-        for (var c : List.of(crCombo, irCombo, arCombo)) labels.tip(c, "environment.requirement.tip");
-        labels.tip(cvssCombo, "environment.cvss.tip");
-        var help = new JButton("?");
-        help.setMargin(new Insets(1, 6, 1, 6));
-        help.addActionListener(_ -> JOptionPane.showMessageDialog(this, new JLabel(I18n.text("environment.help")),
-                I18n.text("environment.help.title"), JOptionPane.INFORMATION_MESSAGE));
-        envCombo.addActionListener(_ -> {
-            if (updatingEnvironment || !(envCombo.getSelectedItem() instanceof Environment e) || e.key().equals(Environment.CUSTOM)) return;
-            setEnvironment(e);
-        });
-        for (var c : List.<JComboBox<?>>of(reachCombo, crCombo, irCombo, arCombo))
-            c.addActionListener(_ -> {
-                if (!updatingEnvironment)
-                    setEnvironment(Environment.of((Reach) reachCombo.getSelectedItem(), (Requirement) crCombo.getSelectedItem(),
-                            (Requirement) irCombo.getSelectedItem(), (Requirement) arCombo.getSelectedItem()));
-            });
-        cvssCombo.addActionListener(_ -> {
-            if (!updatingEnvironment && cvssCombo.getSelectedItem() instanceof Choice<?> choice) {
-                preferV4 = (Boolean) choice.value();
-                rescore();
-            }
-        });
-        p.add(labels.text(new JLabel(), "environment.label"));
-        p.add(envCombo);
-        p.add(Box.createHorizontalStrut(8));
-        p.add(labels.text(new JLabel(), "environment.reachable"));
-        p.add(reachCombo);
-        p.add(labels.text(new JLabel(), "environment.confidentiality"));
-        p.add(crCombo);
-        p.add(labels.text(new JLabel(), "environment.integrity"));
-        p.add(irCombo);
-        p.add(labels.text(new JLabel(), "environment.availability"));
-        p.add(arCombo);
-        p.add(Box.createHorizontalStrut(8));
-        p.add(cvssCombo);
-        p.add(help);
-        return p;
-    }
-
-    private void setEnvironment(Environment e) {
-        environment = e;
-        syncEnvironmentControls();
-        rescore();
-    }
-
-    private void syncEnvironmentControls() {
-        updatingEnvironment = true;
-        try {
-            if (environment.key().equals(Environment.CUSTOM)) {
-                boolean present = false;
-                for (int i = 0; i < envCombo.getItemCount(); i++) present |= envCombo.getItemAt(i).key().equals(Environment.CUSTOM);
-                if (!present) envCombo.addItem(new Environment(Environment.CUSTOM, Reach.UNRESTRICTED,
-                        Requirement.NOT_DEFINED, Requirement.NOT_DEFINED, Requirement.NOT_DEFINED));
-                for (int i = 0; i < envCombo.getItemCount(); i++) if (envCombo.getItemAt(i).key().equals(Environment.CUSTOM)) envCombo.setSelectedIndex(i);
-            } else {
-                envCombo.setSelectedItem(environment);
-            }
-            reachCombo.setSelectedItem(environment.reach());
-            crCombo.setSelectedItem(environment.confidentiality());
-            irCombo.setSelectedItem(environment.integrity());
-            arCombo.setSelectedItem(environment.availability());
-            cvssCombo.setSelectedIndex(preferV4 ? 0 : 1);
-            var header = findingsTable.getColumnModel().getColumn(findingsTable.convertColumnIndexToView(0));
-            header.setHeaderValue(I18n.text(environment.active() ? "column.envSeverity" : "column.severity"));
-            findingsTable.getTableHeader().repaint();
-        } finally {
-            updatingEnvironment = false;
-        }
+    /** The severity column says it is the environmental severity when an environment applies. */
+    private void updateSeverityHeader() {
+        var header = findingsTable.getColumnModel().getColumn(findingsTable.convertColumnIndexToView(0));
+        header.setHeaderValue(I18n.text(environmentBar.environment().active() ? "column.envSeverity" : "column.severity"));
+        findingsTable.getTableHeader().repaint();
     }
 
     /** Recomputes every finding's scores for the current environment (no rescan needed). */
     private void rescore() {
-        saveScoringChoice();
         if (result == null) return;
         var selected = selectedFinding();
         refreshFindings();
@@ -604,33 +520,6 @@ final class MainWindow extends JFrame {
             }
         }
         showSelected();
-    }
-
-    private void restoreScoringChoice() {
-        if (opts.environmentGiven) environment = opts.environment;
-        else {
-            try {
-                String key = settings.get(Settings.ENVIRONMENT, "none");
-                if (key.equals(Environment.CUSTOM)) {
-                    environment = Environment.of(Reach.valueOf(settings.get(Settings.REACH, "UNRESTRICTED")),
-                            Requirement.valueOf(settings.get(Settings.CONFIDENTIALITY, "NOT_DEFINED")),
-                            Requirement.valueOf(settings.get(Settings.INTEGRITY, "NOT_DEFINED")),
-                            Requirement.valueOf(settings.get(Settings.AVAILABILITY, "NOT_DEFINED")));
-                } else {
-                    environment = Environment.preset(key);
-                }
-            } catch (RuntimeException _) { environment = Environment.NONE; }   // a value of another version: the default
-        }
-        preferV4 = opts.cvssGiven ? opts.preferV4 : Boolean.parseBoolean(settings.get(Settings.PREFER_CVSS4, "true"));
-    }
-
-    private void saveScoringChoice() {
-        settings.set(Settings.ENVIRONMENT, environment.key());
-        settings.set(Settings.REACH, environment.reach().name());
-        settings.set(Settings.CONFIDENTIALITY, environment.confidentiality().name());
-        settings.set(Settings.INTEGRITY, environment.integrity().name());
-        settings.set(Settings.AVAILABILITY, environment.availability().name());
-        settings.set(Settings.PREFER_CVSS4, Boolean.toString(preferV4));
     }
 
     private JPanel summaryBar() {
@@ -1056,12 +945,12 @@ final class MainWindow extends JFrame {
         }
         var i = selectedIgnored();
         detailPane.setText(i == null ? FindingDetails.placeholder(result != null)
-                : FindingDetails.page(i.finding(), environment, i.rule(), ignoreActions.ignores().shown()));
+                : FindingDetails.page(i.finding(), environmentBar.environment(), i.rule(), ignoreActions.ignores().shown()));
         detailPane.setCaretPosition(0);
     }
 
     private void showDetails(Finding f) {
-        detailPane.setText(f == null ? FindingDetails.placeholder(result != null) : FindingDetails.page(f, environment));
+        detailPane.setText(f == null ? FindingDetails.placeholder(result != null) : FindingDetails.page(f, environmentBar.environment()));
         detailPane.setCaretPosition(0);
     }
 
@@ -1069,7 +958,7 @@ final class MainWindow extends JFrame {
     /** The findings scored for the environment, then set apart by the ignore file: the tables, the chips, the counts. */
     private void refreshFindings() {
         if (result == null) return;
-        split = ignoreActions.ignores().split(Scoring.applyAll(result.findings(), environment, preferV4), LocalDate.now());
+        split = ignoreActions.ignores().split(Scoring.applyAll(result.findings(), environmentBar.environment(), environmentBar.preferV4()), LocalDate.now());
         findingsModel.setRows(split.active());
         ignoredModel.setRows(split.ignored());
         updateChips();
@@ -1119,7 +1008,7 @@ final class MainWindow extends JFrame {
         try {
             var written = Reports.writeAll(result, split.withActive(visible), chooser.getSelectedFile().toPath(),
                     filtered ? Phrase.of("export.filter", visible.size(), findingsModel.getRowCount()) : null,
-                    environment, preferV4, I18n.language());
+                    environmentBar.environment(), environmentBar.preferV4(), I18n.language());
             // the folder is shown, to copy: the program starts no other one, a file manager no more than a browser
             String folder = chooser.getSelectedFile().getAbsolutePath();
             int choice = JOptionPane.showOptionDialog(this,
