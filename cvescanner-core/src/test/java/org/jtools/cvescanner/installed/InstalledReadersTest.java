@@ -21,6 +21,7 @@ package org.jtools.cvescanner.installed;
  */
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
@@ -34,6 +35,8 @@ import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.jtools.cvescanner.i18n.Phrase;
+import org.jtools.cvescanner.model.Dependency;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.ScanMode;
 import org.jtools.cvescanner.project.DependencyCollector;
 import org.jtools.cvescanner.project.ProjectFiles;
@@ -69,7 +72,7 @@ class InstalledReadersTest {
         var warnings = new ArrayList<Phrase>();
         JarReader.scan(jars, col, warnings::add);
         var found = new TreeSet<String>();
-        col.deps.forEach(d -> found.add(d.name() + " " + d.version() + " " + d.file() + " " + d.scope()));
+        col.deps.forEach(d -> found.add(d.name() + " " + d.version() + " " + d.file() + " " + d.scope() + (d.bundle() == null ? "" : " " + d.bundle())));
         col.unresolved.forEach(u -> found.add("unchecked " + u.name() + " " + u.declared() + " " + u.file()));
         warnings.forEach(w -> found.add("warning " + w.key()));
         return List.copyOf(found);
@@ -99,7 +102,7 @@ class InstalledReadersTest {
     }
 
     @Test
-    void aJarWithoutCoordinatesIsCheckedByItsNameItsGroupFromItsOsgiNameWhenItGivesIt() throws IOException {
+    void aJarWithoutCoordinatesIsCheckedByItsNameItsOsgiNameKept() throws IOException {
         Path text = Files.write(root.resolve("commons-text-1.9.jar"),
                 jar("META-INF/MANIFEST.MF", "Manifest-Version: 1.0\nBundle-SymbolicName: org.apache.commons.commons-text;singleton:=true\n"));
         Path log4j = Files.write(root.resolve("log4j-core-2.14.1.jar"),
@@ -108,11 +111,23 @@ class InstalledReadersTest {
                 jar("META-INF/MANIFEST.MF", "Manifest-Version: 1.0\nImplementation-Title: Tools\n"));
         Path byManifest = Files.write(root.resolve("helper.jar"),
                 jar("META-INF/MANIFEST.MF", "Manifest-Version: 1.0\nImplementation-Title: helper\nImplementation-Version: 3.1\n"));
-        assertEquals(List.of("log4j-core 2.14.1 log4j-core-2.14.1.jar installed",
-                "org.apache.commons:commons-text 1.9 commons-text-1.9.jar installed",
+        assertEquals(List.of("commons-text 1.9 commons-text-1.9.jar installed org.apache.commons.commons-text",
+                "log4j-core 2.14.1 log4j-core-2.14.1.jar installed org.apache.logging.log4j.core",
                 "unchecked Tools  tools.jar",
                 "unchecked helper 3.1 helper.jar"), read(List.of(text, log4j, versionless, byManifest)),
                 "no artifactId in its file name, or no version: not checked");
+    }
+
+    @Test
+    void anAdvisoryIsAJarsOwnWhenItsOsgiNameIsOfTheAdvisorysGroupANameMatchOtherwise() {
+        var guava = new Dependency(Ecosystem.MAVEN, "guava", "31.1-jre", "guava-31.1-jre.jar", "installed", false, "com.google.guava");
+        assertTrue(guava.bundleOf("com.google.guava"), "the group itself");
+        assertFalse(guava.bundleOf("com.google.guava.testing"), "a group below it is another's");
+        var log4j = new Dependency(Ecosystem.MAVEN, "log4j-core", "2.14.1", "x.jar", "installed", false, "org.apache.logging.log4j.core");
+        assertTrue(log4j.bundleOf("org.apache.logging.log4j"), "under the group");
+        var collections = new Dependency(Ecosystem.MAVEN, "commons-collections", "3.2.1", "x.jar", "installed", false, "org.apache.commons.collections");
+        assertFalse(collections.bundleOf("commons-collections"), "another group: a name match, to check");
+        assertFalse(new Dependency(Ecosystem.MAVEN, "a", "1", "x.jar", "installed", false).bundleOf("g"));
     }
 
     @Test

@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:760246dd-9c11-3a15-9435-86fd46cc22f0",
+  "serialNumber": "urn:uuid:329f78e6-d7dd-38c7-aef5-5870779b137a",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-11-21T20:16:23Z",
+    "timestamp": "2026-11-21T20:29:12Z",
     "tools": {
       "components": [
         {
@@ -110,11 +110,9 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:maven/org.apache.commons/commons-text@1.9",
-      "group": "org.apache.commons",
+      "bom-ref": "maven:commons-text@1.9",
       "name": "commons-text",
       "version": "1.9",
-      "purl": "pkg:maven/org.apache.commons/commons-text@1.9",
       "properties": [
         {
           "name": "cvescanner:ecosystem",
@@ -127,10 +125,6 @@
         {
           "name": "cvescanner:file",
           "value": "lib/commons-text-1.9.jar"
-        },
-        {
-          "name": "cvescanner:file",
-          "value": "web/shop.war!/WEB-INF/lib/commons-text-1.9.jar"
         }
       ]
     },
@@ -151,6 +145,28 @@
         {
           "name": "cvescanner:file",
           "value": "lib/log4j-core-2.14.1.jar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:maven/org.apache.commons/commons-text@1.9",
+      "group": "org.apache.commons",
+      "name": "commons-text",
+      "version": "1.9",
+      "purl": "pkg:maven/org.apache.commons/commons-text@1.9",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "Maven"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "installed"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "web/shop.war!/WEB-INF/lib/commons-text-1.9.jar"
         }
       ]
     },
@@ -219,6 +235,50 @@
     }
   ],
   "vulnerabilities": [
+    {
+      "id": "GHSA-599f-7c49-w659",
+      "source": {
+        "name": "GitHub",
+        "url": "https://github.com/advisories/GHSA-599f-7c49-w659"
+      },
+      "references": [
+        {
+          "id": "CVE-2022-42889",
+          "source": {
+            "name": "NVD",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-42889"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "severity": "critical",
+          "method": "other"
+        }
+      ],
+      "description": "Test vuln in org.apache.commons:commons-text",
+      "recommendation": "Upgrade to 1.10.0",
+      "advisories": [
+        {
+          "url": "https://osv.dev/vulnerability/GHSA-599f-7c49-w659"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "maven:commons-text@1.9"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "ADVISORY"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "lib/commons-text-1.9.jar"
+        }
+      ]
+    },
     {
       "id": "GHSA-jfh8-c2jp-5v3q",
       "source": {
@@ -344,50 +404,6 @@
         {
           "name": "cvescanner:file",
           "value": "native/libcrypto.so.1.1"
-        }
-      ]
-    },
-    {
-      "id": "GHSA-599f-7c49-w659",
-      "source": {
-        "name": "GitHub",
-        "url": "https://github.com/advisories/GHSA-599f-7c49-w659"
-      },
-      "references": [
-        {
-          "id": "CVE-2022-42889",
-          "source": {
-            "name": "NVD",
-            "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-42889"
-          }
-        }
-      ],
-      "ratings": [
-        {
-          "severity": "critical",
-          "method": "other"
-        }
-      ],
-      "description": "Test vuln in org.apache.commons:commons-text",
-      "recommendation": "Upgrade to 1.10.0",
-      "advisories": [
-        {
-          "url": "https://osv.dev/vulnerability/GHSA-599f-7c49-w659"
-        }
-      ],
-      "affects": [
-        {
-          "ref": "pkg:maven/org.apache.commons/commons-text@1.9"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cvescanner:match",
-          "value": "ADVISORY"
-        },
-        {
-          "name": "cvescanner:file",
-          "value": "lib/commons-text-1.9.jar"
         }
       ]
     },

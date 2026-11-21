@@ -118,9 +118,16 @@ public final class Osv {
         return toFinding(d, m, MatchBasis.ADVISORY, Phrase.of("match.note.advisory"));
     }
 
-    /** The finding of a jar known by its artifactId alone: an advisory for some group's artifact of that name. */
+    /**
+     * The finding of a jar known by its artifactId alone: an advisory for some group's artifact of that name. It is the
+     * jar's own when the jar's OSGi name is of that group (com.google.guava, org.apache.logging.log4j.core); otherwise
+     * a name match, to check.
+     */
     public static Finding byArtifactName(Dependency d, Match m) {
         String named = Objects.requireNonNullElse(Json.str(Json.obj(m.affected().get("package")), "name"), "");
+        String group = named.contains(":") ? named.substring(0, named.indexOf(':')) : "";
+        if (d.bundleOf(group))
+            return toFinding(d, m, MatchBasis.ADVISORY, Phrase.of("match.note.artifactBundle", d.bundle(), named));
         return toFinding(d, m, MatchBasis.ADVISORY_NAME, Phrase.of("match.note.artifactName", d.name(), named));
     }
 

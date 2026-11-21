@@ -10,9 +10,9 @@ checksums.
   findings the ignore file sets aside are analysed `not_affected`, with the entry's reason.
 - **A database's age**: each report says the date of each database's newest record, and a scan warns of one older than
   30 days (`--db-max-age DAYS`, *View ▸ Database age…*; 0: never).
-- **Jars without Maven coordinates**, in an installed product, are checked by their name: their group from their OSGi
-  name when it spells it, otherwise every group's advisories for their artifactId, as *Jar name match ⚠*, which *Hide
-  name matches* and `--hide-name-matches` leave out.
+- **Jars without Maven coordinates**, in an installed product, are checked by their name: every group's advisories for
+  their artifactId, those of the group their OSGi name belongs to as their own, the others as *Jar name match ⚠*,
+  which *Hide name matches* and `--hide-name-matches` leave out.
 - **The ignore file from the command line**: `--ignore-add ID --reason … [--package] [--version] [--until]`,
   `--ignore-remove ID`, `--ignore-list`, without a scan.
 - **Apply fixes, checked with the real npm, yarn 1, yarn 4, pnpm and Gradle** (`scripts/fix-tools-check.sh`, run on

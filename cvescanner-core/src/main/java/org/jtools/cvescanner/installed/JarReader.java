@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.jtools.cvescanner.i18n.Phrase;
+import org.jtools.cvescanner.model.Dependency;
 import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.project.DependencyCollector;
 
@@ -107,10 +108,9 @@ public final class JarReader {
 
     /**
      * A jar without Maven coordinates, checked by its name: its artifactId and version from its file name
-     * (log4j-core-2.14.1.jar), else its manifest's. Its group too when its OSGi symbolic name is group.artifactId
-     * (org.apache.commons.commons-text); else its artifactId alone, matched against every group's advisories (a
-     * name match, MatchBasis.ADVISORY_NAME). Its version is the jar's own, not approximate. Without one, it cannot be
-     * checked: said.
+     * (log4j-core-2.14.1.jar), its version else from its manifest. Every group's advisories for that artifactId are
+     * matched; its OSGi name, when it has one, tells those of its own group (Dependency.bundle). Its version is the
+     * jar's own, not approximate. Without one, it cannot be checked: said.
      */
     private static void unchecked(Manifest manifest, String shown, String name, DependencyCollector col) {
         String symbolic = null, title = null, manifestVersion = null;
@@ -128,9 +128,8 @@ public final class JarReader {
                     version, shown, Phrase.of("reason.jarNoCoordinates"));
             return;
         }
-        String id = symbolic != null && symbolic.endsWith("." + artifact) && symbolic.length() > artifact.length() + 1
-                ? symbolic.substring(0, symbolic.length() - artifact.length() - 1) + ":" + artifact : artifact;
-        col.add(Ecosystem.MAVEN, id, version.strip(), shown, "installed", false);
+        col.add(new Dependency(Ecosystem.MAVEN, artifact, version.strip(), shown, "installed", false,
+                symbolic == null || symbolic.isEmpty() ? null : symbolic));
     }
 
     private static boolean isArchive(String entry) {

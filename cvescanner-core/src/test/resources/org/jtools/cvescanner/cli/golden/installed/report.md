@@ -1,6 +1,6 @@
 # Dependency Vulnerability Report
 
-- **Generated:** 2026-11-21 20:10 UTC
+- **Generated:** 2026-11-21 20:29 UTC
 - **Scanned directory:** `/home/j4ckk0/Developpement/github/CVEScanner/samples/installed`
 - **Scan:** installed product, from its binaries
 - **Database:** `installed.zip` (advisories + CVE records, 6 records (6 relevant), file dated 2026-11-21 11:30 UTC)
@@ -18,7 +18,7 @@
 | MEDIUM | 1 |
 | LOW | 0 |
 | UNKNOWN | 0 |
-| **Total** | **8** (6 unique vulnerabilities in 7 package versions) |
+| **Total** | **8** (6 unique vulnerabilities in 8 package versions) |
 
 ## Packages to upgrade
 
@@ -26,10 +26,11 @@
 
 | Worst severity | Ecosystem | Package | Current | Upgrade to | Vulns | Found in |
 |---|---|---|---|---|---|---|
+| CRITICAL | Maven | `commons-text` | 1.9 | 1.10.0 | 1 | lib/commons-text-1.9.jar |
 | CRITICAL | Maven | `log4j-core` | 2.14.1 | 2.15.0 | 1 | lib/log4j-core-2.14.1.jar |
 | CRITICAL | npm | `minimist` | 1.2.5 | 1.2.6 | 1 | app/node\_modules/minimist/package.json |
 | CRITICAL | COTS | `openssl:openssl` | 1.1.1k | 1.1.1l | 1 | native/libcrypto.so.1.1 |
-| CRITICAL | Maven | `org.apache.commons:commons-text` | 1.9 | 1.10.0 | 1 | lib/commons-text-1.9.jar, web/shop.war\!/WEB-INF/lib/commons-text-1.9.jar |
+| CRITICAL | Maven | `org.apache.commons:commons-text` | 1.9 | 1.10.0 | 1 | web/shop.war\!/WEB-INF/lib/commons-text-1.9.jar |
 | CRITICAL | Maven | `org.apache.logging.log4j:log4j-core` | 2.14.1 | 2.15.0 | 1 | app/app.jar\!/BOOT-INF/lib/log4j-core-2.14.1.jar |
 | HIGH | npm | `lodash` | 4.17.20 | 4.17.21 | 1 | app/node\_modules/lodash/package.json |
 | MEDIUM | PyPI | `requests` | 2.25.0 | 2.31.0 | 1 | venv/lib/python3.11/site-packages/requests-2.25.0.dist-info/METADATA |
@@ -58,7 +59,7 @@
 
 | Severity | Base score | Environment score | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
 |---|---|---|---|---|---|---|---|---|---|---|
-| CRITICAL | — | — | `org.apache.commons:commons-text` | 1.9 | installed | [GHSA-599f-7c49-w659](https://osv.dev/vulnerability/GHSA-599f-7c49-w659) | Advisory | CVE-2022-42889 | 1.10.0 | Test vuln in org.apache.commons:commons-text |
+| CRITICAL | — | — | `commons-text` | 1.9 | installed | [GHSA-599f-7c49-w659](https://osv.dev/vulnerability/GHSA-599f-7c49-w659) | Advisory | CVE-2022-42889 | 1.10.0 | Test vuln in org.apache.commons:commons-text |
 
 ### `lib/log4j-core-2.14.1.jar`
 

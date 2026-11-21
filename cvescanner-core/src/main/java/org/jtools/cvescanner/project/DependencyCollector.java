@@ -47,7 +47,11 @@ public final class DependencyCollector {
 
     /** A dependency found in a file named as shown: a jar inside another, "app.war!/WEB-INF/lib/x.jar". */
     public void add(Ecosystem eco, String name, String version, String f, String scope, boolean approximate) {
-        if (seen.add(List.of(eco, name, version, f, scope))) deps.add(new Dependency(eco, name, version, f, scope, approximate));
+        add(new Dependency(eco, name, version, f, scope, approximate));
+    }
+
+    public void add(Dependency d) {
+        if (seen.add(List.of(d.ecosystem(), d.name(), d.version(), d.file(), d.scope()))) deps.add(d);
     }
 
     public void miss(Ecosystem eco, String name, String declared, Path file, Phrase reason) {

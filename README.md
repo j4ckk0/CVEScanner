@@ -277,10 +277,12 @@ included:
 
 SBOMs, component inventories and pkg-config files are read in both modes, and so are the version strings of binaries
 named after a known component. **A jar without Maven coordinates** (one copied in by hand) is checked by its name:
-its file name gives its artifactId and version (`commons-collections-3.2.1.jar`), its manifest's OSGi name its group
-when it spells it (`org.apache.commons.commons-text`). Without a group, every group's advisories for that artifactId
-are matched, each a **Jar name match ⚠** to check, which *Hide name matches* and `--hide-name-matches` leave out. A
-jar without a version in its name or manifest is listed in *Unchecked dependencies*. A native library without a version string stays unchecked too, as do some distributions'
+its file name gives its artifactId and version (`guava-31.1-jre.jar`), and every group's advisories for that
+artifactId are matched. Those of the group its manifest's OSGi name belongs to (`com.google.guava`,
+`org.apache.logging.log4j.core`) are its own, *Advisory*; the others are a **Jar name match ⚠** to check
+(`commons-collections-3.2.1.jar`, whose OSGi name is `org.apache.commons.collections`), which *Hide name matches* and
+`--hide-name-matches` leave out. A jar without a version in its name or manifest is listed in *Unchecked
+dependencies*. A native library without a version string stays unchecked too, as do some distributions'
 builds (Debian's zlib holds none). A distribution that backports a fix without changing the version string makes its
 library safer than its version says: the findings then say what the version is known for. A CVE published both as a
 GitHub advisory and in OSV's own records (PYSEC) is reported once, the record with a CVSS vector kept. What an

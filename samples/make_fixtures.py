@@ -344,12 +344,12 @@ with open(os.path.join(out, "installed/app/app.jar"), "wb") as f:
                        ("BOOT-INF/lib/log4j-core-2.14.1.jar", log4j_jar), ("BOOT-INF/lib/plain-1.0.jar", plain_jar)]))
 with open(os.path.join(out, "installed/web/shop.war"), "wb") as f:
     f.write(jar_bytes([("WEB-INF/lib/commons-text-1.9.jar", text_jar)]))
-# jars without Maven coordinates, checked by their name: one whose OSGi name gives its group, one known by its artifactId
+# jars without Maven coordinates, checked by their name: one whose OSGi name tells its group, one known by its name alone
 os.makedirs(os.path.join(out, "installed/lib"), exist_ok=True)
 with open(os.path.join(out, "installed/lib/commons-text-1.9.jar"), "wb") as f:
     f.write(jar_bytes([("META-INF/MANIFEST.MF", "Manifest-Version: 1.0\nBundle-SymbolicName: org.apache.commons.commons-text\nBundle-Version: 1.9\n")]))
 with open(os.path.join(out, "installed/lib/log4j-core-2.14.1.jar"), "wb") as f:
-    f.write(jar_bytes([("META-INF/MANIFEST.MF", "Manifest-Version: 1.0\nBundle-SymbolicName: org.apache.logging.log4j.core\nBundle-Version: 2.14.1\n")]))
+    f.write(jar_bytes([("META-INF/MANIFEST.MF", "Manifest-Version: 1.0\nImplementation-Title: Apache Log4j Core\nImplementation-Version: 2.14.1\n")]))
 write("installed/app/node_modules/minimist/package.json", '{"name":"minimist","version":"1.2.5"}')
 write("installed/app/node_modules/lodash/package.json", '{"name":"lodash","version":"4.17.20"}')
 write("installed/venv/lib/python3.11/site-packages/requests-2.25.0.dist-info/METADATA",
