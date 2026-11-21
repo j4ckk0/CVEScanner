@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.cvss.Rating;
 import org.jtools.cvescanner.cvss.Scoring;
@@ -55,6 +56,7 @@ public final class NvdFeed {
     public record Rule(CveList.Info info, String cpe, String vendor, String product, String version,
                        String startIncluding, String startExcluding, String endIncluding, String endExcluding) {}
 
+    private static final Pattern DATE = Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
     private static final Pattern CPE_PRODUCT = Pattern.compile("cpe:2\\.3:[aho]:([^:\"]+):([^:\"]+):");
 
     private NvdFeed() {}
@@ -111,7 +113,11 @@ public final class NvdFeed {
                     if (!Boolean.TRUE.equals(m.get("vulnerable")) || criteria == null) continue;
                     String[] parts = splitCpe(criteria);
                     if (parts.length < 6) continue;
-                    out.add(new Rule(info, criteria, unescape(parts[3]), unescape(parts[4]), unescape(parts[5]),
+                    // the update field (beta1, rc2) is part of the version: 3.13.0 beta1 is not 3.13.0
+                    String version = unescape(parts[5]), update = parts.length > 6 ? unescape(parts[6]) : "*";
+                    if (!version.equals("*") && !version.equals("-") && !update.equals("*") && !update.equals("-") && !update.isEmpty())
+                        version = version + "-" + update;
+                    out.add(new Rule(info, criteria, unescape(parts[3]), unescape(parts[4]), version,
                             Json.str(m, "versionStartIncluding"), Json.str(m, "versionStartExcluding"),
                             Json.str(m, "versionEndIncluding"), Json.str(m, "versionEndExcluding")));
                 }
@@ -145,6 +151,10 @@ public final class NvdFeed {
     /** Whether the version falls in the rule: its CPE's own version, or its range ("*" and no bound: every version). */
     public static boolean affected(String version, Rule r) {
         String eco = "COTS";
+        // a range bounded by dates (FFmpeg's git snapshots) says nothing of a release's number
+        if (!DATE.matcher(version).matches()
+                && Stream.of(r.startIncluding(), r.startExcluding(), r.endIncluding(), r.endExcluding())
+                        .anyMatch(b -> b != null && DATE.matcher(b).matches())) return false;
         if (!r.version().equals("*") && !r.version().equals("-")) return Versions.compare(eco, version, r.version()) == 0;
         if (r.startIncluding() != null && Versions.compare(eco, version, r.startIncluding()) < 0) return false;
         if (r.startExcluding() != null && Versions.compare(eco, version, r.startExcluding()) <= 0) return false;

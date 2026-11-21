@@ -1,0 +1,13 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {
+    "component": { "type": "application", "name": "cots-app", "version": "1.0.0" }
+  },
+  "components": [
+    { "type": "library", "name": "libtiff", "version": "4.3.0", "cpe": "cpe:2.3:a:libtiff:libtiff:4.3.0:*:*:*:*:*:*:*" },
+    { "type": "library", "name": "expat", "version": "2.4.1" },
+    { "type": "library", "name": "freetype", "version": "2.10.4" }
+  ]
+}

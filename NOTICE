@@ -82,6 +82,9 @@ own terms, which bind whoever downloads and uses it:
     https://www.cve.org/Legal/TermsOfUse.
   - OSV.dev exports (https://osv.dev): each record under the licence of the source it
     comes from, as osv.dev documents.
+  - NVD's CVE feeds (https://nvd.nist.gov/feeds/json/cve/2.0/): NVD data, which the NIST
+    publishes for public use. This product uses data from the NVD API but is not
+    endorsed or certified by the NVD.
 The reports CVEScanner writes quote the advisories' identifiers, summaries and links.
 
 

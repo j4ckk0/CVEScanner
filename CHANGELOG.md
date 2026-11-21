@@ -3,6 +3,18 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
+## 1.1 — not released yet
+
+- **Components off-the-shelf**: GDAL, FFmpeg, OpenSSL, zlib, curl, SQLite… checked against NVD's CVE feeds (and the
+  CVE List) by their CPE, vendor, product and version ranges. CVEScanner finds them four ways: a `cots.csv` inventory,
+  an SBOM (CycloneDX, SPDX; its Maven and npm packages checked as such), a C/C++ build manifest (pkg-config, vcpkg,
+  Conan), a binary (a DLL's version resource, or its file name). NVD's yearly feeds are read a record at a time.
+- The fix of a flavoured version in its own flavour (Guava 32.0.0-jre, not -android); a package under an `npm:` alias
+  in a yarn.lock is a direct dependency.
+- The window: clearer column headers (Base score, Environment score, CVSS version), more room, tables scrolling
+  sideways.
+- `examples/cots-app`, and what NVD's real feeds find in it.
+
 ## 1.0 — 2026-11-21
 
 The first version as a project of its own, from the single-file prototype it was.

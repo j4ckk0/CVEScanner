@@ -110,6 +110,23 @@ class NvdFeedTest {
     }
 
     @Test
+    void aRangeBoundedByDatesSaysNothingOfAReleaseNumber() {
+        // FFmpeg's git snapshots: "before 2025-01-13" is no release version
+        var dated = rules(RECORD.replace("\"versionStartIncluding\":\"3.0.0\",\"versionEndExcluding\":\"3.4.2\"",
+                "\"versionEndExcluding\":\"2025-01-13\"")).getFirst();
+        assertFalse(NvdFeed.affected("3.4.1", dated));
+        assertTrue(NvdFeed.affected("2024-12-01", dated));
+    }
+
+    @Test
+    void theUpdateFieldIsPartOfTheVersion() {
+        var beta = rules(RECORD.replace("cpe:2.3:a:osgeo:gdal:2.4.4:*:", "cpe:2.3:a:osgeo:gdal:3.13.0:beta1:")).get(1);
+        assertEquals("3.13.0-beta1", beta.version());
+        assertFalse(NvdFeed.affected("3.13.0", beta), "the release is not its beta");
+        assertTrue(NvdFeed.affected("3.13.0-beta1", beta));
+    }
+
+    @Test
     void cpeEscapesAreUndone() {
         String[] parts = NvdFeed.splitCpe("cpe:2.3:a:nodejs:node\\.js\\:x:1.0:*");
         assertEquals("node.js:x", NvdFeed.unescape(parts[4]));

@@ -21,8 +21,10 @@ package org.jtools.cvescanner.cots;
  */
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The vendor:product NVD files the usual components off-the-shelf under (their CPEs), and the names they go by in an
@@ -32,6 +34,8 @@ import java.util.Map;
 public final class KnownProducts {
 
     private static final Map<String, String> BY_NAME = new HashMap<>();
+    /** Products NVD files one component's CVEs under, each of a group the other's too: curl's under curl and libcurl. */
+    private static final List<Set<String>> SAME_COMPONENT = List.of(Set.of("curl", "libcurl"));
 
     static {
         known("osgeo:gdal", "gdal", "libgdal");
@@ -80,6 +84,12 @@ public final class KnownProducts {
     public static String identify(String name) {
         String key = name.strip().toLowerCase(Locale.ROOT);
         return BY_NAME.getOrDefault(key, key);
+    }
+
+    /** The products a component's CVEs are filed under: its own, and those of the same component (curl, libcurl). */
+    public static Set<String> products(String product) {
+        for (Set<String> group : SAME_COMPONENT) if (group.contains(product)) return group;
+        return Set.of(product);
     }
 
     /** Whether this name is one of a known component's. */

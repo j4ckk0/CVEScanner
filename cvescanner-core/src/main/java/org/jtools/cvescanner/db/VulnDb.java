@@ -42,6 +42,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
+import org.jtools.cvescanner.cots.KnownProducts;
 import org.jtools.cvescanner.engine.Engine;
 import org.jtools.cvescanner.engine.ScanListener;
 import org.jtools.cvescanner.i18n.I18n;
@@ -72,7 +73,7 @@ public final class VulnDb {
                 by.computeIfAbsent(d.ecosystem(), _ -> new HashSet<>()).add(d.name());
                 all.add(d.name());
                 keys.addAll(CveList.keysFor(d));
-                if (d.ecosystem().equals(COTS)) products.add(product(d));
+                if (d.ecosystem().equals(COTS)) products.addAll(KnownProducts.products(product(d)));
             }
             return new Wanted(by, all, keys, products);
         }
@@ -94,7 +95,10 @@ public final class VulnDb {
 
         /** The NVD rules of a COTS component's product. */
         public List<NvdFeed.Rule> nvdFor(Dependency d) {
-            return d.ecosystem().equals(COTS) ? nvd.getOrDefault(product(d), List.of()) : List.of();
+            if (!d.ecosystem().equals(COTS)) return List.of();
+            var rules = new ArrayList<NvdFeed.Rule>();
+            for (String product : KnownProducts.products(product(d))) rules.addAll(nvd.getOrDefault(product, List.of()));
+            return rules;
         }
 
         public List<Osv.Match> osvFor(Dependency d) {
@@ -148,11 +152,10 @@ public final class VulnDb {
             l.status(I18n.text("status.reading", file.getFileName()));
             l.progress(0);
             try (var in = new CountingInputStream(new BufferedInputStream(Files.newInputStream(file), 1 << 16))) {
+                // the bar moves every 500 records; the count is said every 5,000, a line each on the command line
                 Runnable onEntry = () -> {
-                    if (++counts.entries % 500 == 0) {
-                        l.progress((double) in.count / size);
-                        l.status(I18n.text("status.readingCount", file.getFileName(), counts.entries));
-                    }
+                    if (++counts.entries % 500 == 0) l.progress((double) in.count / size);
+                    if (counts.entries % 5000 == 0) l.status(I18n.text("status.readingCount", file.getFileName(), counts.entries));
                 };
                 readZip(in, entry -> {
                     // an NVD feed is one JSON file of the whole year: read as a stream, a record at a time

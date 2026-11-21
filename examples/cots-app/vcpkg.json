@@ -1,0 +1,12 @@
+{
+  "name": "cots-app",
+  "version": "1.0.0",
+  "builtin-baseline": "0000000000000000000000000000000000000000",
+  "dependencies": [
+    "libwebp",
+    { "name": "poppler", "version>=": "21.01.0" }
+  ],
+  "overrides": [
+    { "name": "libwebp", "version": "1.2.0" }
+  ]
+}

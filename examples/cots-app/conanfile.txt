@@ -1,0 +1,7 @@
+[requires]
+openjpeg/2.4.0
+libarchive/3.5.1
+
+[generators]
+CMakeDeps
+CMakeToolchain

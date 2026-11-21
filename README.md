@@ -49,9 +49,33 @@ window, or name them with `--db`.
 | GitHub Advisory Database (recommended) | <https://github.com/github/advisory-database/archive/refs/heads/main.zip> (`advisory-database-main.zip`, the same as *Code → Download ZIP*) | the exact Maven/npm package and its affected versions, with the CVE IDs |
 | CVE List, the CVE Program's official list (optional) | <https://github.com/CVEProject/cvelistV5/releases>: the newest release's asset `YYYY-MM-DD_all_CVEs_at_midnight.zip.zip` (about 500 MB, a zip in a zip); not the `_delta_` files | exact when the record names the package (**CVE record**); otherwise by product name, marked **CVE name match ⚠**, to check; some CVEs cannot be tied to a package at all (Log4Shell's record) |
 | OSV.dev exports (optional) | `https://osv-vulnerabilities.storage.googleapis.com/Maven/all.zip` and `…/npm/all.zip` | as the GitHub Advisory Database |
+| NVD CVE feeds, for components off-the-shelf | `https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-YYYY.json.zip`, one per year from 2002 (about 25 MB each), and `nvdcve-2.0-modified.json.zip` | GDAL, FFmpeg, OpenSSL… by their CPE: vendor, product and version ranges (see [Components off-the-shelf](#components-off-the-shelf)) |
 
 When several are loaded, a CVE already covered by an advisory is reported once. To update, download fresh files and
 delete the old ones; each report says which files, of which date, it used.
+
+## Components off-the-shelf
+
+Besides Maven, Gradle and npm packages, CVEScanner checks the **components off-the-shelf** (COTS) a project ships:
+native libraries and programs such as GDAL, FFmpeg, OpenSSL, zlib, curl, SQLite. They have no package coordinates;
+NVD files their CVEs by vendor and product (a CPE, `cpe:2.3:a:osgeo:gdal:…`) with version ranges, and CVEScanner
+matches them against **NVD's CVE feeds** and the CVE List. It finds them four ways:
+
+| Where | What it reads |
+|---|---|
+| **An inventory**, `cots.csv` (or `*.cots.csv`) | one line each, `name,version[,vendor][,cpe]`: `GDAL,3.4.1`; `libfoo,1.2,acme`; `x,,,cpe:2.3:a:osgeo:gdal:3.4.1:*:*:*:*:*:*:*` |
+| **An SBOM**: CycloneDX (`bom.json`, `*.cdx.json`) or SPDX (`*.spdx.json`) | its components: by CPE, or by name; one with a Maven or npm package URL is checked as a Maven or npm package |
+| **A C/C++ build manifest** | pkg-config `*.pc` (`Name:`, `Version:`); `vcpkg.json` (an override's version, or the `version>=` minimum, ≈); Conan's `conanfile.txt`, `conanfile.py`, `conan.lock` |
+| **A binary** | a Windows DLL or EXE's version resource (ProductName, ProductVersion), read without loading it; otherwise its file name, its version only when spelled out (`ffmpeg-4.4.2.exe`, ≈) |
+
+A name CVEScanner knows (GDAL, FFmpeg and its libraries, OpenSSL, zlib, curl, SQLite, libxml2, libpng, libtiff,
+libjpeg-turbo, expat, Poppler, ImageMagick, Boost, Qt, libwebp, FreeType, libarchive, OpenJPEG, HDF5, NetCDF, PCRE2,
+nghttp2, libssh2, protobuf, glibc, VLC, LibRaw, JasPer) gives the vendor:product NVD uses: a match by both is a
+**CPE match**. Any other name is matched by product alone, a **CPE product match ⚠** to check; give its vendor or its
+CPE in the inventory to make it exact. Limits: a binary's ABI number (`avcodec-58.dll`, `libgdal.so.30`) is not the
+product's version, so such a binary is unchecked; a CVE NVD says affects a component only on some platform is
+reported as affecting it; a range NVD bounds by dates (FFmpeg's git snapshots) is not compared with a release number.
+`examples/cots-app` shows all four, with what a scan of NVD's real feeds finds in it.
 
 ## The window
 
@@ -205,12 +229,13 @@ Two Maven modules, each a jar and a Java module, built in this order by the pare
 | Path | What it holds |
 |---|---|
 | `cvescanner-core/…/project/` | the projects' dependencies: `ProjectFiles` (the files found), `MavenScanner` (POMs, their properties and parents), `GradleScanner` (build files, catalogs), `NpmScanner` (package.json and its lockfiles), `Collector` |
-| `cvescanner-core/…/db/` | the databases: `VulnDb` (the zips streamed, nested ones followed, only what the projects use kept), `Osv` (OSV records, their ranges), `CveList` (CVE JSON 5 records, their package and name matches) |
+| `cvescanner-core/…/db/` | the databases: `VulnDb` (the zips streamed, nested ones followed, only what the projects use kept), `Osv` (OSV records, their ranges), `CveList` (CVE JSON 5 records, their package and name matches), `NvdFeed` (NVD's feeds, read a record at a time: CPE rules) |
+| `cvescanner-core/…/cots/` | components off-the-shelf: `InventoryReader` (cots.csv), `SbomReader` (CycloneDX, SPDX), `ManifestReader` (pkg-config, vcpkg, Conan), `BinaryReader` and `PeVersionInfo` (a DLL's version resource, read in bounded reads), `KnownProducts` (names to vendor:product) |
 | `cvescanner-core/…/engine/` | `Engine` (a scan: files, dependencies, databases, matches), `ScanListener` (its progress) |
 | `cvescanner-core/…/cvss/` | `Cvss` (vectors, the 3.x formulas, the 4.0 macrovectors), `Scoring` (a finding scored for an environment), `Environment`, `Reach`, `Requirement`, `Rating`, `Score` |
 | `cvescanner-core/…/model/` | what a scan finds: `Finding`, `Dependency`, `Unresolved`, `PackageSummary`, `ScanResult`, `Severity`, `MatchBasis` |
 | `cvescanner-core/…/report/`, `…/cli/` | `Reports` (report.md, findings.csv, findings.json, the packages to upgrade); `Options` and `Cli` (the command line) |
-| `cvescanner-core/…/json/`, `…/version/`, `…/i18n/` | `Json` (a small parser and writer); `Versions` (Maven's and npm's version order); the languages: `I18n`, `I18nLanguage`, `I18nTexts`, `Phrase` |
+| `cvescanner-core/…/json/`, `…/version/`, `…/i18n/` | `Json` (a small parser and writer), `JsonStream` (a large array's elements one at a time); `Versions` (Maven's and npm's version order); the languages: `I18n`, `I18nLanguage`, `I18nTexts`, `Phrase` |
 | `cvescanner-app/…/` | `Launcher` (the entry point), `MainWindow`, `FindingDetails` (a finding's page, escaped), the table's `Column`, `ListTableModel` and renderers, `Settings`, `Looks`, `HelpMenu`, `I18nLabels` and `I18nLanguageBox`, `NoNetworkResolver` |
 | `cvescanner-app/src/dist/`, `…/src/assembly/` | the distributions' launchers, the `database/` folder, FlatLaf's licence, and what goes in each archive |
 | `*/src/test/` | core: `GoldenTest` (the samples' reports, case by case), `FrenchReportTest`, `CvssReferenceTest` (9,000 vectors scored by another implementation), `HostileReportTest`, the rules' unit tests, `PomParserTest`, `CoreTextsTest`; app: `NoNetworkTest`, `NoNetworkResolverTest`, `HostileAdvisoryTest`, `AppTextsTest` |

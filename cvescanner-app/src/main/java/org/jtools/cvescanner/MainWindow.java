@@ -191,7 +191,7 @@ final class MainWindow extends JFrame {
             new Choice<>("filter.lowUp", Severity.LOW)).toArray(Choice[]::new));
     private final JComboBox<Choice<String>> ecosystemCombo = new JComboBox<>(List.of(
             new Choice<String>("filter.allEcosystems", null), new Choice<>("filter.maven", "Maven"),
-            new Choice<>("filter.npm", "npm")).toArray(Choice[]::new));
+            new Choice<>("filter.npm", "npm"), new Choice<>("filter.cots", "COTS")).toArray(Choice[]::new));
     private final JCheckBox cveOnlyBox = new JCheckBox();
     private final JCheckBox hideApproxBox = new JCheckBox();
     private final Map<Severity, JLabel> chips = new EnumMap<>(Severity.class);

@@ -18,6 +18,7 @@ integrity hashes npm and yarn add (CVEScanner reads only the versions).
 | `gradle-app/` | a Gradle build in Kotlin (`build.gradle.kts`): versions in the version catalog (`gradle/libs.versions.toml`, one by `version.ref`), in a `val`, written out |
 | `npm-app/` | `package.json` and its `package-lock.json` (v3): direct dependencies, a transitive one (`follow-redirects`, from `axios`), development ones, a transitive development one (`minimist`, from `mkdirp`) |
 | `yarn-app/` | `package.json` and its `yarn.lock` (Yarn 1): transitive dependencies (`lodash` from `async`; `is-glob`, `is-extglob` from `glob-parent`), a package under an `npm:` alias (`lodash-legacy`, which is `lodash` 4.17.11) |
+| `cots-app/` | components off-the-shelf of a C/C++ application, given the ways CVEScanner reads: a `cots.csv` inventory, a CycloneDX `bom.json`, a `vcpkg.json`, a `conanfile.txt` (see "Components off-the-shelf" below) |
 
 ## What a scan finds
 
@@ -77,6 +78,35 @@ gives the version that fixes them all):
 | `ws` (dev) | 7.4.5 | CVE-2021-32640 | 7.4.6 |
 | `lodash` (transitive, from `async`) | 4.17.15 | CVE-2021-23337 | 4.17.21 |
 | `lodash` (as `lodash-legacy`) | 4.17.11 | CVE-2019-10744 | 4.17.12 |
+
+## Components off-the-shelf (`cots-app`)
+
+Scan it with NVD's CVE feeds in `database/` (see the main README, "The databases"). With NVD's yearly feeds 2002–2026
+and its "modified" feed of 2026-11-21 — 26 zips, read in about 100 seconds with 512 MB of memory —: **385 findings in
+all 15 components, every one an exact vendor:product CPE match.** For each, one of its CVEs and the version that fixes
+that one; *Upgrade to* fixes every one that has a fix:
+
+| Component (vendor:product) | Version | From | Findings | A known CVE | Fixed in | Upgrade to |
+|---|---|---|---|---|---|---|
+| `osgeo:gdal` | 3.4.1 | `cots.csv` | 7 | CVE-2026-8084 | — (up to 3.12.4) | no fix given |
+| `ffmpeg:ffmpeg` | 4.4.2 | `cots.csv` | 54 | CVE-2022-3964 | 4.4.4 | 9.0 (some unfixed) |
+| `openssl:openssl` | 1.1.1k | `cots.csv` | 48 | CVE-2022-0778 | 1.1.1n | 1.1.1zj (some unfixed) |
+| `zlib:zlib` | 1.2.11 | `cots.csv` | 4 | CVE-2018-25032 | 1.2.12 | 1.3.1 (some unfixed) |
+| `haxx:libcurl` | 7.79.1 | `cots.csv` | 65 | CVE-2022-22576 | 7.83.0 | 8.22.0 (some unfixed) |
+| `sqlite:sqlite` | 3.36.0 | `cots.csv` | 18 | CVE-2022-35737 | 3.39.2 | 3.54.0 (some unfixed) |
+| `xmlsoft:libxml2` | 2.9.12 | `cots.csv` | 31 | CVE-2022-40303 | 2.10.3 | 2.15.4 (some unfixed) |
+| `libpng:libpng` | 1.6.37 | `cots.csv` | 10 | CVE-2025-64720 | 1.6.51 | 1.6.57 |
+| `libtiff:libtiff` | 4.3.0 | `bom.json` (CPE) | 61 | CVE-2025-61144 | 4.7.1 | 4.7.2 (some unfixed) |
+| `libexpat_project:libexpat` | 2.4.1 | `bom.json` (name) | 51 | CVE-2022-22822 | 2.4.3 | 2.8.4 (some unfixed) |
+| `freetype:freetype` | 2.10.4 | `bom.json` (name) | 4 | CVE-2022-27404 | 2.12.0 | 2.12.0 (some unfixed) |
+| `webmproject:libwebp` | 1.2.0 | `vcpkg.json` (override) | 2 | CVE-2023-4863 | 1.3.2 | 1.3.2 |
+| `freedesktop:poppler` | 21.01.0 ≈ | `vcpkg.json` (`version>=`) | 11 | CVE-2021-30860 | 22.09.0 | 25.07.0 (some unfixed) |
+| `uclouvain:openjpeg` | 2.4.0 | `conanfile.txt` | 4 | CVE-2021-3575 | — | no fix given |
+| `libarchive:libarchive` | 3.5.1 | `conanfile.txt` | 15 | CVE-2022-36227 | 3.6.2 | 3.8.0 (some unfixed) |
+
+"—" and "no fix given": NVD bounds those CVEs by the last version affected ("up to 3.12.4"), not by a fixed one.
+Poppler's version is the minimum `vcpkg.json` asks for (≈): the one installed may be newer. libcurl's findings include
+those NVD files under `haxx:curl`, the same component's other name.
 
 ## What a scan does not find
 

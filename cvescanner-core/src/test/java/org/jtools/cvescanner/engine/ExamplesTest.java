@@ -57,7 +57,12 @@ class ExamplesTest {
                 "async@2.6.3", "axios@0.21.0", "follow-redirects@1.13.0", "glob-parent@5.1.1", "is-extglob@2.1.1",
                 "is-glob@4.0.1", "jquery@3.4.1", "json5@2.2.1", "lodash@4.17.11", "lodash@4.17.15", "marked@1.1.0",
                 "minimist@1.2.5", "mkdirp@0.5.5", "moment@2.29.1", "node-fetch@2.6.0", "semver@5.7.1",
-                "shell-quote@1.7.2", "ua-parser-js@0.7.21", "ws@7.4.5")), packages);
+                "shell-quote@1.7.2", "ua-parser-js@0.7.21", "ws@7.4.5",
+                "osgeo:gdal@3.4.1", "ffmpeg:ffmpeg@4.4.2", "openssl:openssl@1.1.1k", "zlib:zlib@1.2.11",
+                "haxx:libcurl@7.79.1", "sqlite:sqlite@3.36.0", "xmlsoft:libxml2@2.9.12", "libpng:libpng@1.6.37",
+                "libtiff:libtiff@4.3.0", "libexpat_project:libexpat@2.4.1", "freetype:freetype@2.10.4",
+                "webmproject:libwebp@1.2.0", "freedesktop:poppler@21.01.0", "uclouvain:openjpeg@2.4.0",
+                "libarchive:libarchive@3.5.1")), packages);
         assertEquals(List.of(), result.unresolved(), "a dependency left unchecked");
         assertEquals(List.of(), result.warnings(), "a file skipped");
     }

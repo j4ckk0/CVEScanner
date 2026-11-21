@@ -1,6 +1,6 @@
 # Dependency Vulnerability Report
 
-- **Generated:** 2026-11-21 08:19 UTC
+- **Generated:** 2026-11-21 08:25 UTC
 - **Scanned directory:** `/home/j4ckk0/Developpement/github/CVEScanner/samples/cots-projects`
 - **Database:** `nvdcve-2.0-2024.json.zip` (NVD CVE feed (JSON 2.0), 11 records (10 relevant), file dated 2026-11-21 08:14 UTC)
 - **Database:** `cots-cvelist.zip` (CVE List (CVE JSON 5), 3 records (3 relevant), file dated 2026-11-21 08:09 UTC)
@@ -126,3 +126,4 @@
 - A match means the version is inside an advisory's affected range; whether the vulnerable code is reachable in your application still needs review.
 - *CVE name match ⚠* findings come from CVE List records that describe the product only by name (e.g. product `commons-text`, vendor `Apache Software Foundation`); check that they really refer to your package. The GitHub Advisory Database gives exact package matches.
 - *Base score* is computed from the advisory's CVSS vector (version in brackets), or the advisory's rating when there is no vector. *Environment score* applies the chosen environment (security requirements and maximum attack vector) as CVSS environmental metrics. `MAL-` advisories are known-malicious packages and are rated CRITICAL.
+- *COTS* components (off-the-shelf: GDAL, FFmpeg…) come from component inventories (cots.csv), SBOMs, C/C++ build manifests and binaries. NVD matches them by their CPE's vendor and product (*CPE match*), or by product alone when their vendor is not known (*CPE product match ⚠*, to check); a CVE NVD says affects a component only on some platform is reported as affecting it. A version read from a binary's file name is approximate (≈).

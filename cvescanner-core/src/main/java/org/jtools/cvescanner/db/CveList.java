@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
+import org.jtools.cvescanner.cots.KnownProducts;
 import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.cvss.Rating;
 import org.jtools.cvescanner.cvss.Scoring;
@@ -71,7 +72,7 @@ public final class CveList {
 
     static List<String> keysFor(Dependency d) {
         String name = normalize(d.name());
-        if (d.ecosystem().equals(VulnDb.COTS)) return List.of(VulnDb.product(d));
+        if (d.ecosystem().equals(VulnDb.COTS)) return List.copyOf(KnownProducts.products(VulnDb.product(d)));
         if (!d.ecosystem().equals("Maven")) return List.of(name);
         return List.of(name, name.replace(':', '/'), name.substring(name.indexOf(':') + 1));
     }
@@ -154,7 +155,7 @@ public final class CveList {
         String product = normalize(r.product());
         if (d.ecosystem().equals(VulnDb.COTS)) {
             // the record's vendor is free text ("The OpenSSL Project"): a word of it in the component's CPE vendor will do
-            if (!product.equals(VulnDb.product(d))) return null;
+            if (!KnownProducts.products(VulnDb.product(d)).contains(product)) return null;
             int colon = d.name().indexOf(':');
             return colon > 0 && vendorMatchesGroup(r.vendor(), normalize(d.name().substring(0, colon)))
                     ? MatchBasis.CVE_PACKAGE : MatchBasis.CVE_NAME;

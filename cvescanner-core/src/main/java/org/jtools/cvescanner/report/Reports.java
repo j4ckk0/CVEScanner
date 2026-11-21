@@ -40,6 +40,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jtools.cvescanner.cvss.Environment;
+import org.jtools.cvescanner.db.VulnDb;
 import org.jtools.cvescanner.engine.Engine;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
@@ -214,6 +215,10 @@ public final class Reports {
             sb.append('\n');
         }
         sb.append("## ").append(I18n.text(language, "markdown.notes")).append("\n\n").append(I18n.text(language, "markdown.notes.text")).append('\n');
+        // how components off-the-shelf are found and matched: said when the report holds some
+        if (findings.stream().anyMatch(f -> f.ecosystem().equals(VulnDb.COTS))
+                || r.unresolved().stream().anyMatch(u -> u.ecosystem().equals(VulnDb.COTS)))
+            sb.append(I18n.text(language, "markdown.notes.cots")).append('\n');
         return sb.toString();
     }
 

@@ -1,0 +1,11 @@
+# An example for CVEScanner: the components off-the-shelf a C/C++ application ships, at versions with known
+# vulnerabilities. One line each: name,version[,vendor][,cpe]
+name,version
+GDAL,3.4.1
+FFmpeg,4.4.2
+OpenSSL,1.1.1k
+zlib,1.2.11
+libcurl,7.79.1
+SQLite,3.36.0
+libxml2,2.9.12
+libpng,1.6.37
