@@ -146,7 +146,7 @@ final class MainWindow extends JFrame {
 
     private final JTabbedPane tabs = new JTabbedPane();
     private final JEditorPane detailPane = new JEditorPane("text/html", "");
-    private final JLabel statusLabel = Gui.noHtml(new JLabel(" "));
+    private final JLabel statusLabel = SwingText.noHtml(new JLabel(" "));
     private final JProgressBar progressBar = new JProgressBar(0, 1000);
     private final Timer searchTimer = new Timer(200, _ -> applyFilters());
 
@@ -538,17 +538,17 @@ final class MainWindow extends JFrame {
 
     private JPopupMenu findingsMenu() {
         var menu = new JPopupMenu();
-        menu.add(item("menu.finding.copyAdvisoryLink", f -> copyLink(f.url())));
-        menu.add(item("menu.finding.copyNvdLink", f -> copyLink(f.cves().stream().map(FindingDetails::nvdUrl).collect(Collectors.joining(" ")))));
+        menu.add(findingItem("menu.finding.copyAdvisoryLink", f -> copyLink(f.url())));
+        menu.add(findingItem("menu.finding.copyNvdLink", f -> copyLink(f.cves().stream().map(FindingDetails::nvdUrl).collect(Collectors.joining(" ")))));
         menu.addSeparator();
-        menu.add(item("menu.finding.copyCves", f -> copy(f.cves().isEmpty() ? f.id() : f.cveText())));
-        menu.add(item("menu.finding.copyCoordinate", f -> copy(f.ecosystem().coordinate(f.pkg(), f.version()))));
-        menu.add(item("menu.finding.copyRow", f -> copy(String.join("\t", f.severity().name(), f.pkg(), f.version(), f.id(), f.cveText(),
+        menu.add(findingItem("menu.finding.copyCves", f -> copy(f.cves().isEmpty() ? f.id() : f.cveText())));
+        menu.add(findingItem("menu.finding.copyCoordinate", f -> copy(f.ecosystem().coordinate(f.pkg(), f.version()))));
+        menu.add(findingItem("menu.finding.copyRow", f -> copy(String.join("\t", f.severity().name(), f.pkg(), f.version(), f.id(), f.cveText(),
                 f.fixedIn(), f.file(), f.summary()))));
         menu.addSeparator();
-        menu.add(item("menu.finding.onlyThisPackage", f -> searchField.setText(f.pkg())));
+        menu.add(findingItem("menu.finding.onlyThisPackage", f -> searchField.setText(f.pkg())));
         menu.addSeparator();
-        menu.add(item("menu.finding.ignore", this::ignore));
+        menu.add(findingItem("menu.finding.ignore", this::ignore));
         return menu;
     }
 
@@ -570,7 +570,7 @@ final class MainWindow extends JFrame {
         return menu;
     }
 
-    private JMenuItem item(String key, Consumer<Finding> action) {
+    private JMenuItem findingItem(String key, Consumer<Finding> action) {
         var item = labels.text(new JMenuItem(), key);
         item.addActionListener(_ -> {
             var f = tables.selectedFinding();
@@ -721,7 +721,7 @@ final class MainWindow extends JFrame {
     private void startScan() {
         Path dir = Path.of(dirField.getText().strip());
         if (!Files.isDirectory(dir)) {
-            JOptionPane.showMessageDialog(this, Gui.plain(I18n.text("scan.notAFolder", dir)), I18n.text("scan.notAFolder.title"),
+            JOptionPane.showMessageDialog(this, SwingText.plain(I18n.text("scan.notAFolder", dir)), I18n.text("scan.notAFolder.title"),
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -744,7 +744,7 @@ final class MainWindow extends JFrame {
                     showResult(get());
                 } catch (ExecutionException e) {
                     say(() -> I18n.text("scan.failed"));
-                    JOptionPane.showMessageDialog(MainWindow.this, Gui.plain(e.getCause().getMessage()), I18n.text("scan.failed.title"),
+                    JOptionPane.showMessageDialog(MainWindow.this, SwingText.plain(e.getCause().getMessage()), I18n.text("scan.failed.title"),
                             JOptionPane.ERROR_MESSAGE);
                     statusLabel.setToolTipText(null);
                 } catch (InterruptedException _) {
@@ -835,9 +835,9 @@ final class MainWindow extends JFrame {
     /** The status line's tooltip: the databases read, the scan's warnings, the ignore file's. */
     private void updateStatusTip(List<Phrase> warnings) {
         var tip = new ArrayList<String>();
-        if (result != null) result.snapshots().forEach((k, v) -> tip.add("<b>" + Gui.html(k) + "</b>: " + Gui.html(v.text())));
-        warnings.forEach(w -> tip.add(Gui.html(I18n.text("status.warning", w))));
-        split.warnings().forEach(w -> tip.add(Gui.html(I18n.text("status.warning", w))));
+        if (result != null) result.snapshots().forEach((k, v) -> tip.add("<b>" + SwingText.html(k) + "</b>: " + SwingText.html(v.text())));
+        warnings.forEach(w -> tip.add(SwingText.html(I18n.text("status.warning", w))));
+        split.warnings().forEach(w -> tip.add(SwingText.html(I18n.text("status.warning", w))));
         statusLabel.setToolTipText(tip.isEmpty() ? null : "<html>" + String.join("<br>", tip) + "</html>");
     }
 
@@ -871,7 +871,7 @@ final class MainWindow extends JFrame {
             // the folder is shown, to copy: the program starts no other one, a file manager no more than a browser
             String folder = chooser.getSelectedFile().getAbsolutePath();
             int choice = JOptionPane.showOptionDialog(this,
-                    Gui.plain(I18n.text("export.done", written.stream().map(Path::toString).collect(Collectors.joining("\n")))),
+                    SwingText.plain(I18n.text("export.done", written.stream().map(Path::toString).collect(Collectors.joining("\n")))),
                     I18n.text("export.done.title"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null,
                     new Object[]{I18n.text("export.copyFolder"), I18n.text("export.ok")}, I18n.text("export.ok"));
             if (choice == 0) {
@@ -879,7 +879,7 @@ final class MainWindow extends JFrame {
                 say(() -> I18n.text("export.folderCopied", folder));
             }
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, Gui.plain(e.getMessage()), I18n.text("export.failed.title"), JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, SwingText.plain(e.getMessage()), I18n.text("export.failed.title"), JOptionPane.ERROR_MESSAGE);
         }
     }
 

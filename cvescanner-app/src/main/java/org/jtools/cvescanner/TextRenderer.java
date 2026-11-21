@@ -25,18 +25,18 @@ import java.awt.Component;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 
-/** A cell's text as it is: what a database or a project wrote is never read as HTML (Gui.noHtml). */
+/** A cell's text as it is: what a database or a project wrote is never read as HTML (SwingText.noHtml). */
 final class TextRenderer extends DefaultTableCellRenderer {
 
     TextRenderer() {
-        Gui.noHtml(this);
+        SwingText.noHtml(this);
     }
 
     @Override
     public Component getTableCellRendererComponent(JTable t, Object v, boolean sel, boolean focus, int row, int col) {
         super.getTableCellRendererComponent(t, v, sel, focus, row, col);
         String s = v == null ? "" : v.toString();
-        setToolTipText(s.length() > 30 ? "<html><body style='width:420px'>" + Gui.html(s) + "</body></html>" : null);
+        setToolTipText(s.length() > 30 ? "<html><body style='width:420px'>" + SwingText.html(s) + "</body></html>" : null);
         return this;
     }
 }

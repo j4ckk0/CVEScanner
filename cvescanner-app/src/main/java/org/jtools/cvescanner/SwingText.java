@@ -27,8 +27,12 @@ import javax.swing.JTextArea;
 import javax.swing.UIManager;
 import org.jtools.cvescanner.i18n.I18n;
 
-final class Gui {
-    private Gui() {}
+/**
+ * Text as the window shows it: escaped for its HTML pages, never read as HTML in a component, numbers as the language
+ * writes them.
+ */
+final class SwingText {
+    private SwingText() {}
 
     static String hex(Color c) { return String.format("#%02x%02x%02x", c.getRed(), c.getGreen(), c.getBlue()); }
 

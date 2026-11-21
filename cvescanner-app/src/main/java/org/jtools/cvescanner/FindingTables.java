@@ -126,7 +126,7 @@ final class FindingTables {
 
         var cvss = new DefaultTableCellRenderer() {
             @Override
-            protected void setValue(Object v) { setText(v instanceof Double d ? Gui.score(d) : ""); }
+            protected void setValue(Object v) { setText(v instanceof Double d ? SwingText.score(d) : ""); }
         };
         cvss.setHorizontalAlignment(SwingConstants.RIGHT);
         findingsTable.getColumnModel().getColumn(column(FINDING_COLUMNS, "column.base")).setCellRenderer(cvss);
@@ -134,7 +134,7 @@ final class FindingTables {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object v, boolean sel, boolean focus, int row, int col) {
                 super.getTableCellRendererComponent(t, v, sel, focus, row, col);
-                setText(v instanceof Double d ? Gui.score(d) : "");
+                setText(v instanceof Double d ? SwingText.score(d) : "");
                 setFont(getFont().deriveFont(Font.BOLD));
                 if (!sel && v instanceof Double d) setForeground(SeverityColors.of(Severity.fromScore(d)));
                 return this;

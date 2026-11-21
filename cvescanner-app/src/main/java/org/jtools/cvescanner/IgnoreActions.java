@@ -176,7 +176,7 @@ final class IgnoreActions {
     /** Takes the entry setting this finding aside out of the file, after asking when it sets others aside too. */
     void stopIgnoring(IgnoredFinding i) {
         long others = host.split().ignored().stream().filter(x -> x.rule().equals(i.rule())).count() - 1;
-        if (others > 0 && JOptionPane.showConfirmDialog(owner, Gui.plain(I18n.text("ignore.stop.others", others, i.rule().line())),
+        if (others > 0 && JOptionPane.showConfirmDialog(owner, SwingText.plain(I18n.text("ignore.stop.others", others, i.rule().line())),
                 I18n.text("ignore.stop.title"), JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE) != JOptionPane.OK_OPTION)
             return;
         boolean removed;
@@ -187,7 +187,7 @@ final class IgnoreActions {
             return;
         }
         if (!removed)
-            JOptionPane.showMessageDialog(owner, Gui.plain(I18n.text("ignore.stop.notFound", ignores.shown())), I18n.text("ignore.stop.title"),
+            JOptionPane.showMessageDialog(owner, SwingText.plain(I18n.text("ignore.stop.notFound", ignores.shown())), I18n.text("ignore.stop.title"),
                     JOptionPane.WARNING_MESSAGE);
         reread();
         if (removed) host.say(() -> I18n.text("ignore.stopped", others + 1));
@@ -205,6 +205,6 @@ final class IgnoreActions {
     }
 
     private void failed(IOException e) {
-        JOptionPane.showMessageDialog(owner, Gui.plain(e.getMessage()), I18n.text("ignore.failed.title"), JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(owner, SwingText.plain(e.getMessage()), I18n.text("ignore.failed.title"), JOptionPane.ERROR_MESSAGE);
     }
 }

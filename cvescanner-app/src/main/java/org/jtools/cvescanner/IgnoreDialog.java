@@ -44,7 +44,7 @@ import org.jtools.cvescanner.model.Finding;
 /**
  * Asks how to set a finding aside: for its version of its package, every version, or every package; why; until when.
  * Says how many findings the entry would set aside, and in which file it is written. Every text of the finding is
- * shown as text, never as HTML (Gui.noHtml).
+ * shown as text, never as HTML (SwingText.noHtml).
  */
 final class IgnoreDialog {
 
@@ -65,12 +65,12 @@ final class IgnoreDialog {
         c.gridy = 0;
         c.gridwidth = 2;
         String id = f.cves().isEmpty() ? f.id() : f.cves().getFirst();
-        panel.add(Gui.noHtml(new JLabel(I18n.text("ignore.dialog.what", id, f.pkg(), f.version()))), c);
+        panel.add(SwingText.noHtml(new JLabel(I18n.text("ignore.dialog.what", id, f.pkg(), f.version()))), c);
 
         var scopes = new EnumMap<IgnoreRule.Scope, JRadioButton>(IgnoreRule.Scope.class);
-        scopes.put(IgnoreRule.Scope.VERSION, Gui.noHtml(new JRadioButton(I18n.text("ignore.dialog.scope.version", f.version()), true)));
-        scopes.put(IgnoreRule.Scope.PACKAGE, Gui.noHtml(new JRadioButton(I18n.text("ignore.dialog.scope.package", f.pkg()))));
-        scopes.put(IgnoreRule.Scope.EVERYWHERE, Gui.noHtml(new JRadioButton(I18n.text("ignore.dialog.scope.everywhere", id))));
+        scopes.put(IgnoreRule.Scope.VERSION, SwingText.noHtml(new JRadioButton(I18n.text("ignore.dialog.scope.version", f.version()), true)));
+        scopes.put(IgnoreRule.Scope.PACKAGE, SwingText.noHtml(new JRadioButton(I18n.text("ignore.dialog.scope.package", f.pkg()))));
+        scopes.put(IgnoreRule.Scope.EVERYWHERE, SwingText.noHtml(new JRadioButton(I18n.text("ignore.dialog.scope.everywhere", id))));
         var group = new ButtonGroup();
         c.gridwidth = 1;
         c.gridy++;
@@ -105,7 +105,7 @@ final class IgnoreDialog {
         counted.setBorder(BorderFactory.createEmptyBorder(8, 0, 0, 0));
         panel.add(counted, c);
         c.gridy++;
-        panel.add(Gui.noHtml(new JLabel(I18n.text("ignore.dialog.file", file))), c);
+        panel.add(SwingText.noHtml(new JLabel(I18n.text("ignore.dialog.file", file))), c);
 
         while (true) {
             int choice = JOptionPane.showOptionDialog(owner, panel, I18n.text("ignore.dialog.title"), JOptionPane.OK_CANCEL_OPTION,
@@ -122,7 +122,7 @@ final class IgnoreDialog {
                 }
             }
             if (problem == null) return Optional.of(IgnoreRule.forFinding(f, scope(scopes), reason.getText(), date));
-            JOptionPane.showMessageDialog(owner, Gui.plain(problem), I18n.text("ignore.dialog.title"), JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(owner, SwingText.plain(problem), I18n.text("ignore.dialog.title"), JOptionPane.WARNING_MESSAGE);
         }
     }
 

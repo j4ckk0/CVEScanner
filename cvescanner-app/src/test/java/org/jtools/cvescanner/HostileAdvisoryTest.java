@@ -140,7 +140,7 @@ class HostileAdvisoryTest {
 
     @Test
     void aLabelOfDataShowsHtmlAsText() {
-        JLabel label = Gui.noHtml(new JLabel());
+        JLabel label = SwingText.noHtml(new JLabel());
         label.setText("<html>" + TAGS);
         assertNull(label.getClientProperty(BasicHTML.propertyKey), "the label renders its text as HTML");
     }

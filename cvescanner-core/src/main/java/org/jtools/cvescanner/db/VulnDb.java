@@ -162,7 +162,7 @@ public final class VulnDb {
                                 rule -> index.nvd.computeIfAbsent(rule.product(), _ -> new ArrayList<>()).add(rule), used, onEntry);
                         counts.nvdUsed += used.size();
                     } else {
-                        accept(head.readAllBytes(), wanted, index, counts);
+                        indexRecord(head.readAllBytes(), wanted, index, counts);
                         onEntry.run();
                     }
                 }, 0);
@@ -209,7 +209,7 @@ public final class VulnDb {
         return false;
     }
 
-    private static void accept(byte[] data, Wanted wanted, Index index, Counts counts) {
+    private static void indexRecord(byte[] data, Wanted wanted, Index index, Counts counts) {
         String text = new String(data, UTF_8);
         if (text.contains("\"cveMetadata\"")) {                               // CVE List record
             counts.cve++;
