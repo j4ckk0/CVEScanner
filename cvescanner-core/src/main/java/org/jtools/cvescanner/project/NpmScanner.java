@@ -34,6 +34,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.version.Versions;
 
@@ -49,18 +50,18 @@ public final class NpmScanner {
 
     record LockEntry(String name, String version, boolean dev, boolean direct) {}
 
-    record MinVersion(String version, boolean exact, String reason) {}
+    record MinVersion(String version, boolean exact, Phrase reason) {}
 
     private NpmScanner() {}
 
     static MinVersion minVersion(String spec) {
         String s = spec.strip();
-        if (s.isEmpty() || Set.of("*", "x", "X", "latest", "next").contains(s)) return new MinVersion(null, false, "unpinned version '" + spec + "'");
-        if (NON_REGISTRY.matcher(s).lookingAt() || GITHUB_SHORTHAND.matcher(s).matches()) return new MinVersion(null, false, "non-registry source");
+        if (s.isEmpty() || Set.of("*", "x", "X", "latest", "next").contains(s)) return new MinVersion(null, false, Phrase.of("reason.unpinned", spec));
+        if (NON_REGISTRY.matcher(s).lookingAt() || GITHUB_SHORTHAND.matcher(s).matches()) return new MinVersion(null, false, Phrase.of("reason.nonRegistry"));
         String first = s.split("\\|\\|")[0].strip();
-        if (first.startsWith("<")) return new MinVersion(null, false, "range has no lower bound");
+        if (first.startsWith("<")) return new MinVersion(null, false, Phrase.of("reason.noLowerBound"));
         var m = RANGE_VERSION.matcher(first);
-        if (!m.find()) return new MinVersion(null, false, "unparseable version range");
+        if (!m.find()) return new MinVersion(null, false, Phrase.of("reason.unparseableRange"));
         var nums = new ArrayList<String>();
         for (int g = 1; g <= 3; g++) {
             String p = m.group(g);
@@ -70,14 +71,14 @@ public final class NpmScanner {
         return new MinVersion(v, EXACT.matcher(first).matches(), null);
     }
 
-    public static void scan(List<Path> packageJsons, Path root, Collector col, Consumer<String> warn) {
+    public static void scan(List<Path> packageJsons, Path root, Collector col, Consumer<Phrase> warn) {
         var doneLocks = new HashSet<Path>();
         for (Path pkgPath : packageJsons) {
             Map<String, Object> pkg;
             try {
                 pkg = Json.obj(Json.parse(ProjectFiles.readText(pkgPath)));
             } catch (IOException | IllegalArgumentException e) {
-                warn.accept("skipped " + col.rel(pkgPath) + " (" + e.getMessage() + ")");
+                warn.accept(Phrase.of("warning.skipped", col.rel(pkgPath), e.getMessage()));
                 continue;
             }
             var declared = new LinkedHashMap<String, String[]>();   // name -> {spec, section}
@@ -98,14 +99,14 @@ public final class NpmScanner {
                     };
                     for (var e : entries) {
                         if (!Versions.isSemver(e.version())) {
-                            col.miss("npm", e.name(), e.version(), lock, "non-registry version in lockfile");
+                            col.miss("npm", e.name(), e.version(), lock, Phrase.of("reason.nonRegistryLock"));
                             continue;
                         }
                         col.add("npm", e.name(), e.version(), lock, (e.direct() ? "direct" : "transitive") + (e.dev() ? " (dev)" : ""), false);
                     }
                     continue;
                 } catch (IOException | IllegalArgumentException e) {
-                    warn.accept("could not read " + col.rel(lock) + " (" + e.getMessage() + "); using declared ranges");
+                    warn.accept(Phrase.of("warning.lockUnreadable", col.rel(lock), e.getMessage()));
                 }
             }
             declared.forEach((declaredName, specAndSection) -> {

@@ -24,6 +24,7 @@ package org.jtools.cvescanner.model;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import org.jtools.cvescanner.i18n.Phrase;
 
 public record ScanResult(Path root, List<Finding> findings, List<Dependency> dependencies, List<Unresolved> unresolved,
-                  Map<String, String> snapshots, Map<String, Integer> fileCounts, List<String> warnings) {}
+                  Map<String, Phrase> snapshots, Map<String, Integer> fileCounts, List<Phrase> warnings) {}

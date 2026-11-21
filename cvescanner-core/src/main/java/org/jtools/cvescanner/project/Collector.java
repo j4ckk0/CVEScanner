@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.model.Dependency;
 import org.jtools.cvescanner.model.Unresolved;
 
@@ -44,7 +45,7 @@ public final class Collector {
         if (seen.add(List.of(eco, name, version, f, scope))) deps.add(new Dependency(eco, name, version, f, scope, approximate));
     }
 
-    void miss(String eco, String name, String declared, Path file, String reason) {
+    void miss(String eco, String name, String declared, Path file, Phrase reason) {
         unresolved.add(new Unresolved(eco, name, declared == null ? "" : declared, rel(file), reason));
     }
 }

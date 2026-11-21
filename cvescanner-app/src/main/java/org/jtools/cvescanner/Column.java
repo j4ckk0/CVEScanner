@@ -23,4 +23,4 @@ package org.jtools.cvescanner;
 
 import java.util.function.Function;
 
-record Column<T>(String name, Class<?> type, int width, Function<T, ?> value) {}
+record Column<T>(String key, Class<?> type, int width, Function<T, ?> value) {}

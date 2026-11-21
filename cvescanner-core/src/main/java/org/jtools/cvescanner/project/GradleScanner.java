@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.jtools.cvescanner.i18n.Phrase;
 
 // ---------------------------------------------------------------------------------------------- Gradle
 public final class GradleScanner {
@@ -84,9 +85,9 @@ public final class GradleScanner {
     private static void addDep(Collector col, String g, String a, String raw, Path path, String scope, Map<String, String> vars) {
         String name = g + ":" + a;
         String v = resolve(raw, vars).replaceAll("!+$", "");
-        if (v.contains("$")) col.miss("Maven", name, raw, path, "unresolved Gradle variable");
+        if (v.contains("$")) col.miss("Maven", name, raw, path, Phrase.of("reason.gradleVariable"));
         else if (v.contains("+") || v.startsWith("latest.") || v.startsWith("[") || v.startsWith("("))
-            col.miss("Maven", name, raw, path, "dynamic version");
+            col.miss("Maven", name, raw, path, Phrase.of("reason.dynamicVersion"));
         else col.add("Maven", name, v, path, scope, false);
     }
 
@@ -164,7 +165,7 @@ public final class GradleScanner {
                     v = ref != null ? versions.get(ref)
                             : firstNonNull(pairs.get("version"), pairs.get("strictly"), pairs.get("require"), pairs.get("prefer"));
                 }
-                if (v == null) col.miss("Maven", g + ":" + a, "", path, "no version in catalog (managed by platform/BOM)");
+                if (v == null) col.miss("Maven", g + ":" + a, "", path, Phrase.of("reason.catalogNoVersion"));
                 else addDep(col, g, a, v, path, "catalog:" + alias, Map.of());
             }
         }

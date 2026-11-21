@@ -32,6 +32,8 @@ import java.util.List;
 import org.jtools.cvescanner.db.CveList;
 import org.jtools.cvescanner.db.Osv;
 import org.jtools.cvescanner.db.VulnDb;
+import org.jtools.cvescanner.i18n.I18n;
+import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
@@ -52,14 +54,14 @@ public final class Engine {
      */
     public static ScanResult scan(Path dir, List<Path> dbFiles, ScanListener listener) throws IOException {
         Path root = dir.toAbsolutePath().normalize();
-        var warnings = new ArrayList<String>();
+        var warnings = new ArrayList<Phrase>();
         ScanListener l = new ScanListener() {
             public void status(String m) { listener.status(m); }
             public void progress(double f) { listener.progress(f); }
-            public void warn(String m) { warnings.add(m); listener.warn(m); }
+            public void warn(Phrase m) { warnings.add(m); listener.warn(m); }
         };
 
-        l.status("Looking for project files in " + root + "…");
+        l.status(I18n.text("status.lookingFor", root));
         l.progress(-1);
         var files = ProjectFiles.find(root);
         var col = new Collector(root);
@@ -72,12 +74,11 @@ public final class Engine {
         var index = new VulnDb.Index();
         if (!col.deps.isEmpty()) {
             if (dbFiles.isEmpty())
-                throw new IOException("No vulnerability database loaded.\n\nChoose a database zip file: the GitHub "
-                        + "Advisory Database, the CVE List or an OSV.dev export (see the README, \"The databases\").");
+                throw new IOException(I18n.text("error.noDatabase"));
             index = VulnDb.load(dbFiles, wanted, l);
         }
 
-        l.status("Matching " + col.deps.size() + " dependencies against the database…");
+        l.status(I18n.text("status.matching", col.deps.size()));
         l.progress(-1);
         var findings = new ArrayList<Finding>();
         var seen = new HashSet<List<String>>();
@@ -107,10 +108,10 @@ public final class Engine {
         }
         findings.sort(Finding.ORDER);
         var counts = new LinkedHashMap<String, Integer>();
-        counts.put("pom.xml", files.poms.size());
-        counts.put("Gradle build files", files.gradle.size());
-        counts.put("version catalogs", files.catalogs.size());
-        counts.put("package.json", files.packageJsons.size());
+        counts.put("files.pom", files.poms.size());
+        counts.put("files.gradle", files.gradle.size());
+        counts.put("files.catalogs", files.catalogs.size());
+        counts.put("files.packageJson", files.packageJsons.size());
         return new ScanResult(root, List.copyOf(findings), List.copyOf(col.deps), List.copyOf(col.unresolved),
                 index.sources, counts, List.copyOf(warnings));
     }

@@ -1,5 +1,8 @@
 package org.jtools.cvescanner.model;
 
+import org.jtools.cvescanner.i18n.I18n;
+import org.jtools.cvescanner.i18n.I18nLanguage;
+
 /*-
  * #%L
  * CVEScanner
@@ -21,7 +24,19 @@ package org.jtools.cvescanner.model;
  */
 
 
+/**
+ * A vulnerable package version and its findings together: {@code fixedIn} is the lowest version that fixes every one
+ * of them that has a fix, empty when none has; {@code someUnfixed} when some have none.
+ */
 public record PackageSummary(Severity worst, String ecosystem, String pkg, String version, boolean approximate,
-                      String upgradeTo, int vulnerabilities, String advisories, String files) {
+                      String fixedIn, boolean someUnfixed, int vulnerabilities, String advisories, String files) {
     public String displayVersion() { return approximate ? version + " ≈" : version; }
+
+    /** The version to upgrade to, said: "2.15.0", "2.15.0 (some unfixed)", "no fix". */
+    public String upgradeTo(I18nLanguage language) {
+        if (fixedIn.isEmpty()) return I18n.text(language, "upgrade.noFix");
+        return someUnfixed ? I18n.text(language, "upgrade.someUnfixed", fixedIn) : fixedIn;
+    }
+
+    public String upgradeTo() { return upgradeTo(I18n.language()); }
 }

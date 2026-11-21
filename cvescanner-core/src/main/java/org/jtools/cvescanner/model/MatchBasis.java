@@ -1,5 +1,8 @@
 package org.jtools.cvescanner.model;
 
+import org.jtools.cvescanner.i18n.I18n;
+import org.jtools.cvescanner.i18n.I18nLanguage;
+
 /*-
  * #%L
  * CVEScanner
@@ -23,9 +26,10 @@ package org.jtools.cvescanner.model;
 
 /** How a finding was matched to the dependency. */
 public enum MatchBasis {
-    ADVISORY("Advisory"), CVE_PACKAGE("CVE record"), CVE_NAME("CVE name match ⚠");
+    ADVISORY, CVE_PACKAGE, CVE_NAME;
 
-    public final String label;
+    /** How it is shown in the language in use: "Advisory", "CVE name match ⚠". */
+    public String label() { return label(I18n.language()); }
 
-    MatchBasis(String label) { this.label = label; }
+    public String label(I18nLanguage language) { return I18n.text(language, "match." + name()); }
 }

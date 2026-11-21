@@ -1,5 +1,8 @@
 package org.jtools.cvescanner.engine;
 
+import org.jtools.cvescanner.i18n.I18n;
+import org.jtools.cvescanner.i18n.Phrase;
+
 /*-
  * #%L
  * CVEScanner
@@ -26,5 +29,5 @@ public interface ScanListener {
 
     default void progress(double fraction) {}   // fraction < 0 means "busy, unknown duration"
 
-    default void warn(String message) { status("Warning: " + message); }
+    default void warn(Phrase message) { status(I18n.text("status.warning", message)); }
 }

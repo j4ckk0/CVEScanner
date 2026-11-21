@@ -40,6 +40,7 @@ import javax.swing.text.html.parser.ParserDelegator;
 import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.cvss.Rating;
 import org.jtools.cvescanner.cvss.Score;
+import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
 import org.jtools.cvescanner.model.Severity;
@@ -66,7 +67,7 @@ class HostileAdvisoryTest {
         return new Finding(Severity.CRITICAL, score, "npm" + TAGS, "pkg" + TAGS, "1.0" + TAGS, false, "direct" + TAGS,
                 "file" + TAGS, "GHSA" + BREAKOUT, List.of("CVE-1" + BREAKOUT, "CVE-2" + TAGS), List.of("alias" + TAGS),
                 "2.0" + TAGS, "summary" + TAGS, "details" + TAGS + "\n\nmore" + TAGS, "2026-01-01" + TAGS,
-                "file:///etc/passwd", MatchBasis.ADVISORY, "note" + TAGS, rating);
+                "file:///etc/passwd", MatchBasis.ADVISORY, Phrase.of("match.note.name", "note" + TAGS), rating);
     }
 
     private record Tag(String name, String href) {

@@ -22,25 +22,31 @@ package org.jtools.cvescanner.cvss;
 
 
 import java.util.Locale;
+import org.jtools.cvescanner.i18n.I18n;
+import org.jtools.cvescanner.i18n.I18nLanguage;
 
 /** How reachable the vulnerable component is in the user's environment; caps the CVSS attack vector. */
 public enum Reach {
-    UNRESTRICTED("Unrestricted (Internet)", "unrestricted", null),
-    INTERNAL("Internal network only", "internal network only", "A"),
-    LOCAL("Local access only", "local access only", "L");
+    UNRESTRICTED(null), INTERNAL("A"), LOCAL("L");
 
-    final String label, shortLabel, attackVectorCap;
+    final String attackVectorCap;
 
-    Reach(String label, String shortLabel, String cap) { this.label = label; this.shortLabel = shortLabel; this.attackVectorCap = cap; }
+    Reach(String cap) { this.attackVectorCap = cap; }
 
-    @Override public String toString() { return label; }
+    /** Its name in a list: "Local access only". */
+    public String label(I18nLanguage language) { return I18n.text(language, "reach." + name()); }
+
+    /** Its name in a sentence: "local access only". */
+    public String shortLabel(I18nLanguage language) { return I18n.text(language, "reach.short." + name()); }
+
+    @Override public String toString() { return label(I18n.language()); }
 
     public static Reach parse(String s) {
         return switch (s.toLowerCase(Locale.ROOT)) {
             case "internet", "unrestricted", "network", "n" -> UNRESTRICTED;
             case "internal", "adjacent", "a" -> INTERNAL;
             case "local", "airgapped", "air-gapped", "l" -> LOCAL;
-            default -> throw new IllegalArgumentException("reach must be internet, internal or local");
+            default -> throw new IllegalArgumentException(I18n.text("option.reach"));
         };
     }
 }

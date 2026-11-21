@@ -29,21 +29,23 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 /**
- * The program's settings — the database zips chosen, the environment and the CVSS version preferred —, kept in
- * cvescanner.properties, beside the program (cvescanner.jar): in its folder, as a portable program keeps them, never
- * in the registry or the user's folder. Written only when a setting changes; a folder that cannot be written in keeps
- * nothing, and the program goes on.
+ * The program's settings — its language, the database zips chosen, the environment and the CVSS version preferred —,
+ * kept in cvescanner.properties, beside the program (cvescanner.jar): in its folder, as a portable program keeps them,
+ * never in the registry or the user's folder. Written only when a setting changes; a folder that cannot be written in
+ * keeps nothing, and the program goes on.
  */
 final class Settings {
 
+    /** The language's code: "fr", "en". */
+    static final String LANGUAGE = "language";
     /** The database zips chosen, their paths separated by the system's path separator. */
     static final String DATABASES = "databases";
     /** The environment: a preset's key, or "custom" with its four values below. */
     static final String ENVIRONMENT = "environment";
-    static final String REACH = "environment.reach";
-    static final String CONFIDENTIALITY = "environment.confidentiality";
-    static final String INTEGRITY = "environment.integrity";
-    static final String AVAILABILITY = "environment.availability";
+    static final String REACH = "env.reach";
+    static final String CONFIDENTIALITY = "env.confidentiality";
+    static final String INTEGRITY = "env.integrity";
+    static final String AVAILABILITY = "env.availability";
     /** "true" when CVSS 4.0 is preferred to 3.x for an advisory that has both. */
     static final String PREFER_CVSS4 = "cvss.prefer4";
     private static final String FILE = "cvescanner.properties";

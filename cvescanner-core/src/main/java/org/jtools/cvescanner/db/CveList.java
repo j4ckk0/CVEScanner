@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.cvss.Rating;
 import org.jtools.cvescanner.cvss.Scoring;
+import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Dependency;
 import org.jtools.cvescanner.model.Finding;
@@ -238,11 +239,10 @@ public final class CveList {
 
     public static Finding toFinding(Dependency d, Rule r, MatchBasis basis) {
         var i = r.info();
-        String note = basis == MatchBasis.CVE_PACKAGE
-                ? "The CVE record names this package" + (meaningful(r.packageName()) ? " (" + r.packageName().strip() + ")" : "") + "."
-                : "Name-based match: the CVE record lists product \"" + r.product().strip() + "\""
-                  + (meaningful(r.vendor()) ? " from vendor \"" + r.vendor().strip() + "\"" : "")
-                  + ". Check that it refers to this package.";
+        Phrase note = basis == MatchBasis.CVE_PACKAGE
+                ? (meaningful(r.packageName()) ? Phrase.of("match.note.packageNamed", r.packageName().strip()) : Phrase.of("match.note.package"))
+                : (meaningful(r.vendor()) ? Phrase.of("match.note.nameVendor", r.product().strip(), r.vendor().strip())
+                                          : Phrase.of("match.note.name", r.product().strip()));
         var f = new Finding(Severity.UNKNOWN, null, d.ecosystem(), d.name(), d.version(), d.approximate(), d.scope(), d.file(),
                 i.id(), List.of(i.id()), List.of(), fixedVersion(d.ecosystem(), d.version(), r), i.summary(), i.details(),
                 i.published(), "https://www.cve.org/CVERecord?id=" + i.id(), basis, note, i.rating());

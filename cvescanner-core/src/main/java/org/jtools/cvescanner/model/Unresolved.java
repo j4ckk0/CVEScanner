@@ -1,5 +1,7 @@
 package org.jtools.cvescanner.model;
 
+import org.jtools.cvescanner.i18n.Phrase;
+
 /*-
  * #%L
  * CVEScanner
@@ -21,4 +23,4 @@ package org.jtools.cvescanner.model;
  */
 
 
-public record Unresolved(String ecosystem, String name, String declared, String file, String reason) {}
+public record Unresolved(String ecosystem, String name, String declared, String file, Phrase reason) {}

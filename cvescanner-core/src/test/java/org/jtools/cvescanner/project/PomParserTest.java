@@ -47,7 +47,7 @@ class PomParserTest {
         Files.writeString(file, pom.replace("SECRET", dir.resolve("secret.txt").toUri().toString()));
         List<String> warnings = new ArrayList<>();
         Collector collector = new Collector(dir);
-        MavenScanner.scan(List.of(file), collector, warnings::add);
+        MavenScanner.scan(List.of(file), collector, warning -> warnings.add(warning.text()));
         assertTrue(collector.deps.stream().noneMatch(d -> d.version().contains("4.2.0")),
                 "a version read from outside the POM: " + collector.deps);
         return warnings;

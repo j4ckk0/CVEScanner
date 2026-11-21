@@ -37,6 +37,7 @@ import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import org.jtools.cvescanner.i18n.Phrase;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -89,14 +90,14 @@ public final class MavenScanner {
         }
     }
 
-    public static void scan(List<Path> paths, Collector col, Consumer<String> warn) {
+    public static void scan(List<Path> paths, Collector col, Consumer<Phrase> warn) {
         DocumentBuilder builder = pomParser();
         var poms = new ArrayList<Pom>();
         for (Path p : paths) {
             try {
                 poms.add(parse(p, builder.parse(p.toFile()).getDocumentElement()));
             } catch (Exception e) {
-                warn.accept("skipped " + col.rel(p) + " (" + e.getMessage() + ")");
+                warn.accept(Phrase.of("warning.skipped", col.rel(p), e.getMessage()));
             }
         }
         var index = new PomIndex(poms);
@@ -113,12 +114,12 @@ public final class MavenScanner {
                 String raw = d.version() != null ? d.version() : managed ? null : index.managedVersion(pom, g, a);
                 String scope = managed ? "dependencyManagement" : d.scope();
                 if (raw == null) {
-                    col.miss("Maven", name, "", pom.path, "version managed outside this repo (external parent/BOM)");
+                    col.miss("Maven", name, "", pom.path, Phrase.of("reason.managedOutside"));
                     continue;
                 }
                 String v = index.resolve(pom, raw);
-                if (v.contains("${")) col.miss("Maven", name, raw, pom.path, "unresolved property");
-                else if (v.startsWith("[") || v.startsWith("(")) col.miss("Maven", name, raw, pom.path, "version range");
+                if (v.contains("${")) col.miss("Maven", name, raw, pom.path, Phrase.of("reason.unresolvedProperty"));
+                else if (v.startsWith("[") || v.startsWith("(")) col.miss("Maven", name, raw, pom.path, Phrase.of("reason.versionRange"));
                 else col.add("Maven", name, v, pom.path, scope, false);
             }
         }

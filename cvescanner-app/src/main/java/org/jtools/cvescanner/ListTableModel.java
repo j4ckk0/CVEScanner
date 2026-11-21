@@ -23,6 +23,7 @@ package org.jtools.cvescanner;
 
 import java.util.List;
 import javax.swing.table.AbstractTableModel;
+import org.jtools.cvescanner.i18n.I18n;
 
 final class ListTableModel<T> extends AbstractTableModel {
     private final List<Column<T>> columns;
@@ -43,7 +44,7 @@ final class ListTableModel<T> extends AbstractTableModel {
 
     @Override public int getRowCount() { return rows.size(); }
     @Override public int getColumnCount() { return columns.size(); }
-    @Override public String getColumnName(int c) { return columns.get(c).name(); }
+    @Override public String getColumnName(int c) { return I18n.text(columns.get(c).key()); }
     @Override public Class<?> getColumnClass(int c) { return columns.get(c).type(); }
     @Override public Object getValueAt(int r, int c) { return columns.get(c).value().apply(rows.get(r)); }
 }

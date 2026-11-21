@@ -30,6 +30,7 @@ import org.jtools.cvescanner.cvss.Cvss;
 import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.cvss.Rating;
 import org.jtools.cvescanner.cvss.Scoring;
+import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Dependency;
 import org.jtools.cvescanner.model.Finding;
@@ -127,7 +128,7 @@ public final class Osv {
                 d.scope(), d.file(), id, cves, aliases, nextFixed(d.ecosystem(), d.version(), m.affected()),
                 summary.strip(), details, Objects.requireNonNullElse(Json.str(v, "published"), ""),
                 "https://osv.dev/vulnerability/" + id, MatchBasis.ADVISORY,
-                "The advisory lists this exact package and its affected version range.", ratingOf(v, m.affected()));
+                Phrase.of("match.note.advisory"), ratingOf(v, m.affected()));
         return Scoring.apply(f, Environment.NONE, true);
     }
 }

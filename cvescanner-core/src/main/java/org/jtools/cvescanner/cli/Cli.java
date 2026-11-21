@@ -28,6 +28,9 @@ import java.util.List;
 import org.jtools.cvescanner.cvss.Scoring;
 import org.jtools.cvescanner.engine.Engine;
 import org.jtools.cvescanner.engine.ScanListener;
+import org.jtools.cvescanner.i18n.I18n;
+import org.jtools.cvescanner.i18n.I18nLanguage;
+import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.Severity;
 import org.jtools.cvescanner.report.Reports;
@@ -35,34 +38,36 @@ import org.jtools.cvescanner.report.Reports;
 public final class Cli {
     private Cli() {}
 
+    /** Scans, writes the reports in the language in use, says the counts; 0, 1 on an error, 2 past --fail-on. */
     public static int run(Options o) {
+        I18nLanguage language = I18n.language();
         ScanListener l = new ScanListener() {
             public void status(String m) { System.err.println("==> " + m.replace("…", "...")); }
-            public void warn(String m) { System.err.println("WARNING: " + m); }
+            public void warn(Phrase m) { System.err.println(I18n.text("cli.warning", m)); }
         };
         try {
-            if (!Files.isDirectory(o.scanDir)) throw new IOException("scan directory '" + o.scanDir + "' does not exist");
+            if (!Files.isDirectory(o.scanDir)) throw new IOException(I18n.text("error.scanDirMissing", o.scanDir));
             var r = Engine.scan(o.scanDir, o.dbFiles, l);
             var scored = Scoring.applyAll(r.findings(), o.environment, o.preferV4);
             var findings = o.cveOnly ? scored.stream().filter(f -> !f.cves().isEmpty()).toList() : scored;
-            var written = Reports.writeAll(r, findings, o.outDir, o.cveOnly ? "only vulnerabilities with a CVE ID" : null,
-                    o.environment, o.preferV4);
+            var written = Reports.writeAll(r, findings, o.outDir, o.cveOnly ? Phrase.of("filter.cveOnly") : null,
+                    o.environment, o.preferV4, language);
             var counts = Reports.counts(findings);
-            System.out.println("\n" + "=".repeat(60) + "\n Vulnerability scan complete\n" + "=".repeat(60));
-            System.out.println("  Scoring    : " + Reports.scoringText(o.preferV4));
-            System.out.println("  Environment: " + o.environment.describe() + "\n");
+            System.out.println("\n" + "=".repeat(60) + "\n " + I18n.text("cli.complete") + "\n" + "=".repeat(60));
+            System.out.printf("  %-11s: %s%n", I18n.text("cli.scoring"), Reports.scoringText(o.preferV4, language));
+            System.out.printf("  %-11s: %s%n%n", I18n.text("cli.environment"), o.environment.describe(language));
             for (var s : List.of(Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM, Severity.LOW, Severity.UNKNOWN))
-                System.out.printf("  %-9s %d%n", s.name(), counts.get(s));
-            System.out.printf("  %-9s %d findings, %d unique advisories%n%n", "TOTAL", findings.size(),
-                    findings.stream().map(Finding::id).distinct().count());
+                System.out.printf("  %-9s %d%n", s.label(language).toUpperCase(language.locale()), counts.get(s));
+            System.out.printf("  %-9s %s%n%n", I18n.text("cli.total"),
+                    I18n.text("cli.total.detail", findings.size(), findings.stream().map(Finding::id).distinct().count()));
             for (Path p : written) System.out.println("  " + p.toAbsolutePath());
             if (o.failOn != null && findings.stream().anyMatch(f -> f.severity().compareTo(o.failOn) >= 0)) {
-                System.out.println("\nFAIL: findings at or above " + o.failOn + " severity.");
+                System.out.println("\n" + I18n.text("cli.fail", o.failOn.label(language).toUpperCase(language.locale())));
                 return 2;
             }
             return 0;
         } catch (IOException e) {
-            System.err.println("ERROR: " + e.getMessage().replace("\n\n", " "));
+            System.err.println(I18n.text("cli.error", e.getMessage().replace("\n\n", " ")));
             return 1;
         }
     }

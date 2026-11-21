@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import org.jtools.cvescanner.cvss.Cvss;
 import org.jtools.cvescanner.cvss.Environment;
+import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
 import org.jtools.cvescanner.model.Severity;
@@ -42,7 +43,7 @@ final class FindingDetails {
     /** The page shown when no finding is selected. */
     static String placeholder(boolean scanned) {
         return "<html><body style='font-family:sans-serif;color:gray;padding:12px'>"
-                + (scanned ? "Select a finding to see its details." : "Scan a folder to see vulnerable dependencies.")
+                + I18n.text(scanned ? "details.select" : "details.scanFirst")
                 + "</body></html>";
     }
 
@@ -50,47 +51,48 @@ final class FindingDetails {
         var sb = new StringBuilder("<html><body style='font-family:sans-serif;padding:6px 10px'>");
         sb.append("<div style='font-size:15pt'><b>").append(Gui.html(f.id())).append("</b> &nbsp;<font color='")
                 .append(Gui.hex(SeverityColors.of(f.severity()))).append("'><b>").append(f.severity().label());
-        if (f.envScore() != null) sb.append(" · environmental ").append("%.1f".formatted(f.envScore()));
-        else if (f.cvss() != null) sb.append(" · CVSS ").append("%.1f".formatted(f.cvss()));
+        if (f.envScore() != null) sb.append(" · ").append(I18n.text("details.headline.environmental", Gui.score(f.envScore())));
+        else if (f.cvss() != null) sb.append(" · ").append(I18n.text("details.headline.cvss", Gui.score(f.cvss())));
         sb.append("</b></font></div><p><b>").append(Gui.html(f.summary())).append("</b></p><table cellpadding='2'>");
-        row(sb, "Package", "<b>" + Gui.html(f.pkg()) + "</b> (" + Gui.html(f.ecosystem()) + ")");
-        row(sb, "Version in use", Gui.html(f.version()) + (f.approximate()
-                ? " <font color='gray'>≈ lowest version allowed by the declared range; add a lockfile for an exact check</font>" : ""));
+        row(sb, "details.package", "<b>" + Gui.html(f.pkg()) + "</b> (" + Gui.html(f.ecosystem()) + ")");
+        row(sb, "details.version", Gui.html(f.version()) + (f.approximate()
+                ? " <font color='gray'>" + I18n.text("details.version.approximate") + "</font>" : ""));
         var sc = f.score();
         if (sc.base() != null) {
-            row(sb, "Base score", "<b>" + "%.1f".formatted(sc.base()) + "</b> " + sc.baseSeverity().label()
+            row(sb, "details.base", "<b>" + Gui.score(sc.base()) + "</b> " + sc.baseSeverity().label()
                     + (sc.version() != null ? " · CVSS " + Gui.html(sc.version()) + " <font color='gray'>" + Gui.html(sc.baseVector()) + "</font>"
-                                            : " <font color='gray'>(reported by the advisory, no vector)</font>"));
+                                            : " <font color='gray'>" + I18n.text("details.base.reported") + "</font>"));
         } else {
-            row(sb, "Base score", "<font color='gray'>no CVSS score; severity from the advisory rating ("
-                    + sc.baseSeverity().label() + ")</font>");
+            row(sb, "details.base", "<font color='gray'>" + I18n.text("details.base.none", sc.baseSeverity().label()) + "</font>");
         }
         if (environment.active()) {
             if (sc.env() != null) {
                 double delta = sc.env() - sc.base();
-                row(sb, "Environmental", "<b><font color='" + Gui.hex(SeverityColors.of(Severity.fromScore(sc.env()))) + "'>" + "%.1f".formatted(sc.env())
-                        + " " + Severity.fromScore(sc.env()).label() + "</font></b>"
-                        + (delta == 0 ? " (unchanged)" : " (%+.1f)".formatted(delta)) + " · " + Gui.html(environment.describe())
+                row(sb, "details.environmental", "<b><font color='" + Gui.hex(SeverityColors.of(Severity.fromScore(sc.env()))) + "'>" + Gui.score(sc.env())
+                        + " " + Severity.fromScore(sc.env()).label() + "</font></b> ("
+                        + (delta == 0 ? I18n.text("details.environmental.unchanged") : String.format(I18n.language().locale(), "%+.1f", delta))
+                        + ") · " + Gui.html(environment.describe())
                         + "<br><font color='gray'>" + Gui.html(sc.envVector()) + "</font>");
             } else {
-                row(sb, "Environmental", "<font color='gray'>not computed: the advisory has no CVSS vector</font>");
+                row(sb, "details.environmental", "<font color='gray'>" + I18n.text("details.environmental.none") + "</font>");
             }
         }
         if (f.rating().cvss3() != null && f.rating().cvss4() != null) {
             String other = Objects.equals(sc.baseVector(), f.rating().cvss4()) ? f.rating().cvss3() : f.rating().cvss4();
             Double otherScore = Cvss.baseScore(other);
-            row(sb, "Other version", "CVSS " + Gui.html(Cvss.version(other)) + " base " + (otherScore == null ? "—" : "%.1f".formatted(otherScore))
+            row(sb, "details.other", I18n.text("details.other.value", Gui.html(Cvss.version(other)), otherScore == null ? "—" : Gui.score(otherScore))
                     + " <font color='gray'>" + Gui.html(other) + "</font>");
         }
-        row(sb, "Fixed in", f.fixedIn().isEmpty() ? "<font color='#b00020'>no fixed version published</font>" : "<b>" + Gui.html(f.fixedIn()) + "</b>");
-        row(sb, "CVE", f.cves().isEmpty() ? "—" : f.cves().stream()
+        row(sb, "details.fixedIn", f.fixedIn().isEmpty() ? "<font color='#b00020'>" + I18n.text("details.fixedIn.none") + "</font>"
+                : "<b>" + Gui.html(f.fixedIn()) + "</b>");
+        row(sb, "details.cve", f.cves().isEmpty() ? "—" : f.cves().stream()
                 .map(c -> link(nvdUrl(c), c)).collect(Collectors.joining(", ")));
-        if (!f.aliases().isEmpty()) row(sb, "Aliases", Gui.html(String.join(", ", f.aliases())));
-        row(sb, "Found in", Gui.html(f.file()) + " · " + Gui.html(f.scope()));
-        row(sb, "Match", (f.basis() == MatchBasis.CVE_NAME ? "<font color='#b7791f'><b>⚠ " : "<b>") + Gui.html(f.basis().label.replace(" ⚠", ""))
-                + "</b>" + (f.basis() == MatchBasis.CVE_NAME ? "</font>" : "") + " — " + Gui.html(f.basisNote()));
-        if (!f.published().isEmpty()) row(sb, "Published", Gui.html(f.publishedDate()));
-        row(sb, f.basis() == MatchBasis.ADVISORY ? "Advisory" : "CVE record", link(f.url(), f.url()));
+        if (!f.aliases().isEmpty()) row(sb, "details.aliases", Gui.html(String.join(", ", f.aliases())));
+        row(sb, "details.foundIn", Gui.html(f.file()) + " · " + Gui.html(f.scope()));
+        row(sb, "details.match", (f.basis() == MatchBasis.CVE_NAME ? "<font color='#b7791f'><b>⚠ " : "<b>") + Gui.html(f.basis().label().replace(" ⚠", ""))
+                + "</b>" + (f.basis() == MatchBasis.CVE_NAME ? "</font>" : "") + " — " + Gui.html(f.basisNote().text()));
+        if (!f.published().isEmpty()) row(sb, "details.published", Gui.html(f.publishedDate()));
+        row(sb, f.basis() == MatchBasis.ADVISORY ? "details.advisory" : "details.cveRecord", link(f.url(), f.url()));
         sb.append("</table>");
         if (!f.details().isBlank()) {
             String d = f.details().length() > 8000 ? f.details().substring(0, 8000) + "…" : f.details();
@@ -110,7 +112,8 @@ final class FindingDetails {
         return "<a href='" + Gui.html(url) + "'>" + Gui.html(text) + "</a>";
     }
 
-    private static void row(StringBuilder sb, String label, String valueHtml) {
-        sb.append("<tr><td valign='top'><font color='gray'>").append(label).append("</font></td><td>").append(valueHtml).append("</td></tr>");
+    /** A row of the table: its label's key, its value as HTML. */
+    private static void row(StringBuilder sb, String labelKey, String valueHtml) {
+        sb.append("<tr><td valign='top'><font color='gray'>").append(I18n.text(labelKey)).append("</font></td><td>").append(valueHtml).append("</td></tr>");
     }
 }

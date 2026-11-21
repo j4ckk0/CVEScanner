@@ -1,14 +1,3 @@
-/**
- * CVEScanner, the program: its window around the scan (cvescanner-core), the findings' table, its filters and
- * details. Its jar runs on the class path as well, where this file is not read.
- */
-module org.jtools.cvescanner {
-    requires org.jtools.cvescanner.core;
-    requires java.desktop;
-
-    // Launcher's package: the module is then resolved whenever the runtime starts, and Launcher loaded from it
-    exports org.jtools.cvescanner;
-
 /*-
  * #%L
  * CVEScanner
@@ -28,5 +17,23 @@ module org.jtools.cvescanner {
  * limitations under the License.
  * #L%
  */
+/**
+ * CVEScanner's scan, with no window: the projects' dependencies (project), the vulnerability databases read from
 
+/**
+ * CVEScanner, the program: its window around the scan (cvescanner-core), the findings' table, its filters and
+ * details. The distributions link it into their runtime image, with the scan's module. Its jar runs on the class path
+ * as well, where this file is not read.
+ */
+module org.jtools.cvescanner {
+    requires org.jtools.cvescanner.core;
+    requires java.desktop;
+
+    // Launcher's package: the module is then resolved whenever the runtime starts, and Launcher loaded from it
+    exports org.jtools.cvescanner;
+
+    // no name ever looked up on the network, as on the class path (META-INF/services)
+    provides java.net.spi.InetAddressResolverProvider with org.jtools.cvescanner.NoNetworkResolver;
+
+    provides org.jtools.cvescanner.i18n.I18nTexts with org.jtools.cvescanner.texts.AppTexts;
 }

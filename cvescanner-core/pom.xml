@@ -29,6 +29,8 @@
             <configuration>
               <includes>
                 <include>org/jtools/cvescanner/testing/**</include>
+                <include>META-INF/services/**</include>
+                <include>junit-platform.properties</include>
               </includes>
             </configuration>
           </execution>

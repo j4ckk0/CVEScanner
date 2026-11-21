@@ -30,11 +30,17 @@ import javax.swing.JTextField;
 
 /** Text field with grey hint text when empty. */
 final class HintField extends JTextField {
-    private final String hint;
+    private String hint;
 
     HintField(String hint, int columns) {
         super(columns);
         this.hint = hint;
+    }
+
+    /** The hint shown, in the language in use (I18nLabels). */
+    void setHint(String hint) {
+        this.hint = hint;
+        repaint();
     }
 
     @Override

@@ -25,6 +25,7 @@ import java.util.Comparator;
 import java.util.List;
 import org.jtools.cvescanner.cvss.Rating;
 import org.jtools.cvescanner.cvss.Score;
+import org.jtools.cvescanner.i18n.Phrase;
 
 /**
  * One vulnerability affecting one dependency. {@code severity} is the effective severity: environmental when an
@@ -33,7 +34,7 @@ import org.jtools.cvescanner.cvss.Score;
  */
 public record Finding(Severity severity, Score score, String ecosystem, String pkg, String version, boolean approximate,
                String scope, String file, String id, List<String> cves, List<String> aliases, String fixedIn,
-               String summary, String details, String published, String url, MatchBasis basis, String basisNote,
+               String summary, String details, String published, String url, MatchBasis basis, Phrase basisNote,
                Rating rating) {
 
     public Double cvss() { return score.base(); }

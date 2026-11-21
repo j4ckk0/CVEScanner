@@ -22,12 +22,17 @@ package org.jtools.cvescanner.model;
 
 
 import java.util.Locale;
+import org.jtools.cvescanner.i18n.I18n;
+import org.jtools.cvescanner.i18n.I18nLanguage;
 
 /** How severe a finding is, the least first: the ordinal is the rank. Its colour is the window's (SeverityColors). */
 public enum Severity {
     UNKNOWN, LOW, MEDIUM, HIGH, CRITICAL;
 
-    public String label() { return name().charAt(0) + name().substring(1).toLowerCase(Locale.ROOT); }
+    /** Its name in the language in use: "Critical", "Critique". */
+    public String label() { return label(I18n.language()); }
+
+    public String label(I18nLanguage language) { return I18n.text(language, "severity." + name()); }
 
     public static Severity fromRating(String s) {
         return switch (s.toUpperCase(Locale.ROOT)) {
@@ -48,7 +53,7 @@ public enum Severity {
 
     public static Severity parseThreshold(String s) {
         var sev = fromRating(s);
-        if (sev == UNKNOWN) throw new IllegalArgumentException("--fail-on must be LOW, MEDIUM, HIGH or CRITICAL");
+        if (sev == UNKNOWN) throw new IllegalArgumentException(I18n.text("option.failOn"));
         return sev;
     }
 }

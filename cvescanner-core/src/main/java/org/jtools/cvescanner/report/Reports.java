@@ -40,6 +40,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.engine.Engine;
+import org.jtools.cvescanner.i18n.I18n;
+import org.jtools.cvescanner.i18n.I18nLanguage;
+import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.PackageSummary;
@@ -75,8 +78,7 @@ public final class Reports {
         map.forEach((k, a) -> {
             var fixed = a.fixes.stream().filter(s -> !s.isEmpty()).max(Versions.comparator(k.eco()));
             boolean someUnfixed = a.fixes.stream().anyMatch(String::isEmpty);
-            String target = fixed.map(v -> someUnfixed ? v + " (some unfixed)" : v).orElse("no fix");
-            out.add(new PackageSummary(a.worst, k.eco(), k.pkg(), k.version(), a.approximate, target, a.ids.size(),
+            out.add(new PackageSummary(a.worst, k.eco(), k.pkg(), k.version(), a.approximate, fixed.orElse(""), someUnfixed, a.ids.size(),
                     String.join(", ", a.labels), String.join(", ", a.files)));
         });
         out.sort(Comparator.comparing(PackageSummary::worst).reversed()
@@ -92,12 +94,15 @@ public final class Reports {
         return m;
     }
 
-    /** Writes report.md, findings.csv and findings.json; returns the paths written. */
-    public static List<Path> writeAll(ScanResult r, List<Finding> findings, Path outDir, String filterNote,
-                               Environment env, boolean preferV4) throws IOException {
+    /**
+     * Writes report.md, in this language, and findings.csv and findings.json, in English whatever the language: their
+     * readers are programs. Returns the paths written.
+     */
+    public static List<Path> writeAll(ScanResult r, List<Finding> findings, Path outDir, Phrase filterNote,
+                               Environment env, boolean preferV4, I18nLanguage language) throws IOException {
         Files.createDirectories(outDir);
         Path md = outDir.resolve("report.md"), csv = outDir.resolve("findings.csv"), json = outDir.resolve("findings.json");
-        Files.writeString(md, markdown(r, findings, filterNote, env, preferV4), UTF_8);
+        Files.writeString(md, markdown(r, findings, filterNote, env, preferV4, language), UTF_8);
         Files.writeString(csv, csv(findings, env), UTF_8);
         Files.writeString(json, json(r, findings, env, preferV4), UTF_8);
         return List.of(md, csv, json);
@@ -110,85 +115,81 @@ public final class Reports {
         return s.length() <= n ? s : s.substring(0, n - 1) + "…";
     }
 
-    static String scoreText(Double score, String version) {
-        return score == null ? "—" : String.format(Locale.ROOT, "%.1f", score) + (version != null ? " (v" + version + ")" : "");
+    /** A score as the language writes numbers: 9.8, 9,8. */
+    static String scoreText(Double score, String version, I18nLanguage language) {
+        return score == null ? "—" : String.format(language.locale(), "%.1f", score) + (version != null ? " (v" + version + ")" : "");
     }
 
-    public static String scoringText(boolean preferV4) {
-        return preferV4 ? "CVSS 4.0 preferred (CVSS 3.x when an advisory has no 4.0 vector)"
-                : "CVSS 3.x preferred (CVSS 4.0 when an advisory has no 3.x vector)";
+    public static String scoringText(boolean preferV4, I18nLanguage language) {
+        return I18n.text(language, preferV4 ? "scoring.prefer4" : "scoring.prefer3");
     }
 
-    static String markdown(ScanResult r, List<Finding> findings, String filterNote, Environment env, boolean preferV4) {
+    public static String scoringText(boolean preferV4) { return scoringText(preferV4, I18n.language()); }
+
+    /** A severity in a report's table, in capitals: CRITICAL, CRITIQUE. */
+    private static String severity(Severity s, I18nLanguage language) {
+        return s.label(language).toUpperCase(language.locale());
+    }
+
+    static String markdown(ScanResult r, List<Finding> findings, Phrase filterNote, Environment env, boolean preferV4,
+                           I18nLanguage language) {
         var sb = new StringBuilder();
         var counts = counts(findings);
-        sb.append("# Dependency Vulnerability Report\n\n");
-        sb.append("- **Generated:** ").append(Engine.STAMP.format(Instant.now())).append('\n');
-        sb.append("- **Scanned directory:** `").append(r.root()).append("`\n");
-        r.snapshots().forEach((file, desc) -> sb.append("- **Database:** `").append(file).append("` (").append(desc).append(")\n"));
-        sb.append("- **Files scanned:** ").append(r.fileCounts().entrySet().stream().map(e -> e.getValue() + " " + e.getKey())
-                .collect(Collectors.joining(", "))).append('\n');
-        sb.append("- **Dependencies analysed:** ").append(r.dependencies().size()).append(" (plus ").append(r.unresolved().size())
-                .append(" that could not be resolved to a version)\n");
-        sb.append("- **Scoring:** ").append(scoringText(preferV4)).append('\n');
-        sb.append("- **Environment:** ").append(env.describe())
-                .append(env.active() ? ". *Severity* is the environmental severity where a CVSS vector is available." : "").append('\n');
-        if (filterNote != null) sb.append("- **Filter:** ").append(filterNote).append('\n');
-        sb.append("\n## Summary\n\n| Severity | Findings |\n|---|---|\n");
+        sb.append("# ").append(I18n.text(language, "markdown.title")).append("\n\n");
+        sb.append("- **").append(I18n.text(language, "markdown.generated")).append(":** ").append(Engine.STAMP.format(Instant.now())).append('\n');
+        sb.append("- **").append(I18n.text(language, "markdown.scanned")).append(":** `").append(r.root()).append("`\n");
+        r.snapshots().forEach((file, desc) -> sb.append("- **").append(I18n.text(language, "markdown.database")).append(":** `")
+                .append(file).append("` (").append(desc.text(language)).append(")\n"));
+        sb.append("- **").append(I18n.text(language, "markdown.files")).append(":** ").append(r.fileCounts().entrySet().stream()
+                .map(e -> I18n.text(language, e.getKey(), e.getValue())).collect(Collectors.joining(", "))).append('\n');
+        sb.append("- **").append(I18n.text(language, "markdown.dependencies")).append(":** ")
+                .append(I18n.text(language, "markdown.dependencies.count", r.dependencies().size(), r.unresolved().size())).append('\n');
+        sb.append("- **").append(I18n.text(language, "markdown.scoring")).append(":** ").append(scoringText(preferV4, language)).append('\n');
+        sb.append("- **").append(I18n.text(language, "markdown.environment")).append(":** ").append(env.describe(language))
+                .append(env.active() ? I18n.text(language, "markdown.environment.severity") : "").append('\n');
+        if (filterNote != null) sb.append("- **").append(I18n.text(language, "markdown.filter")).append(":** ").append(filterNote.text(language)).append('\n');
+        sb.append("\n## ").append(I18n.text(language, "markdown.summary")).append("\n\n").append(I18n.text(language, "markdown.summary.header")).append("\n|---|---|\n");
         for (var s : List.of(Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM, Severity.LOW, Severity.UNKNOWN))
-            sb.append("| ").append(s.name()).append(" | ").append(counts.get(s)).append(" |\n");
+            sb.append("| ").append(severity(s, language)).append(" | ").append(counts.get(s)).append(" |\n");
         var pkgs = packages(findings);
-        sb.append("| **Total** | **").append(findings.size()).append("** (").append(findings.stream().map(Finding::id).distinct().count())
-                .append(" unique vulnerabilities in ").append(pkgs.size()).append(" package versions) |\n\n");
+        sb.append("| **").append(I18n.text(language, "markdown.total")).append("** | **").append(findings.size()).append("** ")
+                .append(I18n.text(language, "markdown.total.detail", findings.stream().map(Finding::id).distinct().count(), pkgs.size()))
+                .append(" |\n\n");
 
         if (findings.isEmpty()) {
-            sb.append("No known vulnerabilities were found in the resolved dependencies.\n\n");
+            sb.append(I18n.text(language, "markdown.none")).append("\n\n");
         } else {
-            sb.append("## Packages to upgrade\n\n*Upgrade to* is the lowest version that fixes every listed advisory.\n\n");
-            sb.append("| Worst severity | Ecosystem | Package | Current | Upgrade to | Vulns | Found in |\n|---|---|---|---|---|---|---|\n");
+            sb.append("## ").append(I18n.text(language, "markdown.packages")).append("\n\n")
+                    .append(I18n.text(language, "markdown.packages.intro")).append("\n\n");
+            sb.append(I18n.text(language, "markdown.packages.header")).append("\n|---|---|---|---|---|---|---|\n");
             for (var p : pkgs)
-                sb.append("| %s | %s | `%s` | %s | %s | %d | %s |\n".formatted(p.worst().name(), p.ecosystem(), md(p.pkg()),
-                        md(p.displayVersion()), md(p.upgradeTo()), p.vulnerabilities(), md(p.files())));
+                sb.append("| %s | %s | `%s` | %s | %s | %d | %s |\n".formatted(severity(p.worst(), language), p.ecosystem(), md(p.pkg()),
+                        md(p.displayVersion()), md(p.upgradeTo(language)), p.vulnerabilities(), md(p.files())));
             if (findings.stream().anyMatch(Finding::approximate))
-                sb.append("\n> ≈ = lowest version allowed by the range in package.json (no lockfile found). "
-                        + "The installed version may be newer; add a lockfile for exact results.\n");
-            sb.append("\n## Findings by file\n\n");
+                sb.append("\n> ").append(I18n.text(language, "markdown.approximate")).append('\n');
+            sb.append("\n## ").append(I18n.text(language, "markdown.byFile")).append("\n\n");
             var byFile = new TreeMap<String, List<Finding>>();
             findings.forEach(f -> byFile.computeIfAbsent(f.file(), _ -> new ArrayList<>()).add(f));
             byFile.forEach((file, list) -> {
                 sb.append("### `").append(file).append("`\n\n");
-                sb.append("| Severity | Base | Env. | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |\n"
-                        + "|---|---|---|---|---|---|---|---|---|---|---|\n");
+                sb.append(I18n.text(language, "markdown.findings.header")).append("\n|---|---|---|---|---|---|---|---|---|---|---|\n");
                 list.stream().sorted(Finding.ORDER).forEach(f -> sb.append("| %s | %s | %s | `%s` | %s | %s | [%s](%s) | %s | %s | %s | %s |\n".formatted(
-                        f.severity().name(), scoreText(f.cvss(), f.score().version()), scoreText(f.envScore(), null), md(f.pkg()), md(f.version()),
-                        md(f.scope()), f.id(), f.url(), f.basis().label, f.cves().isEmpty() ? "—" : f.cveText(),
+                        severity(f.severity(), language), scoreText(f.cvss(), f.score().version(), language),
+                        scoreText(f.envScore(), null, language), md(f.pkg()), md(f.version()),
+                        md(f.scope()), f.id(), f.url(), f.basis().label(language), f.cves().isEmpty() ? "—" : f.cveText(),
                         f.fixedIn().isEmpty() ? "—" : md(f.fixedIn()), md(shorten(f.summary(), 110)))));
                 sb.append('\n');
             });
         }
         if (!r.unresolved().isEmpty()) {
-            sb.append("## Dependencies that could not be checked (").append(r.unresolved().size()).append(")\n\n");
-            sb.append("| File | Ecosystem | Package | Declared | Reason |\n|---|---|---|---|---|\n");
+            sb.append("## ").append(I18n.text(language, "markdown.unresolved", r.unresolved().size())).append("\n\n");
+            sb.append(I18n.text(language, "markdown.unresolved.header")).append("\n|---|---|---|---|---|\n");
             r.unresolved().stream().sorted(Comparator.comparing(Unresolved::file).thenComparing(Unresolved::name))
                     .forEach(u -> sb.append("| %s | %s | `%s` | %s | %s |\n".formatted(md(u.file()), u.ecosystem(), md(u.name()),
-                            u.declared().isEmpty() ? "—" : md(u.declared()), md(u.reason()))));
+                            u.declared().isEmpty() ? "—" : md(u.declared()), md(u.reason().text(language)))));
             sb.append('\n');
         }
-        sb.append("""
-                ## Notes and limitations
-
-                - Maven and Gradle results cover **declared** dependencies only. For transitive dependencies run \
-                `mvn dependency:tree` / `gradle dependencies`, or enable Gradle dependency locking and re-scan.
-                - npm results include transitive dependencies when a lockfile is present.
-                - A match means the version is inside an advisory's affected range; whether the vulnerable code is \
-                reachable in your application still needs review.
-                - *CVE name match ⚠* findings come from CVE List records that describe the product only by name \
-                (e.g. product `commons-text`, vendor `Apache Software Foundation`); check that they really refer to your \
-                package. The GitHub Advisory Database gives exact package matches.
-                - *Base* is computed from the advisory's CVSS vector (version in brackets), or the advisory's rating when \
-                there is no vector. *Env.* applies the chosen environment (security requirements and maximum attack vector) \
-                as CVSS environmental metrics. `MAL-` advisories are known-malicious packages and are rated CRITICAL.
-                """);
+        sb.append("## ").append(I18n.text(language, "markdown.notes")).append("\n\n").append(I18n.text(language, "markdown.notes.text")).append('\n');
         return sb.toString();
     }
 
@@ -202,7 +203,7 @@ public final class Reports {
                 + "ecosystem,package,version,approximate,scope,file,id,cves,match,fixed_in,summary,url\n");
         for (var f : findings)
             sb.append(Stream.of(f.severity(), f.score().baseSeverity(), f.cvss(), f.score().version(), f.score().baseVector(),
-                    f.envScore(), f.score().envVector(), env.name(), f.ecosystem(), f.pkg(), f.version(), f.approximate(), f.scope(), f.file(),
+                    f.envScore(), f.score().envVector(), env.name(I18nLanguage.ENGLISH), f.ecosystem(), f.pkg(), f.version(), f.approximate(), f.scope(), f.file(),
                     f.id(), String.join(" ", f.cves()), f.basis().name(), f.fixedIn(), f.summary(), f.url()).map(Reports::cell)
                     .collect(Collectors.joining(","))).append('\n');
         return sb.toString();
@@ -212,10 +213,12 @@ public final class Reports {
         var root = new LinkedHashMap<String, Object>();
         root.put("generated", Engine.STAMP.format(Instant.now()));
         root.put("scanned_directory", r.root().toString());
-        root.put("databases", r.snapshots());
+        var databases = new LinkedHashMap<String, Object>();
+        r.snapshots().forEach((file, desc) -> databases.put(file, desc.text(I18nLanguage.ENGLISH)));
+        root.put("databases", databases);
         var scoring = new LinkedHashMap<String, Object>();
         scoring.put("preferred_cvss_version", preferV4 ? "4.0" : "3.x");
-        scoring.put("environment", env.name());
+        scoring.put("environment", env.name(I18nLanguage.ENGLISH));
         scoring.put("reach", env.reach().name());
         scoring.put("confidentiality_requirement", env.confidentiality().code);
         scoring.put("integrity_requirement", env.integrity().code);
@@ -240,7 +243,7 @@ public final class Reports {
             m.put("cves", f.cves());
             m.put("aliases", f.aliases());
             m.put("match", f.basis().name());
-            m.put("match_note", f.basisNote());
+            m.put("match_note", f.basisNote().text(I18nLanguage.ENGLISH));
             m.put("fixed_in", f.fixedIn());
             m.put("summary", f.summary());
             m.put("published", f.published());
@@ -254,7 +257,7 @@ public final class Reports {
             m.put("name", u.name());
             m.put("declared", u.declared());
             m.put("file", u.file());
-            m.put("reason", u.reason());
+            m.put("reason", u.reason().text(I18nLanguage.ENGLISH));
             return m;
         }).toList());
         return Json.write(root);

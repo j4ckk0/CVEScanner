@@ -25,20 +25,34 @@ import java.awt.GraphicsEnvironment;
 import javax.swing.SwingUtilities;
 import org.jtools.cvescanner.cli.Cli;
 import org.jtools.cvescanner.cli.Options;
+import org.jtools.cvescanner.i18n.I18n;
+import org.jtools.cvescanner.i18n.I18nLanguage;
 
+/**
+ * The entry point: the window, or with --no-gui (or no display) the command line. Both speak the language --lang asks
+ * for, else the one chosen in the window (Settings), else French.
+ */
 public final class Launcher {
+
+    private Launcher() {
+    }
+
     public static void main(String[] args) {
+        Settings settings = Settings.load();
+        I18nLanguage requested = Options.requestedLanguage(args);
+        I18n.use(requested != null ? requested : I18nLanguage.ofCode(settings.get(Settings.LANGUAGE, I18nLanguage.DEFAULT.code())));
+        MainWindow.useSwingLocale();
         Options opts;
         try {
             opts = Options.parse(args);
         } catch (IllegalArgumentException e) {
-            System.err.println("ERROR: " + e.getMessage());
-            System.err.println(Options.USAGE);
+            System.err.println(I18n.text("cli.error", e.getMessage()));
+            System.err.println(Options.usage());
             System.exit(1);
             return;
         }
         if (opts.help) {
-            System.out.println(Options.USAGE);
+            System.out.println(Options.usage());
             return;
         }
         if (opts.noGui || GraphicsEnvironment.isHeadless()) {
@@ -46,7 +60,7 @@ public final class Launcher {
         }
         SwingUtilities.invokeLater(() -> {
             Gui.installLookAndFeel();
-            new MainWindow(opts).setVisible(true);
+            new MainWindow(opts, settings).setVisible(true);
         });
     }
 }

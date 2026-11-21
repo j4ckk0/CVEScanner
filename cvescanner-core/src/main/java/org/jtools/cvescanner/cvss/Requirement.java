@@ -1,5 +1,8 @@
 package org.jtools.cvescanner.cvss;
 
+import org.jtools.cvescanner.i18n.I18n;
+import org.jtools.cvescanner.i18n.I18nLanguage;
+
 /*-
  * #%L
  * CVEScanner
@@ -23,16 +26,19 @@ package org.jtools.cvescanner.cvss;
 
 /** CVSS security requirement (CR / IR / AR). */
 public enum Requirement {
-    NOT_DEFINED("Not defined", "X"), LOW("Low", "L"), MEDIUM("Medium", "M"), HIGH("High", "H");
+    NOT_DEFINED("X"), LOW("L"), MEDIUM("M"), HIGH("H");
 
-    public final String label, code;
+    /** Its letter in a CVSS vector, and on the command line. */
+    public final String code;
 
-    Requirement(String label, String code) { this.label = label; this.code = code; }
+    Requirement(String code) { this.code = code; }
 
-    @Override public String toString() { return label; }
+    public String label(I18nLanguage language) { return I18n.text(language, "requirement." + name()); }
+
+    @Override public String toString() { return label(I18n.language()); }
 
     public static Requirement parse(String s) {
         for (var r : values()) if (r.code.equalsIgnoreCase(s) || r.name().equalsIgnoreCase(s)) return r;
-        throw new IllegalArgumentException("requirement must be L, M, H or X");
+        throw new IllegalArgumentException(I18n.text("option.requirement"));
     }
 }

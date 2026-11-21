@@ -30,34 +30,20 @@ import java.util.Locale;
 import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.cvss.Reach;
 import org.jtools.cvescanner.cvss.Requirement;
+import org.jtools.cvescanner.i18n.I18n;
+import org.jtools.cvescanner.i18n.I18nLanguage;
 import org.jtools.cvescanner.model.Severity;
 
 public final class Options {
-    public static final String USAGE = """
-            Usage: cvescanner.sh | cvescanner.bat [options] [DIR]      (or: java -jar cvescanner.jar ...)
-
-              DIR / -d, --dir DIR   Directory to scan (default: current directory)
-              -o, --out DIR         Report output directory for --no-gui (default: ./cve-report)
-                  --db-dir DIR      Load every *.zip in DIR as a database (used by the launchers: database/)
-                  --db FILE         Load the database from a zip file (repeatable; at least one is needed).
-                                    Accepts the GitHub Advisory Database zip, the CVE List (cvelistV5)
-                                    zip, and OSV.dev ecosystem zips
-                  --cve-only        Only report vulnerabilities that have a CVE ID
-                  --env PRESET      Environment for the environmental CVSS score:
-                                    none (default), internet, internal, airgapped, devci
-                  --reach R         Override reachability: internet | internal | local
-                  --cr / --ir / --ar V   Override the confidentiality / integrity / availability
-                                    requirement: L | M | H | X (not defined)
-                  --cvss 4|3        Preferred CVSS version when an advisory has both (default 4)
-                  --no-gui          Run headless and write report.md, findings.csv, findings.json
-                  --fail-on LEVEL   With --no-gui: exit 2 if a finding is >= LOW|MEDIUM|HIGH|CRITICAL
-              -h, --help            Show this help
-            """;
+    /** The options and what they do, in the language in use. */
+    public static String usage() { return I18n.text("cli.usage"); }
 
     public Path scanDir = Path.of(".");
     public boolean dirGiven;
     public Path outDir = Path.of("cve-report");
     public boolean cveOnly, noGui, help;
+    /** The language --lang asks for; null when none is given. */
+    public I18nLanguage language;
     Severity failOn;
     public final List<Path> dbFiles = new ArrayList<>();
     public Path dbDir;
@@ -84,16 +70,17 @@ public final class Options {
                 case "--ar" -> { ar = Requirement.parse(value(args, ++i, a)); o.environmentGiven = true; }
                 case "--cvss" -> {
                     String v = value(args, ++i, a);
-                    if (!v.equals("4") && !v.equals("3")) throw new IllegalArgumentException("--cvss must be 4 or 3");
+                    if (!v.equals("4") && !v.equals("3")) throw new IllegalArgumentException(I18n.text("option.cvss"));
                     o.preferV4 = v.equals("4");
                     o.cvssGiven = true;
                 }
                 case "--cve-only" -> o.cveOnly = true;
                 case "--no-gui" -> o.noGui = true;
                 case "--fail-on" -> o.failOn = Severity.parseThreshold(value(args, ++i, a));
+                case "--lang" -> o.language = language(value(args, ++i, a));
                 case "-h", "--help" -> o.help = true;
                 default -> {
-                    if (a.startsWith("-")) throw new IllegalArgumentException("unknown option " + a);
+                    if (a.startsWith("-")) throw new IllegalArgumentException(I18n.text("option.unknown", a));
                     o.scanDir = Path.of(a);
                     o.dirGiven = true;
                 }
@@ -107,14 +94,32 @@ public final class Options {
                 files.filter(f -> f.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".zip") && Files.isRegularFile(f))
                         .sorted().forEach(o.dbFiles::add);
             } catch (IOException e) {
-                throw new IllegalArgumentException("cannot read " + o.dbDir + ": " + e.getMessage());
+                throw new IllegalArgumentException(I18n.text("option.dbDir", o.dbDir, e.getMessage()));
             }
         }
         return o;
     }
 
+    /**
+     * The language the arguments ask for (--lang fr|en), read before the others so that what they say is said in it;
+     * null when they ask for none, or for one the program does not speak (parse then says so).
+     */
+    public static I18nLanguage requestedLanguage(String[] args) {
+        for (int i = 0; i + 1 < args.length; i++) {
+            if (args[i].equals("--lang")) {
+                for (I18nLanguage l : I18nLanguage.values()) if (l.code().equals(args[i + 1])) return l;
+            }
+        }
+        return null;
+    }
+
+    private static I18nLanguage language(String code) {
+        for (I18nLanguage l : I18nLanguage.values()) if (l.code().equals(code)) return l;
+        throw new IllegalArgumentException(I18n.text("option.lang"));
+    }
+
     private static String value(String[] args, int i, String opt) {
-        if (i >= args.length) throw new IllegalArgumentException(opt + " needs a value");
+        if (i >= args.length) throw new IllegalArgumentException(I18n.text("option.needsValue", opt));
         return args[i];
     }
 }

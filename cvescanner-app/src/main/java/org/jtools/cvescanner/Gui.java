@@ -25,6 +25,7 @@ import java.awt.Color;
 import javax.swing.JComponent;
 import javax.swing.JTextArea;
 import javax.swing.UIManager;
+import org.jtools.cvescanner.i18n.I18n;
 
 final class Gui {
     private Gui() {}
@@ -41,6 +42,11 @@ final class Gui {
     }
 
     static String hex(Color c) { return String.format("#%02x%02x%02x", c.getRed(), c.getGreen(), c.getBlue()); }
+
+    /** A score as the language in use writes numbers: 9.8, 9,8. */
+    static String score(double score) {
+        return String.format(I18n.language().locale(), "%.1f", score);
+    }
 
     /** Text as HTML shows it, every character that could open a tag or end an attribute escaped. */
     static String html(String s) {

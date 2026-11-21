@@ -43,6 +43,8 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
 import org.jtools.cvescanner.engine.Engine;
 import org.jtools.cvescanner.engine.ScanListener;
+import org.jtools.cvescanner.i18n.I18n;
+import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Dependency;
 
@@ -74,7 +76,7 @@ public final class VulnDb {
     public static final class Index {
         final Map<String, Map<String, List<Osv.Match>>> osv = new HashMap<>();
         final Map<String, List<CveList.Rule>> cve = new HashMap<>();
-        public final Map<String, String> sources = new LinkedHashMap<>();
+        public final Map<String, Phrase> sources = new LinkedHashMap<>();
 
         public List<Osv.Match> osvFor(Dependency d) {
             return osv.getOrDefault(d.ecosystem(), Map.of()).getOrDefault(d.name(), List.of());
@@ -121,34 +123,33 @@ public final class VulnDb {
         var index = new Index();
         int total = 0;
         for (Path file : files) {
-            if (!Files.isRegularFile(file)) throw new IOException("Database file not found: " + file);
+            if (!Files.isRegularFile(file)) throw new IOException(I18n.text("error.dbNotFound", file));
             long size = Math.max(1, Files.size(file));
             var counts = new Counts();
-            l.status("Reading " + file.getFileName() + "…");
+            l.status(I18n.text("status.reading", file.getFileName()));
             l.progress(0);
             try (var in = new CountingInputStream(new BufferedInputStream(Files.newInputStream(file), 1 << 16))) {
                 readZip(in, data -> {
                     accept(data, wanted, index, counts);
                     if (++counts.entries % 500 == 0) {
                         l.progress((double) in.count / size);
-                        l.status(String.format(Locale.ROOT, "Reading %s… %,d records", file.getFileName(), counts.entries));
+                        l.status(I18n.text("status.readingCount", file.getFileName(), counts.entries));
                     }
                 }, 0);
             } catch (ZipException e) {
-                throw new IOException(file.getFileName() + " is not a readable zip file (" + e.getMessage() + ")", e);
+                throw new IOException(I18n.text("error.notZip", file.getFileName(), e.getMessage()), e);
             }
-            String kind = counts.osv > 0 && counts.cve > 0 ? "advisories + CVE records"
-                    : counts.cve > 0 ? "CVE List (CVE JSON 5)" : "OSV / GitHub advisories";
+            Phrase kind = Phrase.of(counts.osv > 0 && counts.cve > 0 ? "database.kind.both"
+                    : counts.cve > 0 ? "database.kind.cve" : "database.kind.osv");
             total += counts.osv + counts.cve;
             if (counts.osv + counts.cve == 0)
-                l.warn(file.getFileName() + " contains no OSV, GitHub advisory or CVE JSON 5 records");
-            index.sources.put(file.getFileName().toString(), String.format(Locale.ROOT, "%s, %,d records (%,d relevant), file dated %s",
+                l.warn(Phrase.of("warning.noRecords", file.getFileName().toString()));
+            index.sources.put(file.getFileName().toString(), Phrase.of("database.description",
                     kind, counts.osv + counts.cve, counts.osvUsed + counts.cveUsed,
                     Engine.STAMP.format(Files.getLastModifiedTime(file).toInstant())));
         }
         if (total == 0)
-            throw new IOException("The chosen database file(s) contain no vulnerability records.\n\nUse the GitHub Advisory "
-                    + "Database zip, the CVE List (cvelistV5) zip, or an OSV.dev ecosystem zip.");
+            throw new IOException(I18n.text("error.noRecordsAtAll"));
         return index;
     }
 

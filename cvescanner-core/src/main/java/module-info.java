@@ -1,6 +1,6 @@
 /*-
  * #%L
- * CVEScanner core
+ * CVEScanner
  * %%
  * Copyright (C) 2026 jtools.org
  * %%
@@ -20,7 +20,8 @@
 /**
  * CVEScanner's scan, with no window: the projects' dependencies (project), the vulnerability databases read from
  * their zips (db), the matching and the scan as a whole (engine), the CVSS scores for an environment (cvss), what a
- * scan finds (model), the reports (report) and the command line (cli). It needs nothing but the JDK.
+ * scan finds (model), the reports (report), the command line (cli)
+ * and the languages (i18n). It needs nothing but the JDK.
  */
 module org.jtools.cvescanner.core {
     requires java.xml;
@@ -29,9 +30,15 @@ module org.jtools.cvescanner.core {
     exports org.jtools.cvescanner.cvss;
     exports org.jtools.cvescanner.db;
     exports org.jtools.cvescanner.engine;
+    exports org.jtools.cvescanner.i18n;
     exports org.jtools.cvescanner.json;
     exports org.jtools.cvescanner.model;
     exports org.jtools.cvescanner.project;
     exports org.jtools.cvescanner.report;
     exports org.jtools.cvescanner.version;
+    // not exported: i18n.texts (this jar's texts)
+
+    // the texts of every jar, its own among them (I18n)
+    uses org.jtools.cvescanner.i18n.I18nTexts;
+    provides org.jtools.cvescanner.i18n.I18nTexts with org.jtools.cvescanner.i18n.texts.CoreTexts;
 }

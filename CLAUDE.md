@@ -36,6 +36,14 @@ scripts/package.sh    # releases/cvescanner-<version>-linux.tar.gz
   files in the same commit, and says so in its message.
 - `samples/` is written by `samples/make_fixtures.py samples`; its databases are made-up advisories.
 
+## Languages
+
+Every text a user reads is in its module's `messages_{en,fr}.properties` (`i18n/texts/` in core, `texts/` in the app),
+the same keys in each; `TextsCheck` (CoreTextsTest, AppTextsTest) fails on a missing, blank, duplicated or unused key.
+What a scan finds that is said later (a reason, a note, a warning) is kept as a `Phrase` (key + arguments). The window,
+the console and report.md speak the language chosen; findings.csv / findings.json are always written in English.
+Tests speak English (`I18nEnglishInTests`).
+
 ## Conventions
 
 - Comments tell the intention (why the code is as it is), never what the next line does, never the history.
