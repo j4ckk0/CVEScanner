@@ -32,7 +32,8 @@ while [ $# -gt 0 ]; do
     *) break ;;
   esac
 done
-[ $# -eq 1 ] || [ $# -eq 2 ] || { sed -n '3,17p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
+# the usage: the header's comment lines, after the shebang, whatever their number
+[ $# -eq 1 ] || [ $# -eq 2 ] || { sed -n '3,/^[^#]/{/^#/p}' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
 version=$1; tag=v$version
 if [ $# -eq 2 ]; then
   notes=$2
