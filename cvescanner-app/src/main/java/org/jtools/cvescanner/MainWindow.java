@@ -104,6 +104,7 @@ import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
 import org.jtools.cvescanner.model.PackageSummary;
 import org.jtools.cvescanner.model.ScanListener;
+import org.jtools.cvescanner.model.ScanMode;
 import org.jtools.cvescanner.model.ScanResult;
 import org.jtools.cvescanner.model.Scoring;
 import org.jtools.cvescanner.model.Unresolved;
@@ -138,7 +139,12 @@ final class MainWindow extends JFrame {
             new Choice<>("filter.lowUp", Severity.LOW)).toArray(Choice[]::new));
     private final JComboBox<Choice<Ecosystem>> ecosystemCombo = new JComboBox<>(List.of(
             new Choice<Ecosystem>("filter.allEcosystems", null), new Choice<>("filter.maven", Ecosystem.MAVEN),
-            new Choice<>("filter.npm", Ecosystem.NPM), new Choice<>("filter.cots", Ecosystem.COTS)).toArray(Choice[]::new));
+            new Choice<>("filter.npm", Ecosystem.NPM), new Choice<>("filter.pypi", Ecosystem.PYPI),
+            new Choice<>("filter.cots", Ecosystem.COTS)).toArray(Choice[]::new));
+    /** What a scan reads: source projects, or an installed product from its binaries. */
+    private final JComboBox<Choice<ScanMode>> scanModeCombo = new JComboBox<>(List.of(
+            new Choice<>("toolbar.scanMode.sources", ScanMode.SOURCES), new Choice<>("toolbar.scanMode.installed", ScanMode.INSTALLED))
+            .toArray(Choice[]::new));
     private final JCheckBox cveOnlyBox = new JCheckBox();
     private final JCheckBox hideApproxBox = new JCheckBox();
     private final Map<Severity, JLabel> chips = new EnumMap<>(Severity.class);
@@ -252,7 +258,7 @@ final class MainWindow extends JFrame {
         labels.on(this::updateCounts);
         labels.on(() -> showSelected());
         labels.on(this::updateSeverityHeader);
-        labels.on(() -> List.of(severityCombo, ecosystemCombo)
+        labels.on(() -> List.of(severityCombo, ecosystemCombo, scanModeCombo)
                 .forEach(Component::repaint));
         labels.on(() -> List.of(tables.findingsTable, tables.packagesTable, tables.unresolvedTable, tables.ignoredTable).forEach(Component::repaint));
         setSize(1480, 940);
@@ -407,6 +413,12 @@ final class MainWindow extends JFrame {
 
         c.gridy = 2;
         ignoreActions.addRow(rows, c);
+        c.gridx = 4;
+        rows.add(scanModeCombo, c);
+        labels.tip(scanModeCombo, "toolbar.scanMode.tip");
+        boolean installed = opts.installed || settings.get(Settings.SCAN_MODE, "SOURCES").equals(ScanMode.INSTALLED.name());
+        scanModeCombo.setSelectedIndex(installed ? 1 : 0);
+        scanModeCombo.addActionListener(_ -> settings.set(Settings.SCAN_MODE, scanMode().name()));
         return rows;
     }
 
@@ -723,6 +735,10 @@ final class MainWindow extends JFrame {
         clearDbButton.setEnabled(!none);
     }
 
+    private ScanMode scanMode() {
+        return scanModeCombo.getSelectedItem() instanceof Choice<?> choice ? (ScanMode) choice.value() : ScanMode.SOURCES;
+    }
+
     private void chooseFolder() {
         var chooser = new JFileChooser(dirField.getText());
         chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -740,10 +756,11 @@ final class MainWindow extends JFrame {
         setBusy(true);
         var databases = List.copyOf(dbFiles);
         Path ignoreFile = ignoreActions.choice();
+        ScanMode mode = scanMode();
         new SwingWorker<ScanResult, Void>() {
             @Override
             protected ScanResult doInBackground() throws Exception {
-                return Engine.scan(dir, databases, ignoreFile, new ScanListener() {
+                return Engine.scan(dir, databases, ignoreFile, mode, new ScanListener() {
                     public void status(String m) { SwingUtilities.invokeLater(() -> { if (busy) say(() -> m); }); }
                     public void progress(double f) { SwingUtilities.invokeLater(() -> { if (busy) updateProgress(f); }); }
                 });

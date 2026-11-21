@@ -50,6 +50,8 @@ final class Settings {
     static final String AVAILABILITY = "env.availability";
     /** "true" when CVSS 4.0 is preferred to 3.x for an advisory that has both. */
     static final String PREFER_CVSS4 = "cvss.prefer4";
+    /** What a scan reads: SOURCES (the projects' manifests) or INSTALLED (what an installed product ships). */
+    static final String SCAN_MODE = "scanMode";
     private static final String FILE = "cvescanner.properties";
 
     private final Path file;

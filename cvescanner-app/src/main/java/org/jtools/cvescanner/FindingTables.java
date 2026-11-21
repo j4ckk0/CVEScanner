@@ -198,9 +198,12 @@ final class FindingTables {
         sorter.setSortsOnUpdates(true);
     }
 
-    /** A package version the Apply fixes button can act on: a Maven or npm package with a version that fixes it. */
+    /**
+     * A package version the Apply fixes button can act on: a Maven or npm package a project declares, with a version
+     * that fixes it; not a component off-the-shelf, a Python package, nor what an installed product ships.
+     */
     static boolean fixable(PackageSummary p) {
-        return p.ecosystem() != Ecosystem.COTS && !p.fixedIn().isEmpty();
+        return (p.ecosystem() == Ecosystem.MAVEN || p.ecosystem() == Ecosystem.NPM) && !p.installed() && !p.fixedIn().isEmpty();
     }
 
     private void tick(PackageSummary p, boolean on) {
