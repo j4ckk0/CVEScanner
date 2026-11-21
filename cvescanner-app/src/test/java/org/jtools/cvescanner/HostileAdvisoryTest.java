@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -41,6 +42,7 @@ import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.cvss.Rating;
 import org.jtools.cvescanner.cvss.Score;
 import org.jtools.cvescanner.i18n.Phrase;
+import org.jtools.cvescanner.ignore.IgnoreRule;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
 import org.jtools.cvescanner.model.Severity;
@@ -102,6 +104,18 @@ class HostileAdvisoryTest {
             assertEquals(Set.of(), foreign, page);
             assertTrue(page.contains("&lt;img src=&#39;http://attacker.example/x.png&#39;&gt;"), page);
         }
+    }
+
+    @Test
+    void theIgnoredBlockHoldsNoTagOfTheIgnoreFile() throws IOException {
+        var rule = new IgnoreRule("CVE-1", "", "", LocalDate.of(2030, 1, 1), "reason" + TAGS + BREAKOUT, 3);
+        String page = FindingDetails.page(hostile(), Environment.NONE, rule, "dir" + TAGS + "/cvescanner-ignore.csv");
+        Set<String> foreign = new TreeSet<>();
+        for (Tag tag : tags(page)) {
+            if (!PAGE_TAGS.contains(tag.name())) foreign.add(tag.name());
+        }
+        assertEquals(Set.of(), foreign, page);
+        assertTrue(page.contains("reason&lt;img"), page);
     }
 
     @Test

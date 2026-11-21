@@ -50,6 +50,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
+import java.time.LocalDate;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -107,6 +108,9 @@ import org.jtools.cvescanner.engine.ScanListener;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
 import org.jtools.cvescanner.i18n.Phrase;
+import org.jtools.cvescanner.ignore.IgnoreFile;
+import org.jtools.cvescanner.ignore.IgnoreRule;
+import org.jtools.cvescanner.ignore.IgnoredFinding;
 import org.jtools.cvescanner.ignore.Ignores;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
@@ -154,6 +158,17 @@ final class MainWindow extends JFrame {
             new Column<PackageSummary>("column.vulnerabilities", Integer.class, 95, PackageSummary::vulnerabilities),
             new Column<PackageSummary>("column.advisories", String.class, 260, PackageSummary::advisories),
             new Column<PackageSummary>("column.foundIn", String.class, 330, PackageSummary::files));
+    private static final List<Column<IgnoredFinding>> IGNORED_COLUMNS = List.of(
+            new Column<IgnoredFinding>("column.severity", Severity.class, 175, i -> i.finding().severity()),
+            new Column<IgnoredFinding>("column.env", Double.class, 140, i -> i.finding().envScore()),
+            new Column<IgnoredFinding>("column.ecosystem", String.class, 100, i -> i.finding().ecosystem()),
+            new Column<IgnoredFinding>("column.package", String.class, 300, i -> i.finding().pkg()),
+            new Column<IgnoredFinding>("column.version", String.class, 95, i -> i.finding().displayVersion()),
+            new Column<IgnoredFinding>("column.cve", String.class, 130, i -> i.finding().cveText()),
+            new Column<IgnoredFinding>("column.advisory", String.class, 150, i -> i.finding().id()),
+            new Column<IgnoredFinding>("column.until", String.class, 110, i -> i.rule().until() == null ? "—" : i.rule().until().toString()),
+            new Column<IgnoredFinding>("column.reason", String.class, 330, i -> i.rule().reason()),
+            new Column<IgnoredFinding>("column.file", String.class, 220, i -> i.finding().file()));
     private static final List<Column<Unresolved>> UNRESOLVED_COLUMNS = List.of(
             new Column<Unresolved>("column.ecosystem", String.class, 75, Unresolved::ecosystem),
             new Column<Unresolved>("column.package", String.class, 300, Unresolved::name),
@@ -172,6 +187,10 @@ final class MainWindow extends JFrame {
     private final JTextField dbField = new JTextField(40);
     private final JButton clearDbButton = new JButton();
     private final List<Path> dbFiles = new ArrayList<>();
+    private final JTextField ignoreField = new JTextField(40);
+    private final JButton ownIgnoreButton = new JButton();
+    /** The ignore file to read: null for the folder's own, Ignores.DISABLED for none (Engine.scan). */
+    private Path ignoreChoice;
     private final JCheckBox hideNameMatchBox = new JCheckBox();
     private final JComboBox<Environment> envCombo = new JComboBox<>();
     private final JComboBox<Reach> reachCombo = new JComboBox<>(Reach.values());
@@ -201,12 +220,15 @@ final class MainWindow extends JFrame {
     private final ListTableModel<Finding> findingsModel = new ListTableModel<>(FINDING_COLUMNS);
     private final ListTableModel<PackageSummary> packagesModel = new ListTableModel<>(PACKAGE_COLUMNS);
     private final ListTableModel<Unresolved> unresolvedModel = new ListTableModel<>(UNRESOLVED_COLUMNS);
+    private final ListTableModel<IgnoredFinding> ignoredModel = new ListTableModel<>(IGNORED_COLUMNS);
     private final JTable findingsTable = new ScrollingTable(findingsModel);
     private final JTable packagesTable = new ScrollingTable(packagesModel);
     private final JTable unresolvedTable = new ScrollingTable(unresolvedModel);
+    private final JTable ignoredTable = new ScrollingTable(ignoredModel);
     private final TableRowSorter<ListTableModel<Finding>> findingsSorter = new TableRowSorter<>(findingsModel);
     private final TableRowSorter<ListTableModel<PackageSummary>> packagesSorter = new TableRowSorter<>(packagesModel);
     private final TableRowSorter<ListTableModel<Unresolved>> unresolvedSorter = new TableRowSorter<>(unresolvedModel);
+    private final TableRowSorter<ListTableModel<IgnoredFinding>> ignoredSorter = new TableRowSorter<>(ignoredModel);
     private final JTabbedPane tabs = new JTabbedPane();
     private final JEditorPane detailPane = new JEditorPane("text/html", "");
     private final JLabel statusLabel = Gui.noHtml(new JLabel(" "));
@@ -214,6 +236,10 @@ final class MainWindow extends JFrame {
     private final Timer searchTimer = new Timer(200, _ -> applyFilters());
 
     private ScanResult result;
+    /** The scan's ignore file, read again after the window writes it. */
+    private Ignores ignores = Ignores.NONE;
+    /** The scan's findings scored for the environment, those the ignore file sets aside apart. */
+    private Ignores.Split split = Ignores.Split.none(List.of());
     private boolean busy;   // progress messages arriving after a scan has finished are ignored
     /** What the status line says, said again in the language chosen. */
     private Supplier<String> statusMessage = () -> I18n.text("status.ready");
@@ -226,6 +252,7 @@ final class MainWindow extends JFrame {
         dirField.setText(opts.scanDir.toAbsolutePath().normalize().toString());
         if (!opts.dbFiles.isEmpty()) dbFiles.addAll(opts.dbFiles);
         else restoreDatabaseChoice();
+        ignoreChoice = opts.ignoreChoice();
         restoreScoringChoice();
         cveOnlyBox.setSelected(opts.cveOnly);
         searchTimer.setRepeats(false);
@@ -249,6 +276,8 @@ final class MainWindow extends JFrame {
         tabs.addTab("", new JScrollPane(findingsTable));
         tabs.addTab("", new JScrollPane(packagesTable));
         tabs.addTab("", new JScrollPane(unresolvedTable));
+        tabs.addTab("", new JScrollPane(ignoredTable));
+        tabs.addChangeListener(_ -> showSelected());
 
         detailPane.setEditable(false);
         detailPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
@@ -283,14 +312,15 @@ final class MainWindow extends JFrame {
         // what is shown from data rather than bound to one key: said again in the language chosen
         labels.on(() -> statusLabel.setText(statusMessage.get()));
         labels.on(this::updateDatabaseField);
+        labels.on(this::updateIgnoreField);
         labels.on(this::updateChips);
         showSeverityColors();
         labels.on(this::updateCounts);
-        labels.on(() -> showDetails(selectedFinding()));
+        labels.on(() -> showSelected());
         labels.on(this::syncEnvironmentControls);
         labels.on(() -> List.of(severityCombo, ecosystemCombo, cvssCombo, envCombo, reachCombo, crCombo, irCombo, arCombo)
                 .forEach(Component::repaint));
-        labels.on(() -> List.of(findingsTable, packagesTable, unresolvedTable).forEach(Component::repaint));
+        labels.on(() -> List.of(findingsTable, packagesTable, unresolvedTable, ignoredTable).forEach(Component::repaint));
         setSize(1480, 940);
         setMinimumSize(new Dimension(1000, 640));
         setLocationRelativeTo(null);
@@ -438,6 +468,25 @@ final class MainWindow extends JFrame {
         rows.add(chooseDb, c);
         c.gridx = 3;
         rows.add(clearDbButton, c);
+
+        var chooseIgnore = labels.text(new JButton(), "toolbar.chooseIgnoreFile");
+        chooseIgnore.addActionListener(_ -> chooseIgnoreFile());
+        labels.text(ownIgnoreButton, "toolbar.ownIgnoreFile");
+        ownIgnoreButton.addActionListener(_ -> setIgnoreChoice(null));
+        ignoreField.setEditable(false);
+        c.gridy = 2;
+        c.gridx = 0;
+        rows.add(labels.text(new JLabel(), "toolbar.ignoreFile"), c);
+        c.gridx = 1;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1;
+        rows.add(ignoreField, c);
+        c.fill = GridBagConstraints.NONE;
+        c.weightx = 0;
+        c.gridx = 2;
+        rows.add(chooseIgnore, c);
+        c.gridx = 3;
+        rows.add(ownIgnoreButton, c);
         return rows;
     }
 
@@ -558,9 +607,7 @@ final class MainWindow extends JFrame {
         saveScoringChoice();
         if (result == null) return;
         var selected = selectedFinding();
-        findingsModel.setRows(Scoring.applyAll(result.findings(), environment, preferV4));
-        updateChips();
-        applyFilters();
+        refreshFindings();
         if (selected != null) {
             for (int i = 0; i < findingsTable.getRowCount(); i++) {
                 var f = findingsModel.row(findingsTable.convertRowIndexToModel(i));
@@ -572,7 +619,7 @@ final class MainWindow extends JFrame {
                 }
             }
         }
-        showDetails(selectedFinding());
+        showSelected();
     }
 
     private void restoreScoringChoice() {
@@ -641,6 +688,10 @@ final class MainWindow extends JFrame {
         packagesSorter.setSortKeys(List.of(new RowSorter.SortKey(0, SortOrder.DESCENDING),
                 new RowSorter.SortKey(column(PACKAGE_COLUMNS, "column.vulnerabilities"), SortOrder.DESCENDING)));
         setup(unresolvedTable, unresolvedSorter, UNRESOLVED_COLUMNS);
+        setup(ignoredTable, ignoredSorter, IGNORED_COLUMNS);
+        ignoredSorter.setComparator(column(IGNORED_COLUMNS, "column.version"), version);
+        ignoredSorter.setSortKeys(List.of(new RowSorter.SortKey(0, SortOrder.DESCENDING),
+                new RowSorter.SortKey(column(IGNORED_COLUMNS, "column.env"), SortOrder.DESCENDING)));
 
         var cvss = new DefaultTableCellRenderer() {
             @Override
@@ -660,10 +711,11 @@ final class MainWindow extends JFrame {
         };
         envRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
         findingsTable.getColumnModel().getColumn(column(FINDING_COLUMNS, "column.env")).setCellRenderer(envRenderer);
+        ignoredTable.getColumnModel().getColumn(column(IGNORED_COLUMNS, "column.env")).setCellRenderer(envRenderer);
         labels.tip(findingsTable.getTableHeader(), "column.header.tip");
 
         findingsTable.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) showDetails(selectedFinding());
+            if (!e.getValueIsAdjusting()) showSelected();
         });
         findingsTable.addMouseListener(new MouseAdapter() {
             @Override
@@ -679,6 +731,24 @@ final class MainWindow extends JFrame {
             }
         });
         findingsTable.setComponentPopupMenu(findingsMenu());
+
+        ignoredTable.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) showSelected();
+        });
+        ignoredTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                int row = ignoredTable.rowAtPoint(e.getPoint());
+                if (SwingUtilities.isRightMouseButton(e) && row >= 0) ignoredTable.setRowSelectionInterval(row, row);
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                var i = selectedIgnored();
+                if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e) && i != null) copyLink(i.finding().url());
+            }
+        });
+        ignoredTable.setComponentPopupMenu(ignoredMenu());
 
         packagesTable.addMouseListener(new MouseAdapter() {     // double-click a package: show its findings
             @Override
@@ -735,6 +805,26 @@ final class MainWindow extends JFrame {
                 f.fixedIn(), f.file(), f.summary()))));
         menu.addSeparator();
         menu.add(item("menu.finding.onlyThisPackage", f -> searchField.setText(f.pkg())));
+        menu.addSeparator();
+        menu.add(item("menu.finding.ignore", this::ignore));
+        return menu;
+    }
+
+    private JPopupMenu ignoredMenu() {
+        var menu = new JPopupMenu();
+        var stop = labels.text(new JMenuItem(), "menu.ignored.stop");
+        stop.addActionListener(_ -> {
+            var i = selectedIgnored();
+            if (i != null) stopIgnoring(i);
+        });
+        menu.add(stop);
+        menu.addSeparator();
+        var link = labels.text(new JMenuItem(), "menu.finding.copyAdvisoryLink");
+        link.addActionListener(_ -> {
+            var i = selectedIgnored();
+            if (i != null) copyLink(i.finding().url());
+        });
+        menu.add(link);
         return menu;
     }
 
@@ -801,6 +891,15 @@ final class MainWindow extends JFrame {
                 return matchesSearch(e, terms, "");
             }
         });
+        ignoredSorter.setRowFilter(new RowFilter<>() {
+            @Override
+            public boolean include(Entry<? extends ListTableModel<IgnoredFinding>, ? extends Integer> e) {
+                var i = e.getModel().row(e.getIdentifier());
+                String ecosystem = ecosystemShown();
+                if (ecosystem != null && !i.finding().ecosystem().equals(ecosystem)) return false;
+                return matchesSearch(e, terms, i.rule().reason());
+            }
+        });
         updateCounts();
         int shown = findingsTable.getRowCount();
         if (findingsTable.getSelectedRow() < 0 && shown > 0) findingsTable.setRowSelectionInterval(0, 0);
@@ -813,6 +912,7 @@ final class MainWindow extends JFrame {
         tabs.setTitleAt(0, shown == total ? I18n.text("tab.findings", total) : I18n.text("tab.findings.filtered", shown, total));
         tabs.setTitleAt(1, I18n.text("tab.packages", packagesTable.getRowCount()));
         tabs.setTitleAt(2, I18n.text("tab.unresolved", unresolvedTable.getRowCount()));
+        tabs.setTitleAt(3, I18n.text("tab.ignored", ignoredTable.getRowCount()));
         showingLabel.setText(result == null ? " " : shown == total ? I18n.text("showing.all", total)
                 : I18n.text("showing.some", shown, total));
     }
@@ -823,7 +923,7 @@ final class MainWindow extends JFrame {
             chip.setIcon(new DotIcon(SeverityColors.of(s), 12));
             chip.setForeground(SeverityColors.of(s));
         });
-        showDetails(selectedFinding());
+        showSelected();
     }
 
     private void updateChips() {
@@ -885,10 +985,11 @@ final class MainWindow extends JFrame {
         }
         setBusy(true);
         var databases = List.copyOf(dbFiles);
+        Path ignoreFile = ignoreChoice;
         new SwingWorker<ScanResult, Void>() {
             @Override
             protected ScanResult doInBackground() throws Exception {
-                return Engine.scan(dir, databases, new ScanListener() {
+                return Engine.scan(dir, databases, ignoreFile, new ScanListener() {
                     public void status(String m) { SwingUtilities.invokeLater(() -> { if (busy) say(() -> m); }); }
                     public void progress(double f) { SwingUtilities.invokeLater(() -> { if (busy) updateProgress(f); }); }
                 });
@@ -927,23 +1028,21 @@ final class MainWindow extends JFrame {
 
     private void show(ScanResult r) {
         result = r;
+        ignores = r.ignores();
         findingsTable.clearSelection();
-        findingsModel.setRows(Scoring.applyAll(r.findings(), environment, preferV4));
+        ignoredTable.clearSelection();
         unresolvedModel.setRows(r.unresolved());
-        updateChips();
-        applyFilters();
+        refreshFindings();
         exportButton.setEnabled(true);
         int files = r.fileCounts().values().stream().mapToInt(Integer::intValue).sum();
         say(() -> {
             String scanned = I18n.text("scan.done", files, r.dependencies().size(), r.findings().size());
             if (!r.snapshots().isEmpty()) scanned += "  ·  " + I18n.text("scan.done.databases", String.join(", ", r.snapshots().keySet()));
-            if (!r.warnings().isEmpty()) scanned += "  ·  " + I18n.text("scan.done.warnings", r.warnings().size());
+            int warnings = r.warnings().size() + split.warnings().size();
+            if (warnings > 0) scanned += "  ·  " + I18n.text("scan.done.warnings", warnings);
             return scanned;
         });
-        var tip = new ArrayList<String>();
-        r.snapshots().forEach((k, v) -> tip.add("<b>" + Gui.html(k) + "</b>: " + Gui.html(v.text())));
-        r.warnings().forEach(w -> tip.add(Gui.html(I18n.text("status.warning", w))));
-        statusLabel.setToolTipText(tip.isEmpty() ? null : "<html>" + String.join("<br>", tip) + "</html>");
+        updateStatusTip(r.warnings());
         if (files == 0)
             JOptionPane.showMessageDialog(this, I18n.text("scan.nothing"), I18n.text("scan.nothing.title"),
                     JOptionPane.INFORMATION_MESSAGE);
@@ -960,9 +1059,140 @@ final class MainWindow extends JFrame {
         return row < 0 ? null : findingsModel.row(findingsTable.convertRowIndexToModel(row));
     }
 
+    private IgnoredFinding selectedIgnored() {
+        int row = ignoredTable.getSelectedRow();
+        return row < 0 ? null : ignoredModel.row(ignoredTable.convertRowIndexToModel(row));
+    }
+
+    /** The details of what is selected in the tab shown: a finding, or a finding set aside. */
+    private void showSelected() {
+        if (tabs.getSelectedIndex() != 3) {
+            showDetails(selectedFinding());
+            return;
+        }
+        var i = selectedIgnored();
+        detailPane.setText(i == null ? FindingDetails.placeholder(result != null)
+                : FindingDetails.page(i.finding(), environment, i.rule(), ignores.shown()));
+        detailPane.setCaretPosition(0);
+    }
+
     private void showDetails(Finding f) {
         detailPane.setText(f == null ? FindingDetails.placeholder(result != null) : FindingDetails.page(f, environment));
         detailPane.setCaretPosition(0);
+    }
+
+    // ------------------------------------------------------------------------------- ignore file
+    /** The findings scored for the environment, then set apart by the ignore file: the tables, the chips, the counts. */
+    private void refreshFindings() {
+        if (result == null) return;
+        split = ignores.split(Scoring.applyAll(result.findings(), environment, preferV4), LocalDate.now());
+        findingsModel.setRows(split.active());
+        ignoredModel.setRows(split.ignored());
+        updateChips();
+        applyFilters();
+    }
+
+    /** The status line's tooltip: the databases read, the scan's warnings, the ignore file's. */
+    private void updateStatusTip(List<Phrase> warnings) {
+        var tip = new ArrayList<String>();
+        if (result != null) result.snapshots().forEach((k, v) -> tip.add("<b>" + Gui.html(k) + "</b>: " + Gui.html(v.text())));
+        warnings.forEach(w -> tip.add(Gui.html(I18n.text("status.warning", w))));
+        split.warnings().forEach(w -> tip.add(Gui.html(I18n.text("status.warning", w))));
+        statusLabel.setToolTipText(tip.isEmpty() ? null : "<html>" + String.join("<br>", tip) + "</html>");
+    }
+
+    private void chooseIgnoreFile() {
+        Path start = ignoreChoice != null && ignoreChoice.getParent() != null ? ignoreChoice.getParent() : Path.of(dirField.getText().strip());
+        var chooser = new JFileChooser(start.toFile());
+        chooser.setDialogTitle(I18n.text("ignore.chooser.title"));
+        chooser.setFileFilter(new FileNameExtensionFilter(I18n.text("ignore.chooser.filter"), "csv"));
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) setIgnoreChoice(chooser.getSelectedFile().toPath());
+    }
+
+    /** Reads this ignore file from now on: the findings shown are set apart again at once, without a new scan. */
+    private void setIgnoreChoice(Path file) {
+        ignoreChoice = file;
+        updateIgnoreField();
+        if (result == null) return;
+        var warnings = new ArrayList<Phrase>();
+        try {
+            ignores = Ignores.load(result.root(), file, warnings::add);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, Gui.plain(e.getMessage()), I18n.text("ignore.failed.title"), JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        refreshFindings();
+        updateStatusTip(warnings);
+        say(() -> I18n.text("ignore.applied", split.ignored().size()));
+    }
+
+    private void updateIgnoreField() {
+        boolean own = ignoreChoice == null, none = Ignores.DISABLED.equals(ignoreChoice);
+        ignoreField.setText(own ? I18n.text("toolbar.ignoreFile.own", IgnoreFile.NAME)
+                : none ? I18n.text("toolbar.ignoreFile.disabled") : ignoreChoice.toString());
+        ignoreField.setForeground(own || none ? Color.GRAY : UIManager.getColor("TextField.foreground"));
+        ignoreField.setCaretPosition(0);
+        ownIgnoreButton.setEnabled(!own);
+    }
+
+    /** Asks how to set this finding aside, writes the entry, sets the findings apart again; the next row is selected. */
+    private void ignore(Finding f) {
+        if (ignores.file() == null) {
+            JOptionPane.showMessageDialog(this, I18n.text("ignore.disabled"), I18n.text("ignore.dialog.title"), JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        var rule = IgnoreDialog.ask(this, f, ignores.file().toString(),
+                r -> (int) split.active().stream().filter(r::matches).count());
+        if (rule.isEmpty()) return;
+        int row = findingsTable.getSelectedRow();
+        try {
+            IgnoreFile.append(ignores.file(), rule.get());
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, Gui.plain(e.getMessage()), I18n.text("ignore.failed.title"), JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        int before = split.ignored().size();
+        rereadIgnores();
+        int rows = findingsTable.getRowCount();
+        if (rows > 0) {
+            int next = Math.min(Math.max(row, 0), rows - 1);
+            findingsTable.setRowSelectionInterval(next, next);
+            findingsTable.scrollRectToVisible(findingsTable.getCellRect(next, 0, true));
+        }
+        int added = split.ignored().size() - before;
+        say(() -> I18n.text("ignore.done", added, ignores.shown()));
+    }
+
+    /** Takes the entry setting this finding aside out of the file, after asking when it sets others aside too. */
+    private void stopIgnoring(IgnoredFinding i) {
+        long others = split.ignored().stream().filter(x -> x.rule().equals(i.rule())).count() - 1;
+        if (others > 0 && JOptionPane.showConfirmDialog(this, Gui.plain(I18n.text("ignore.stop.others", others, i.rule().line())),
+                I18n.text("ignore.stop.title"), JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE) != JOptionPane.OK_OPTION)
+            return;
+        boolean removed;
+        try {
+            removed = IgnoreFile.remove(ignores.file(), i.rule());
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, Gui.plain(e.getMessage()), I18n.text("ignore.failed.title"), JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (!removed)
+            JOptionPane.showMessageDialog(this, Gui.plain(I18n.text("ignore.stop.notFound", ignores.shown())), I18n.text("ignore.stop.title"),
+                    JOptionPane.WARNING_MESSAGE);
+        rereadIgnores();
+        if (removed) say(() -> I18n.text("ignore.stopped", others + 1));
+    }
+
+    /** The ignore file read again, once the window wrote it (or someone edited it), and the findings set apart again. */
+    private void rereadIgnores() {
+        var warnings = new ArrayList<Phrase>();
+        try {
+            ignores = ignores.reload(warnings::add);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, Gui.plain(e.getMessage()), I18n.text("ignore.failed.title"), JOptionPane.ERROR_MESSAGE);
+        }
+        refreshFindings();
+        updateStatusTip(warnings);
     }
 
     // ----------------------------------------------------------------------------- export, misc
@@ -977,7 +1207,7 @@ final class MainWindow extends JFrame {
                 .mapToObj(i -> findingsModel.row(findingsTable.convertRowIndexToModel(i))).toList();
         boolean filtered = visible.size() != findingsModel.getRowCount();
         try {
-            var written = Reports.writeAll(result, Ignores.Split.none(visible), chooser.getSelectedFile().toPath(),
+            var written = Reports.writeAll(result, split.withActive(visible), chooser.getSelectedFile().toPath(),
                     filtered ? Phrase.of("export.filter", visible.size(), findingsModel.getRowCount()) : null,
                     environment, preferV4, I18n.language());
             // the folder is shown, to copy: the program starts no other one, a file manager no more than a browser

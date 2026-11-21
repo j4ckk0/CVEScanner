@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import org.jtools.cvescanner.cvss.Cvss;
 import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.i18n.I18n;
+import org.jtools.cvescanner.ignore.IgnoreRule;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
 import org.jtools.cvescanner.model.Severity;
@@ -48,12 +49,28 @@ final class FindingDetails {
     }
 
     static String page(Finding f, Environment environment) {
+        return page(f, environment, null, "");
+    }
+
+    /**
+     * The page of a finding the ignore file sets aside: why, until when, which entry of which file, before the rest.
+     *
+     * @param rule the entry setting it aside; null for a finding reported
+     */
+    static String page(Finding f, Environment environment, IgnoreRule rule, String file) {
         var sb = new StringBuilder("<html><body style='font-family:sans-serif;padding:12px 18px'>");
         sb.append("<div style='font-size:15pt'><b>").append(Gui.html(f.id())).append("</b> &nbsp;<font color='")
                 .append(Gui.hex(SeverityColors.of(f.severity()))).append("'><b>").append(f.severity().label());
         if (f.envScore() != null) sb.append(" · ").append(I18n.text("details.headline.environmental", Gui.score(f.envScore())));
         else if (f.cvss() != null) sb.append(" · ").append(I18n.text("details.headline.cvss", Gui.score(f.cvss())));
-        sb.append("</b></font></div><p><b>").append(Gui.html(f.summary())).append("</b></p><table cellpadding='4'>");
+        sb.append("</b></font></div>");
+        if (rule != null) {
+            sb.append("<p><font color='gray'><b>").append(I18n.text("details.ignored")).append("</b> — ")
+                    .append(rule.reason().isEmpty() ? "" : Gui.html(rule.reason()) + " · ")
+                    .append(rule.until() == null ? I18n.text("details.ignored.forEver") : I18n.text("details.ignored.until", rule.until().toString()))
+                    .append(" · ").append(I18n.text("details.ignored.entry", rule.line(), Gui.html(file))).append("</font></p>");
+        }
+        sb.append("<p><b>").append(Gui.html(f.summary())).append("</b></p><table cellpadding='4'>");
         row(sb, "details.package", "<b>" + Gui.html(f.pkg()) + "</b> (" + Gui.html(f.ecosystem()) + ")");
         row(sb, "details.version", Gui.html(f.version()) + (f.approximate()
                 ? " <font color='gray'>" + I18n.text("details.version.approximate") + "</font>" : ""));
