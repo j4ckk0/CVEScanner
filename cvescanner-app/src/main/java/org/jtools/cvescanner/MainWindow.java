@@ -78,11 +78,13 @@ import javax.swing.JProgressBar;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.RowFilter;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
@@ -95,6 +97,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import org.jtools.cvescanner.cli.Options;
 import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.engine.Engine;
+import org.jtools.cvescanner.engine.ScanOptions;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
 import org.jtools.cvescanner.i18n.Phrase;
@@ -280,6 +283,9 @@ final class MainWindow extends JFrame {
         file.add(exit);
         JMenu view = labels.menu(new JMenu(), "menu.view");
         view.add(lookMenu());
+        JMenuItem age = labels.menu(new JMenuItem(), "menu.view.dbMaxAge");
+        age.addActionListener(_ -> chooseDbMaxAge());
+        view.add(age);
         JMenuBar bar = new JMenuBar();
         bar.add(file);
         bar.add(view);
@@ -290,6 +296,26 @@ final class MainWindow extends JFrame {
         bar.add(languageBox);
         bar.add(Box.createHorizontalStrut(4));
         return bar;
+    }
+
+    /** The days past which a database's newest record is said to be old, as the settings keep it; 30 when not set. */
+    private int dbMaxAge() {
+        try {
+            return Math.max(0, Integer.parseInt(settings.get(Settings.DB_MAX_AGE, String.valueOf(ScanOptions.DEFAULT_DB_MAX_AGE_DAYS))));
+        } catch (NumberFormatException _) {
+            return ScanOptions.DEFAULT_DB_MAX_AGE_DAYS;
+        }
+    }
+
+    /** View ▸ Database age: how old a database may be before a scan says so, kept for the next time. */
+    private void chooseDbMaxAge() {
+        var days = new JSpinner(new SpinnerNumberModel(dbMaxAge(), 0, 3650, 1));
+        var panel = new JPanel(new BorderLayout(0, 6));
+        panel.add(new JLabel(I18n.text("dbMaxAge.label")), BorderLayout.NORTH);
+        panel.add(days, BorderLayout.CENTER);
+        if (JOptionPane.showConfirmDialog(this, panel, I18n.text("dbMaxAge.title"), JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE) == JOptionPane.OK_OPTION)
+            settings.set(Settings.DB_MAX_AGE, days.getValue().toString());
     }
 
     /**
@@ -758,12 +784,11 @@ final class MainWindow extends JFrame {
         }
         setBusy(true);
         var databases = List.copyOf(dbFiles);
-        Path ignoreFile = ignoreActions.choice();
-        ScanMode mode = scanMode();
+        var options = new ScanOptions(ignoreActions.choice(), scanMode(), dbMaxAge(), LocalDate.now());
         new SwingWorker<ScanResult, Void>() {
             @Override
             protected ScanResult doInBackground() throws Exception {
-                return Engine.scan(dir, databases, ignoreFile, mode, new ScanListener() {
+                return Engine.scan(dir, databases, options, new ScanListener() {
                     public void status(String m) { SwingUtilities.invokeLater(() -> { if (busy) say(() -> m); }); }
                     public void progress(double f) { SwingUtilities.invokeLater(() -> { if (busy) updateProgress(f); }); }
                 });
@@ -819,6 +844,10 @@ final class MainWindow extends JFrame {
             if (!r.snapshots().isEmpty()) scanned += "  ·  " + I18n.text("scan.done.databases", String.join(", ", r.snapshots().keySet()));
             int warnings = r.warnings().size() + split.warnings().size();
             if (warnings > 0) scanned += "  ·  " + I18n.text("scan.done.warnings", warnings);
+            // an old database said where it is seen: its findings lack the vulnerabilities published since
+            var oldest = r.warnings().stream().filter(w -> w.key().equals("warning.dbOld"))
+                    .mapToLong(w -> ((Number) w.arguments().get(2)).longValue()).max();
+            if (oldest.isPresent()) scanned += "  ·  " + I18n.text("scan.done.dbOld", oldest.getAsLong());
             return scanned;
         });
         updateStatusTip(r.warnings());

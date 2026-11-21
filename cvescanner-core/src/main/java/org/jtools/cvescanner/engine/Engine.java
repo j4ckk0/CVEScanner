@@ -23,6 +23,7 @@ package org.jtools.cvescanner.engine;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -52,7 +53,7 @@ public final class Engine {
 
     /** A scan reading the folder's own ignore file, if it has one. */
     public static ScanResult scan(Path dir, List<Path> dbFiles, ScanListener listener) throws IOException {
-        return scan(dir, dbFiles, null, listener);
+        return scan(dir, dbFiles, (Path) null, listener);
     }
 
     /**
@@ -63,10 +64,13 @@ public final class Engine {
         return scan(dir, dbFiles, ignoreFile, ScanMode.SOURCES, listener);
     }
 
-    /**
-     * @param mode the projects' manifests (SOURCES), or what an installed product ships (INSTALLED)
-     */
     public static ScanResult scan(Path dir, List<Path> dbFiles, Path ignoreFile, ScanMode mode, ScanListener listener) throws IOException {
+        return scan(dir, dbFiles, ScanOptions.of(ignoreFile, mode), listener);
+    }
+
+    public static ScanResult scan(Path dir, List<Path> dbFiles, ScanOptions options, ScanListener listener) throws IOException {
+        Path ignoreFile = options.ignoreFile();
+        ScanMode mode = options.mode();
         Path root = dir.toAbsolutePath().normalize();
         var warnings = new ArrayList<Phrase>();
         ScanListener l = new ScanListener() {
@@ -99,6 +103,11 @@ public final class Engine {
                 throw new IOException(I18n.text("error.noDatabase"));
             index = VulnDb.load(dbFiles, wanted, l);
         }
+        index.newest.forEach((file, newest) -> {
+            long days = ChronoUnit.DAYS.between(newest, options.today());
+            if (options.dbMaxAgeDays() > 0 && days > options.dbMaxAgeDays())
+                l.warn(Phrase.of("warning.dbOld", file, newest.toString(), days, options.dbMaxAgeDays()));
+        });
 
         l.status(I18n.text("status.matching", col.deps.size()));
         l.progress(-1);

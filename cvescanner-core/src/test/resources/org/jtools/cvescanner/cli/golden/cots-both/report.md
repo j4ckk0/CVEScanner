@@ -1,8 +1,8 @@
 # Dependency Vulnerability Report
 
-- **Generated:** 2026-11-21 08:25 UTC
+- **Generated:** 2026-11-21 20:07 UTC
 - **Scanned directory:** `/home/j4ckk0/Developpement/github/CVEScanner/samples/cots-projects`
-- **Database:** `nvdcve-2.0-2024.json.zip` (NVD CVE feed (JSON 2.0), 11 records (10 relevant), file dated 2026-11-21 08:14 UTC)
+- **Database:** `nvdcve-2.0-2024.json.zip` (NVD CVE feed (JSON 2.0), 11 records (10 relevant), newest record 2026-11-21, file dated 2026-11-21 08:14 UTC)
 - **Database:** `cots-cvelist.zip` (CVE List (CVE JSON 5), 3 records (3 relevant), file dated 2026-11-21 08:09 UTC)
 - **Database:** `advisory-database-main.zip` (OSV / GitHub advisories, 12 records (3 relevant), file dated 2026-11-21 05:55 UTC)
 - **Files scanned:** 0 pom.xml, 0 Gradle build files, 0 version catalogs, 0 package.json, 1 component inventories, 2 SBOMs, 4 C/C++ build manifests, 7 binaries examined

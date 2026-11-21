@@ -34,6 +34,7 @@ import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.cvss.Reach;
 import org.jtools.cvescanner.cvss.Requirement;
 import org.jtools.cvescanner.cvss.Severity;
+import org.jtools.cvescanner.engine.ScanOptions;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
 import org.jtools.cvescanner.ignore.IgnoreRule;
@@ -79,6 +80,10 @@ public final class Options {
     /** The entry's --package, --version, --reason, --until; null when not given. */
     public String ignorePackage, ignoreVersion, ignoreReason;
     public LocalDate ignoreUntil;
+    /** --db-max-age: a database whose newest record is older than this many days is said to be; 0 for never. */
+    public int dbMaxAgeDays = ScanOptions.DEFAULT_DB_MAX_AGE_DAYS;
+    /** The day the scan counts from: today, a fixed one in the tests. */
+    LocalDate today = LocalDate.now();
 
     public static Options parse(String[] args) {
         var o = new Options();
@@ -129,6 +134,14 @@ public final class Options {
                 case "--ignore-add" -> o.ignoreAdd = value(args, ++i, a);
                 case "--ignore-remove" -> o.ignoreRemove = value(args, ++i, a);
                 case "--ignore-list" -> o.ignoreList = true;
+                case "--db-max-age" -> {
+                    try {
+                        o.dbMaxAgeDays = Integer.parseInt(value(args, ++i, a).strip());
+                    } catch (NumberFormatException _) {
+                        o.dbMaxAgeDays = -1;
+                    }
+                    if (o.dbMaxAgeDays < 0) throw new IllegalArgumentException(I18n.text("option.dbMaxAge"));
+                }
                 case "--package" -> o.ignorePackage = value(args, ++i, a);
                 case "--version" -> o.ignoreVersion = value(args, ++i, a);
                 case "--reason" -> o.ignoreReason = value(args, ++i, a);
@@ -191,6 +204,11 @@ public final class Options {
     /** Whether the ignore file is to be edited or listed (--ignore-add, --ignore-remove, --ignore-list) rather than a scan run. */
     public boolean ignoreEdit() {
         return ignoreAdd != null || ignoreRemove != null || ignoreList;
+    }
+
+    /** How Engine.scan runs: the ignore file, the mode, the databases' age limit, today. */
+    public ScanOptions scanOptions() {
+        return new ScanOptions(ignoreChoice(), mode(), dbMaxAgeDays, today);
     }
 
     public ScanMode mode() {

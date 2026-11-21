@@ -28,6 +28,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,6 +47,9 @@ import org.junit.jupiter.params.provider.MethodSource;
  * file dates. The JSON is compared as values, the order of an object's keys aside.
  */
 class GoldenTest {
+
+    /** The day the golden reports were made: the databases' ages are counted from it. */
+    private static final LocalDate TODAY = LocalDate.of(2026, 11, 21);
 
     private static final Path SAMPLES = Path.of("..", "samples").toAbsolutePath().normalize();
 
@@ -73,7 +77,9 @@ class GoldenTest {
             }
         }
 
-        int exit = Cli.run(Options.parse(args.toArray(String[]::new)));
+        var options = Options.parse(args.toArray(String[]::new));
+        options.today = TODAY;
+        int exit = Cli.run(options);
 
         assertEquals(Integer.parseInt(Files.readString(golden.resolve("exit.txt")).trim()), exit, "exit code");
         assertEquals(read(golden, "findings.csv"), read(out, "findings.csv"), "findings.csv");

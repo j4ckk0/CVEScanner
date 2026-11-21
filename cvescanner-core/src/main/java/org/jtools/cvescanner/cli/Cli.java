@@ -24,7 +24,6 @@ package org.jtools.cvescanner.cli;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDate;
 import java.util.List;
 import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.engine.Engine;
@@ -47,7 +46,7 @@ public final class Cli {
      */
     private static Ignores.Split split(Options o, ScanResult r, ScanListener l) {
         var scored = Scoring.applyAll(r.findings(), o.environment, o.preferV4);
-        var split = r.ignores().split(scored, LocalDate.now());
+        var split = r.ignores().split(scored, o.today);
         split.warnings().forEach(l::warn);
         return o.filter().active() ? split.filter(o.filter()::test) : split;
     }
@@ -67,13 +66,13 @@ public final class Cli {
         };
         try {
             if (!Files.isDirectory(o.scanDir)) throw new IOException(I18n.text("error.scanDirMissing", o.scanDir));
-            var r = Engine.scan(o.scanDir, o.dbFiles, o.ignoreChoice(), o.mode(), l);
+            var r = Engine.scan(o.scanDir, o.dbFiles, o.scanOptions(), l);
             var split = split(o, r, l);
             CliFixes.Result fixes = null;
             if (o.applyFixes) {
                 fixes = CliFixes.run(o, r.root(), split.active(), System.out);
                 if (fixes.applied() > 0) {   // the reports say the projects as they are now
-                    r = Engine.scan(o.scanDir, o.dbFiles, o.ignoreChoice(), o.mode(), l);
+                    r = Engine.scan(o.scanDir, o.dbFiles, o.scanOptions(), l);
                     split = split(o, r, l);
                 }
             }

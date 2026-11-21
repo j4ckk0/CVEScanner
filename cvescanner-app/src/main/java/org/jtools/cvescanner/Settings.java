@@ -52,6 +52,8 @@ final class Settings {
     static final String PREFER_CVSS4 = "cvss.prefer4";
     /** What a scan reads: SOURCES (the projects' manifests) or INSTALLED (what an installed product ships). */
     static final String SCAN_MODE = "scanMode";
+    /** The days past which a database's newest record is said to be old: a number, 0 for never (View ▸ Database age). */
+    static final String DB_MAX_AGE = "dbMaxAge";
     private static final String FILE = "cvescanner.properties";
 
     private final Path file;

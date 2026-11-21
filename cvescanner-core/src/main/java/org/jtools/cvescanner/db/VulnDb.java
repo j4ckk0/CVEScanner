@@ -28,6 +28,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -60,6 +62,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public final class VulnDb {
     private static final Pattern OSV_NAME = Pattern.compile("\"name\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
+    /** A record's last change, in its first lines: OSV's "modified", the CVE List's "dateUpdated"; an NVD feed's "timestamp". */
+    private static final Pattern RECORD_DATE = Pattern.compile("\"(?:modified|dateUpdated)\"\\s*:\\s*\"(\\d{4}-\\d{2}-\\d{2})");
+    private static final Pattern FEED_DATE = Pattern.compile("\"timestamp\"\\s*:\\s*\"(\\d{4}-\\d{2}-\\d{2})");
     private static final Pattern CVE_NAME = Pattern.compile("\"(?:product|packageName)\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
 
     /** What the scan looks for: packages by ecosystem, the CVE List's keys, and the products of the COTS components. */
@@ -86,6 +91,8 @@ public final class VulnDb {
         final Map<String, List<CveList.Rule>> cve = new HashMap<>();
         final Map<String, List<NvdFeed.Rule>> nvd = new HashMap<>();
         public final Map<String, Phrase> sources = new LinkedHashMap<>();
+        /** Each database file's newest record, when its records are dated: how old the data is, not the file. */
+        public final Map<String, LocalDate> newest = new LinkedHashMap<>();
 
         /** The NVD rules of a COTS component's product. */
         public List<NvdFeed.Rule> nvdFor(Dependency d) {
@@ -106,7 +113,15 @@ public final class VulnDb {
         }
     }
 
-    private static final class Counts { int osv, cve, nvd, osvUsed, cveUsed, nvdUsed, entries; }
+    private static final class Counts {
+        int osv, cve, nvd, osvUsed, cveUsed, nvdUsed, entries;
+        String newest;   // yyyy-MM-dd, compared as text
+
+        void dated(Pattern date, String text) {
+            var m = date.matcher(text.length() > 4096 ? text.substring(0, 4096) : text);
+            while (m.find()) if (newest == null || m.group(1).compareTo(newest) > 0) newest = m.group(1);
+        }
+    }
 
     private interface EntryHandler { void accept(InputStream entry) throws IOException; }
 
@@ -158,6 +173,7 @@ public final class VulnDb {
                     String start = new String(head.readNBytes(2048), UTF_8);
                     head.reset();
                     if (start.contains("\"NVD_CVE\"")) {
+                        counts.dated(FEED_DATE, start);
                         var used = new HashSet<String>();
                         counts.nvd += NvdFeed.read(new InputStreamReader(head, UTF_8), wanted.cotsProducts(),
                                 rule -> index.nvd.computeIfAbsent(rule.product(), _ -> new ArrayList<>()).add(rule), used, onEntry);
@@ -177,13 +193,26 @@ public final class VulnDb {
             total += records;
             if (records == 0)
                 l.warn(Phrase.of("warning.noRecords", file.getFileName().toString()));
-            index.sources.put(file.getFileName().toString(), Phrase.of("database.description",
-                    kind, records, counts.osvUsed + counts.cveUsed + counts.nvdUsed,
-                    ScanResult.TIMESTAMP_UTC.format(Files.getLastModifiedTime(file).toInstant())));
+            String name = file.getFileName().toString();
+            String fileDate = ScanResult.TIMESTAMP_UTC.format(Files.getLastModifiedTime(file).toInstant());
+            int used = counts.osvUsed + counts.cveUsed + counts.nvdUsed;
+            LocalDate newest = date(counts.newest);
+            if (newest != null) index.newest.put(name, newest);
+            index.sources.put(name, newest == null ? Phrase.of("database.description", kind, records, used, fileDate)
+                    : Phrase.of("database.descriptionNewest", kind, records, used, fileDate, newest.toString()));
         }
         if (total == 0)
             throw new IOException(I18n.text("error.noRecordsAtAll"));
         return index;
+    }
+
+    private static LocalDate date(String text) {
+        if (text == null) return null;
+        try {
+            return LocalDate.parse(text);
+        } catch (DateTimeParseException _) {
+            return null;   // a month 13: no date then
+        }
     }
 
     private static void readZip(InputStream in, EntryHandler handler, int depth) throws IOException {
@@ -214,6 +243,7 @@ public final class VulnDb {
         String text = new String(data, UTF_8);
         if (text.contains("\"cveMetadata\"")) {                               // CVE List record
             counts.cve++;
+            counts.dated(RECORD_DATE, text);
             if (!mentions(CVE_NAME, text, wanted.cveKeys(), true)) return;
             Map<String, Object> rec;
             try { rec = Json.obj(Json.parse(text)); } catch (IllegalArgumentException _) { return; }
@@ -227,6 +257,7 @@ public final class VulnDb {
             if (used) counts.cveUsed++;
         } else if (text.contains("\"affected\"") && text.contains("\"ecosystem\"")) {   // OSV / GitHub advisory
             counts.osv++;
+            counts.dated(RECORD_DATE, text);
             if (!mentions(OSV_NAME, text, wanted.allNames(), false)) return;
             Map<String, Object> vuln;
             try { vuln = Json.obj(Json.parse(text)); } catch (IllegalArgumentException _) { return; }
