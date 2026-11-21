@@ -3,6 +3,14 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
+## 1.2 — not released yet
+
+- **An ignore file for reviewed findings**: `cvescanner-ignore.csv` at the root of the folder scanned (or `--ignore
+  FILE`; `--no-ignore` reads none) sets findings aside by CVE or advisory, package and version, with a reason and, if
+  you want, a last day. They leave the counters, `findings.csv` and `--fail-on`, and are listed apart in an **Ignored**
+  tab and in `report.md` and `findings.json`, with the entries past their date and those naming nothing. In the window,
+  right-click a finding, **Ignore this finding…**; **Stop ignoring** takes it back.
+
 ## 1.1 — 2026-11-21
 
 - **Components off-the-shelf**: GDAL, FFmpeg, OpenSSL, zlib, curl, SQLite… checked against NVD's CVE feeds (and the

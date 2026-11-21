@@ -18,6 +18,9 @@ OSV.dev exports), scored with CVSS 3.x/4.0 for the environment the software runs
 - **Settings** in `cvescanner.properties` beside the program, never `java.util.prefs`.
 - **GitHub releases only** (tag `vX.Y`, PUBLISHING.md); no Maven Central.
 - Commits as `j4ckk0 <j4ckk057@gmail.com>`.
+- **Ignore file** `cvescanner-ignore.csv` (id,package,version,until,reason) at the root of the folder scanned, or
+  `--ignore`; the window may write it there (Ignore… / Stop ignoring), the only file it writes into a scanned project.
+  Ignored findings are out of the counts, `findings.csv` and `--fail-on`, listed apart in `report.md`/`findings.json`.
 
 ## Commands
 

@@ -27,6 +27,7 @@ to install, a Java runtime is inside: unpack it anywhere, drop a database zip in
 |---|---|
 | You scan projects | [**The databases**](#the-databases), then [**The window**](#the-window) or [**The command line**](#the-command-line) |
 | You ship native components | [**Components off-the-shelf**](#components-off-the-shelf): GDAL, FFmpeg, OpenSSL… from an inventory, an SBOM, a build manifest, the binaries |
+| You review the findings | [**Ignoring findings**](#ignoring-findings): those reviewed and accepted set aside in `cvescanner-ignore.csv`, why and until when |
 | You read the results | [**Understanding the results**](#understanding-the-results) and [**CVSS scores and environments**](#cvss-scores-and-environments) |
 | You want it on your machine | [**Build and run**](#build-and-run) and [**Packaging**](#packaging): self-contained archives for Windows and Linux |
 | You read or change the code | [**Layout**](#layout) |
@@ -35,8 +36,9 @@ to install, a Java runtime is inside: unpack it anywhere, drop a database zip in
 ## No network
 
 The program reads the folder it scans and the database zips it is given, and writes its reports and its settings
-beside it; that is all. No download, no update check, no browser, no file manager, no other program started: a link
-is copied to the clipboard, to open elsewhere, and after an export the folder's path is offered to copy.
+beside it — and the ignore file, when you ask the window to ignore a finding; that is all. No download, no update
+check, no browser, no file manager, no other program started: a link is copied to the clipboard, to open elsewhere,
+and after an export the folder's path is offered to copy.
 
 **No name lookup either, not even the JDK's own**: `NoNetworkResolver` takes the place of Java's name service and
 answers every lookup as an unknown host. **A scanned project or a database cannot make it reach the network**: the
@@ -101,12 +103,13 @@ declaring real packages at vulnerable versions (Log4Shell, Text4Shell, Spring4Sh
 The table sorts by any column and filters as you type: **Search** (every word must match, across the columns and the
 aliases; Ctrl+F, Esc to clear), the **severity** (the coloured counters do the same), the **ecosystem**, *Only with
 CVE ID*, *Hide approximate (≈) versions*, *Hide CVE name matches ⚠*. Its tabs: **Findings**, one row per
-vulnerability and dependency, its details below (the fix, the scores, the match, the links); **Packages to upgrade**,
-one row per package version with the version that fixes all its findings; **Unchecked dependencies**, those whose
-version could not be known (an external BOM, a dynamic version like `1.+`), and why. A double-click or a right-click
-copies the advisory's link, the CVEs, the package's coordinates. **Export…** writes the three reports for the rows
-shown. *View ▸ Look* offers FlatLaf's looks, light and dark; the language is on the right of the menus. The choices are
-kept in `cvescanner.properties`, beside the program.
+vulnerability and dependency, its details below (the fix, the scores, the match, the links); **Packages to
+upgrade**, one row per package version with the version that fixes all its findings; **Unchecked dependencies**,
+those whose version could not be known (an external BOM, a dynamic version like `1.+`), and why; **Ignored**, the
+findings the ignore file sets aside (see [Ignoring findings](#ignoring-findings)). A double-click or a right-click
+copies the advisory's link, the CVEs, the package's coordinates; a right-click also ignores a finding. **Export…**
+writes the three reports for the rows shown. *View ▸ Look* offers FlatLaf's looks, light and dark; the language is
+on the right of the menus. The choices are kept in `cvescanner.properties`, beside the program.
 
 ## The command line
 
@@ -126,8 +129,41 @@ cvescanner-cli.bat --no-gui -d C:\src\my-app --fail-on HIGH               (Windo
 | `--cvss 4\|3` | the CVSS version preferred when an advisory has both (default 4) |
 | `--lang fr\|en` | the messages' and `report.md`'s language (default: the window's, else French) |
 | `--fail-on LEVEL` | exit code 2 when a finding is at or above `LOW`, `MEDIUM`, `HIGH` or `CRITICAL` |
+| `--ignore FILE`, `--no-ignore` | the ignore file to read (default: the folder's `cvescanner-ignore.csv`, if any); none |
 
 Exit codes: `0`, `1` on an error, `2` past `--fail-on`. Without a display the program goes to the command line by itself.
+
+## Ignoring findings
+
+A finding reviewed — the vulnerable code is not reachable, a setting turns it off, the risk is accepted until the next
+release — can be set aside: it leaves the table, the counters, `findings.csv` and `--fail-on`, and is listed apart,
+with its reason, in the **Ignored** tab and in a section of `report.md` and `findings.json`. The entries are in
+`cvescanner-ignore.csv` at the root of the folder scanned, to keep and version with the project like a `.gitignore`:
+
+```
+# id,package,version,until,reason
+CVE-2021-44228,org.apache.logging.log4j:log4j-core,2.14.1,2027-06-30,"Not exposed: JNDI lookups disabled, see SEC-12"
+GHSA-jfh8-c2jp-5v3q,,,,Test scope only
+CVE-2023-1234,osgeo:gdal,,,Driver not built
+```
+
+- **id**: an advisory (`GHSA-…`), a CVE or an alias, whatever the case. A CVE sets aside every advisory naming it,
+  whichever database the scan reads.
+- **package** (empty: any): the package as CVEScanner shows it — `group:artifact`, an npm name, a component's
+  `vendor:product`.
+- **version** (empty: any): that version only; an upgrade to another vulnerable version shows the finding again.
+- **until** (empty: for ever): the last day the entry applies, `yyyy-MM-dd`; past it the finding is reported again
+  and the scan says so.
+- **reason**: why, for whoever reads the file next. A reason holding a comma is quoted, as a spreadsheet writes it.
+
+In the window, right-click a finding, **Ignore this finding…**: for this version, every version of the package or every
+package; a reason; a last day if any. The entry is written to the file (created the first time) and the table changes
+at once, without scanning again; in the **Ignored** tab, **Stop ignoring** takes the entry's line out, the file's other
+lines and comments kept as written. *Ignore file* above the table names another file, for every folder scanned.
+
+On the command line `--ignore FILE` names another file, `--no-ignore` reads none (every finding reported, for an audit).
+The scan warns of a line it cannot read, of an entry past its date, and of one that names none of the findings — an
+entry to clean up.
 
 ## Understanding the results
 
