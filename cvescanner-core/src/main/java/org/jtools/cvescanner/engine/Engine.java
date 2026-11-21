@@ -34,8 +34,12 @@ import org.jtools.cvescanner.db.VulnDb;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.ignore.Ignores;
+import org.jtools.cvescanner.installed.InstalledNpmReader;
+import org.jtools.cvescanner.installed.JarReader;
+import org.jtools.cvescanner.installed.PythonReader;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.ScanListener;
+import org.jtools.cvescanner.model.ScanMode;
 import org.jtools.cvescanner.model.ScanResult;
 import org.jtools.cvescanner.project.DependencyCollector;
 import org.jtools.cvescanner.project.GradleReader;
@@ -56,6 +60,13 @@ public final class Engine {
      * @param ignoreFile the ignore file: null for the folder's own cvescanner-ignore.csv, if any; Ignores.DISABLED for none
      */
     public static ScanResult scan(Path dir, List<Path> dbFiles, Path ignoreFile, ScanListener listener) throws IOException {
+        return scan(dir, dbFiles, ignoreFile, ScanMode.SOURCES, listener);
+    }
+
+    /**
+     * @param mode the projects' manifests (SOURCES), or what an installed product ships (INSTALLED)
+     */
+    public static ScanResult scan(Path dir, List<Path> dbFiles, Path ignoreFile, ScanMode mode, ScanListener listener) throws IOException {
         Path root = dir.toAbsolutePath().normalize();
         var warnings = new ArrayList<Phrase>();
         ScanListener l = new ScanListener() {
@@ -67,7 +78,7 @@ public final class Engine {
         var ignores = Ignores.load(root, ignoreFile, l::warn);   // first: a file named that is not there stops the scan now
         l.status(I18n.text("status.lookingFor", root));
         l.progress(-1);
-        var files = ProjectFiles.find(root);
+        var files = ProjectFiles.find(root, mode);
         var col = new DependencyCollector(root);
         MavenReader.scan(files.poms, col, l::warn);
         GradleReader.scan(files.gradle, files.gradleProps, col);
@@ -77,6 +88,9 @@ public final class Engine {
         SbomReader.scan(files.sboms, col, l::warn);
         ManifestReader.scan(files.pkgConfigs, files.vcpkgManifests, files.conanFiles, col, l::warn);
         BinaryReader.scan(files.binaries, col);
+        JarReader.scan(files.jars, col, l::warn);
+        InstalledNpmReader.scan(files.installedPackageJsons, col, l::warn);
+        PythonReader.scan(files.pythonMetadata, col, l::warn);
 
         var wanted = VulnDb.Wanted.of(col.deps);
         var index = new VulnDb.Index();
@@ -92,10 +106,16 @@ public final class Engine {
         for (var d : col.deps) findings.addAll(Matcher.findings(d, index));
         findings.sort(Finding.ORDER);
         var counts = new LinkedHashMap<String, Integer>();
-        counts.put("files.pom", files.poms.size());
-        counts.put("files.gradle", files.gradle.size());
-        counts.put("files.catalogs", files.catalogs.size());
-        counts.put("files.packageJson", files.packageJsons.size());
+        if (mode == ScanMode.SOURCES) {
+            counts.put("files.pom", files.poms.size());
+            counts.put("files.gradle", files.gradle.size());
+            counts.put("files.catalogs", files.catalogs.size());
+            counts.put("files.packageJson", files.packageJsons.size());
+        }
+        // what an installed product ships, said only when there is some
+        if (!files.jars.isEmpty()) counts.put("files.jars", files.jars.size());
+        if (!files.installedPackageJsons.isEmpty()) counts.put("files.installedPackages", files.installedPackageJsons.size());
+        if (!files.pythonMetadata.isEmpty()) counts.put("files.pythonPackages", files.pythonMetadata.size());
         // the files of components off-the-shelf, said only when there are some
         if (!files.cotsInventories.isEmpty()) counts.put("files.cotsInventories", files.cotsInventories.size());
         if (!files.sboms.isEmpty()) counts.put("files.sboms", files.sboms.size());
@@ -103,6 +123,6 @@ public final class Engine {
         if (manifests > 0) counts.put("files.manifests", manifests);
         if (!files.binaries.isEmpty()) counts.put("files.binaries", files.binaries.size());
         return new ScanResult(root, List.copyOf(findings), List.copyOf(col.deps), List.copyOf(col.unresolved),
-                index.sources, counts, List.copyOf(warnings), ignores);
+                index.sources, counts, List.copyOf(warnings), ignores, mode);
     }
 }

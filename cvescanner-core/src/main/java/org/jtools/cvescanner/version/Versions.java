@@ -91,6 +91,51 @@ public final class Versions {
 
     public static boolean isSemver(String v) { return SEMVER.matcher(v.strip()).matches(); }
 
+    private static final Pattern PEP440 = Pattern.compile(
+            "v?(?:(\\d+)!)?(\\d+(?:\\.\\d+)*)(?:[-_.]?(a|alpha|b|beta|c|rc|pre|preview)[-_.]?(\\d*))?"
+                    + "(?:-(\\d+)|[-_.]?(?:post|rev|r)[-_.]?(\\d*))?(?:[-_.]?dev[-_.]?(\\d*))?(?:\\+.*)?");
+
+    /**
+     * Two Python versions in PEP 440's order: the epoch, the release, then a pre-release (a, b, rc) before the
+     * release, a post-release after it, a development release before what it leads to. A version PEP 440 does not
+     * describe is compared as Maven's.
+     */
+    public static int comparePep440(String a, String b) {
+        long[] x = pep440(a), y = pep440(b);
+        if (x == null || y == null) return compareMaven(a, b);
+        for (int i = 0; i < Math.max(x.length, y.length); i++) {
+            int c = Long.compare(i < x.length ? x[i] : 0, i < y.length ? y[i] : 0);
+            if (c != 0) return c;
+        }
+        return 0;
+    }
+
+    /**
+     * A PEP 440 version as numbers to compare in order: its epoch, its release (32 numbers, zeros after), its
+     * pre-release phase and number, its post-release, its development release. Null for anything else. An optional
+     * part that is absent is null in the match, one present without a number is "".
+     */
+    private static long[] pep440(String version) {
+        var m = PEP440.matcher(version.strip().toLowerCase(Locale.ROOT));
+        if (!m.matches()) return null;
+        long absentAfter = Long.MAX_VALUE, absentBefore = Long.MIN_VALUE;
+        String phase = m.group(3), post = m.group(5) != null ? m.group(5) : m.group(6), dev = m.group(7);
+        long[] key = new long[1 + 32 + 4];
+        key[0] = m.group(1) == null ? 0 : num(m.group(1));
+        String[] release = m.group(2).split("\\.");
+        for (int i = 0; i < release.length && i < 32; i++) key[1 + i] = num(release[i]);
+        key[33] = phase == null ? (post == null && dev != null ? absentBefore : absentAfter)   // 1.0.dev1 before 1.0a1
+                : switch (phase) {
+                    case "a", "alpha" -> 0;
+                    case "b", "beta" -> 1;
+                    default -> 2;
+                };
+        key[34] = phase == null ? 0 : num(m.group(4));
+        key[35] = post == null ? absentBefore : num(post);
+        key[36] = dev == null ? absentAfter : num(dev);
+        return key;
+    }
+
     public static Integer compareSemver(String a, String b) {
         var ma = SEMVER.matcher(a.strip());
         var mb = SEMVER.matcher(b.strip());

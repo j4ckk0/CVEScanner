@@ -34,6 +34,7 @@ import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
 import org.jtools.cvescanner.ignore.Ignores;
+import org.jtools.cvescanner.model.ScanMode;
 
 public final class Options {
     /** The options and what they do, in the language in use. */
@@ -55,6 +56,8 @@ public final class Options {
     public Path ignoreFile;
     /** --no-ignore: every finding reported, the folder's ignore file left unread. */
     public boolean noIgnore;
+    /** --installed: an installed product, read from what it ships, rather than source projects. */
+    public boolean installed;
 
     public static Options parse(String[] args) {
         var o = new Options();
@@ -81,6 +84,7 @@ public final class Options {
                 }
                 case "--ignore" -> o.ignoreFile = Path.of(value(args, ++i, a));
                 case "--no-ignore" -> o.noIgnore = true;
+                case "--installed" -> o.installed = true;
                 case "--cve-only" -> o.cveOnly = true;
                 case "--no-gui" -> o.noGui = true;
                 case "--fail-on" -> o.failOn = Severity.parseThreshold(value(args, ++i, a));
@@ -119,6 +123,10 @@ public final class Options {
             }
         }
         return null;
+    }
+
+    public ScanMode mode() {
+        return installed ? ScanMode.INSTALLED : ScanMode.SOURCES;
     }
 
     /** The ignore file for Engine.scan: the one named, none (--no-ignore), or null for the folder's own. */

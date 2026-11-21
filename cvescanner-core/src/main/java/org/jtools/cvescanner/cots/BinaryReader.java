@@ -20,6 +20,9 @@ package org.jtools.cvescanner.cots;
  * #L%
  */
 
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
@@ -75,11 +78,49 @@ public final class BinaryReader {
                 }
             }
             if (id == null) continue;
+            if (version == null) {
+                version = versionString(file, id);   // the library's own words: exact, not approximate
+                if (version != null) approximate = false;
+            }
             Path folder = file.getParent();
             if (!seen.add(id + "|" + version + "|" + folder)) continue;
             if (version == null) col.miss(Ecosystem.COTS, id, "", file, Phrase.of("reason.noBinaryVersion"));
             else col.add(Ecosystem.COTS, id, version, file, "binary", approximate);
         }
+    }
+
+    private static final int MIN_STRING = 6, MAX_STRING = 200;
+    private static final long MAX_READ = 128L * 1024 * 1024;
+
+    /**
+     * The version a binary's printable strings give, by the pattern of its component (KnownProducts); null when it
+     * has none or the strings hold none. At most the first 128 MiB are read, a string at a time, as `strings` does.
+     */
+    static String versionString(Path file, String id) {
+        Pattern pattern = KnownProducts.versionString(id);
+        if (pattern == null) return null;
+        try (var in = new BufferedInputStream(Files.newInputStream(file), 1 << 16)) {
+            var run = new StringBuilder();
+            long read = 0;
+            for (int c; (c = in.read()) != -1 && read < MAX_READ; read++) {
+                if (c >= 0x20 && c < 0x7f && run.length() < MAX_STRING) {
+                    run.append((char) c);
+                    continue;
+                }
+                if (run.length() >= MIN_STRING) {
+                    Matcher m = pattern.matcher(run);
+                    if (m.find()) return m.group(1);
+                }
+                run.setLength(0);
+            }
+            if (run.length() >= MIN_STRING) {
+                Matcher m = pattern.matcher(run);
+                if (m.find()) return m.group(1);
+            }
+        } catch (IOException _) {
+            // no version, then
+        }
+        return null;
     }
 
     /** The component a binary's stem names, with or without its "lib"; null when none is known. */

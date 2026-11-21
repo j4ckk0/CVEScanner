@@ -26,12 +26,13 @@ import java.util.Locale;
 import org.jtools.cvescanner.version.Versions;
 
 /**
- * The kind of a dependency: a Maven or an npm package, or a component off-the-shelf (COTS: GDAL, FFmpeg…, named
- * vendor:product). Its name is the one OSV advisories give their ecosystem, and the one the reports write.
+ * The kind of a dependency: a Maven, an npm or a Python (PyPI) package, or a component off-the-shelf (COTS: GDAL,
+ * FFmpeg…, named vendor:product). Its name is the one OSV advisories give their ecosystem, and the one the reports write.
  */
 public enum Ecosystem {
     MAVEN("Maven"),
     NPM("npm"),
+    PYPI("PyPI"),
     COTS("COTS");
 
     private final String id;
@@ -56,8 +57,9 @@ public enum Ecosystem {
         return null;
     }
 
-    /** Two versions in this ecosystem's order: npm's semantic versions, Maven's order otherwise (COTS too). */
+    /** Two versions in this ecosystem's order: npm's semantic versions, Python's PEP 440, Maven's otherwise (COTS too). */
     public int compare(String a, String b) {
+        if (this == PYPI) return Versions.comparePep440(a, b);
         if (this == NPM) {
             Integer c = Versions.compareSemver(a, b);
             if (c != null) return Integer.signum(c);
@@ -74,9 +76,18 @@ public enum Ecosystem {
         return Versions.nearestFix(versionOrder(), version, fixes);
     }
 
-    /** A package at a version as this ecosystem writes it: group:artifact:1.0, name@1.0. */
+    /** A package at a version as this ecosystem writes it: group:artifact:1.0, name@1.0, name==1.0. */
     public String coordinate(String name, String version) {
-        return name + (this == NPM ? "@" : ":") + version;
+        return name + (this == NPM ? "@" : this == PYPI ? "==" : ":") + version;
+    }
+
+    /** A package's name as databases are matched by it: Python's normalized (PEP 503: Foo_Bar, foo.bar → foo-bar). */
+    public String matchName(String name) {
+        return this == PYPI ? pep503(name) : name;
+    }
+
+    public static String pep503(String name) {
+        return name.toLowerCase(Locale.ROOT).replaceAll("[-_.]+", "-");
     }
 
     /** A COTS component's product, in lower case: "gdal" for "osgeo:gdal" and for "gdal". */

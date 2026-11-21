@@ -38,6 +38,7 @@ import org.jtools.cvescanner.ignore.Ignores;
 import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
+import org.jtools.cvescanner.model.ScanMode;
 import org.jtools.cvescanner.model.ScanResult;
 import org.jtools.cvescanner.model.Unresolved;
 import org.junit.jupiter.api.Test;
@@ -63,7 +64,7 @@ class HostileReportTest {
     private static ScanResult result(Finding f) {
         return new ScanResult(Path.of("/scan"), List.of(f), List.of(),
                 List.of(new Unresolved(Ecosystem.NPM, "left`" + TAGS, "git+" + TAGS, "package.json", Phrase.of("reason.unpinned", TAGS))),
-                Map.of("db" + TAGS + ".zip", Phrase.of("database.kind.osv")), Map.of(), List.of(), Ignores.NONE);
+                Map.of("db" + TAGS + ".zip", Phrase.of("database.kind.osv")), Map.of(), List.of(), Ignores.NONE, ScanMode.SOURCES);
     }
 
     @Test

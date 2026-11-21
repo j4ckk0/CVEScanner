@@ -98,6 +98,8 @@ public final class FixPlanner {
     FixPlan plan(FixRequest r) {
         if (r.to() == null || r.to().isEmpty()) return FixPlan.not(r, Phrase.of("fix.reason.noFix"));
         if (r.ecosystem() == Ecosystem.COTS) return FixPlan.not(r, Phrase.of("fix.reason.cots"));
+        if (r.declarations().stream().anyMatch(d -> d.scope().equals("installed"))) return FixPlan.not(r, Phrase.of("fix.reason.installed"));
+        if (r.ecosystem() == Ecosystem.PYPI) return FixPlan.not(r, Phrase.of("fix.reason.pypi"));
         if (r.declarations().isEmpty()) return FixPlan.not(r, Phrase.of("fix.reason.notDeclared"));
         if (!SAFE_VERSION.matcher(r.to()).matches() || !(r.ecosystem() == Ecosystem.NPM ? SAFE_NPM_NAME : SAFE_MAVEN_NAME).matcher(r.pkg()).matches())
             return FixPlan.not(r, Phrase.of("fix.reason.unsafe"));

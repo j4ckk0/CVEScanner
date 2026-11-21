@@ -42,11 +42,19 @@ public final class DependencyCollector {
     public String rel(Path p) { return root.relativize(p.toAbsolutePath().normalize()).toString().replace('\\', '/'); }
 
     public void add(Ecosystem eco, String name, String version, Path file, String scope, boolean approximate) {
-        String f = rel(file);
+        add(eco, name, version, rel(file), scope, approximate);
+    }
+
+    /** A dependency found in a file named as shown: a jar inside another, "app.war!/WEB-INF/lib/x.jar". */
+    public void add(Ecosystem eco, String name, String version, String f, String scope, boolean approximate) {
         if (seen.add(List.of(eco, name, version, f, scope))) deps.add(new Dependency(eco, name, version, f, scope, approximate));
     }
 
     public void miss(Ecosystem eco, String name, String declared, Path file, Phrase reason) {
-        unresolved.add(new Unresolved(eco, name, declared == null ? "" : declared, rel(file), reason));
+        miss(eco, name, declared, rel(file), reason);
+    }
+
+    public void miss(Ecosystem eco, String name, String declared, String file, Phrase reason) {
+        unresolved.add(new Unresolved(eco, name, declared == null ? "" : declared, file, reason));
     }
 }

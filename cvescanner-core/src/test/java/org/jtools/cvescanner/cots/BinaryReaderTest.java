@@ -24,11 +24,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 import org.jtools.cvescanner.project.DependencyCollector;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /** The binaries of the sample: named by their version resource, else by their file name; the unknown ones left out. */
 class BinaryReaderTest {
@@ -50,6 +52,27 @@ class BinaryReaderTest {
                 "avcodec-58.dll ffmpeg:ffmpeg unchecked",           // avformat-58.dll beside it counts once
                 "libssl-1_1-x64.dll openssl:openssl unchecked",
                 "linux/libgdal.so.30 osgeo:gdal unchecked")), found);
+    }
+
+    @Test
+    void aLibraryNamedByItsAbiOnlyIsKnownByTheVersionStringItHolds(@TempDir Path dir) throws Exception {
+        byte[] noise = {0, 1, 2, (byte) 0xff};
+        Path gdal = dir.resolve("libgdal.so.30"), ssl = dir.resolve("libcrypto.so.1.1"), z = dir.resolve("libz.so.1");
+        Files.write(gdal, concat(noise, "GDAL 3.4.1, released 2021/12/27".getBytes(), noise));
+        Files.write(ssl, concat(noise, "OpenSSL 1.1.1k  25 Mar 2021".getBytes(), noise));
+        Files.write(z, concat(noise, "no version here".getBytes(), noise));
+        var col = new DependencyCollector(dir);
+        BinaryReader.scan(List.of(gdal, ssl, z), col);
+        var found = new TreeSet<String>();
+        col.deps.forEach(d -> found.add(d.name() + " " + d.version() + (d.approximate() ? " ≈" : "")));
+        col.unresolved.forEach(u -> found.add(u.name() + " unchecked"));
+        assertEquals(new TreeSet<>(Set.of("osgeo:gdal 3.4.1", "openssl:openssl 1.1.1k", "zlib:zlib unchecked")), found);
+    }
+
+    private static byte[] concat(byte[]... parts) {
+        var out = new java.io.ByteArrayOutputStream();
+        for (byte[] p : parts) out.writeBytes(p);
+        return out.toByteArray();
     }
 
     @Test

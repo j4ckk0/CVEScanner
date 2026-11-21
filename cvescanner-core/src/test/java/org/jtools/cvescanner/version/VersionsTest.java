@@ -75,6 +75,15 @@ class VersionsTest {
     }
 
     @Test
+    void pythonFollowsPep440() {
+        ascending(Ecosystem.PYPI, "1.0.dev1", "1.0a1", "1.0a2.dev1", "1.0a2", "1.0b1", "1.0rc1", "1.0", "1.0.post1", "1.0.1", "1.1", "2!0.5");
+        assertEquals(0, Ecosystem.PYPI.compare("1.0", "1.0.0"));
+        assertEquals(0, Ecosystem.PYPI.compare("1.0RC1", "1.0rc1"));
+        assertEquals(0, Ecosystem.PYPI.compare("2.25.0+local.7", "2.25.0"), "a local label does not order");
+        assertEquals("requests-oauthlib", Ecosystem.pep503("Requests_OAuthlib"));
+    }
+
+    @Test
     void npmFollowsSemverPrecedence() {
         // the example of the SemVer 2.0 specification, section 11
         ascending(Ecosystem.NPM, "1.0.0-alpha", "1.0.0-alpha.1", "1.0.0-alpha.beta", "1.0.0-beta", "1.0.0-beta.2", "1.0.0-beta.11",

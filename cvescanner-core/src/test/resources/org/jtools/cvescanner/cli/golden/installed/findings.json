@@ -1,0 +1,193 @@
+{
+  "generated": "2026-11-21 11:30 UTC",
+  "scanned_directory": "/home/j4ckk0/Developpement/github/CVEScanner/samples/installed",
+  "scan_mode": "installed",
+  "databases": {
+    "installed.zip": "advisories + CVE records, 6 records (6 relevant), file dated 2026-11-21 11:30 UTC"
+  },
+  "scoring": {
+    "preferred_cvss_version": "4.0",
+    "environment": "Not applied (base score)",
+    "reach": "UNRESTRICTED",
+    "confidentiality_requirement": "X",
+    "integrity_requirement": "X",
+    "availability_requirement": "X"
+  },
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "base_severity": "CRITICAL",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "npm",
+      "package": "minimist",
+      "version": "1.2.5",
+      "approximate": false,
+      "scope": "installed",
+      "file": "app/node_modules/minimist/package.json",
+      "id": "GHSA-xvch-5gv4-984h",
+      "cves": [
+        "CVE-2021-44906"
+      ],
+      "aliases": [
+        "CVE-2021-44906"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "1.2.6",
+      "summary": "Test vuln in minimist",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-xvch-5gv4-984h"
+    },
+    {
+      "severity": "CRITICAL",
+      "base_severity": "CRITICAL",
+      "cvss_version": "3.1",
+      "base_score": 9.8,
+      "base_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "COTS",
+      "package": "openssl:openssl",
+      "version": "1.1.1k",
+      "approximate": false,
+      "scope": "binary",
+      "file": "native/libcrypto.so.1.1",
+      "id": "CVE-2021-3711",
+      "cves": [
+        "CVE-2021-3711"
+      ],
+      "aliases": [],
+      "match": "CVE_PACKAGE",
+      "match_note": "The CVE record names this package.",
+      "fixed_in": "1.1.1l",
+      "summary": "SM2 decryption buffer overflow",
+      "published": "2022-10-13T00:00:00.000Z",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2021-3711"
+    },
+    {
+      "severity": "CRITICAL",
+      "base_severity": "CRITICAL",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "Maven",
+      "package": "org.apache.commons:commons-text",
+      "version": "1.9",
+      "approximate": false,
+      "scope": "installed",
+      "file": "web/shop.war!/WEB-INF/lib/commons-text-1.9.jar",
+      "id": "GHSA-599f-7c49-w659",
+      "cves": [
+        "CVE-2022-42889"
+      ],
+      "aliases": [
+        "CVE-2022-42889"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "1.10.0",
+      "summary": "Test vuln in org.apache.commons:commons-text",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-599f-7c49-w659"
+    },
+    {
+      "severity": "CRITICAL",
+      "base_severity": "CRITICAL",
+      "cvss_version": "4.0",
+      "base_score": 10.0,
+      "base_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "Maven",
+      "package": "org.apache.logging.log4j:log4j-core",
+      "version": "2.14.1",
+      "approximate": false,
+      "scope": "installed",
+      "file": "app/app.jar!/BOOT-INF/lib/log4j-core-2.14.1.jar",
+      "id": "GHSA-jfh8-c2jp-5v3q",
+      "cves": [
+        "CVE-2021-44228"
+      ],
+      "aliases": [
+        "CVE-2021-44228"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "2.15.0",
+      "summary": "Test vuln in org.apache.logging.log4j:log4j-core",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-jfh8-c2jp-5v3q"
+    },
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": "4.0",
+      "base_score": 8.6,
+      "base_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "npm",
+      "package": "lodash",
+      "version": "4.17.20",
+      "approximate": false,
+      "scope": "installed",
+      "file": "app/node_modules/lodash/package.json",
+      "id": "GHSA-35jh-r3h4-6jhm",
+      "cves": [
+        "CVE-2021-23337"
+      ],
+      "aliases": [
+        "CVE-2021-23337"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "4.17.21",
+      "summary": "Test vuln in lodash",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-35jh-r3h4-6jhm"
+    },
+    {
+      "severity": "MEDIUM",
+      "base_severity": "MEDIUM",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "PyPI",
+      "package": "requests",
+      "version": "2.25.0",
+      "approximate": false,
+      "scope": "installed",
+      "file": "venv/lib/python3.11/site-packages/requests-2.25.0.dist-info/METADATA",
+      "id": "GHSA-j8r2-6x86-q33q",
+      "cves": [
+        "CVE-2023-32681"
+      ],
+      "aliases": [
+        "CVE-2023-32681"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "2.31.0",
+      "summary": "Test vuln in Requests",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-j8r2-6x86-q33q"
+    }
+  ],
+  "unresolved_dependencies": [
+    {
+      "ecosystem": "Maven",
+      "name": "plain-lib",
+      "declared": "1.0",
+      "file": "app/app.jar!/BOOT-INF/lib/plain-1.0.jar",
+      "reason": "the jar holds no Maven coordinates (META-INF/maven/…/pom.properties)"
+    }
+  ]
+}

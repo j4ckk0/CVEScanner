@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * The vendor:product NVD files the usual components off-the-shelf under (their CPEs), and the names they go by in an
@@ -72,7 +73,28 @@ public final class KnownProducts {
         known("jasper_project:jasper", "jasper", "libjasper");
     }
 
+    /**
+     * The version strings known products build into their libraries and programs, as found in an installed product:
+     * the first group is the version. A library named only by its ABI (libgdal.so.30) is then known by its version.
+     */
+    private static final Map<String, Pattern> VERSION_STRINGS = Map.of(
+            "openssl:openssl", Pattern.compile("^OpenSSL (\\d+\\.\\d+\\.\\d+[a-z]?)\\s"),
+            "zlib:zlib", Pattern.compile("^(?:deflate|inflate) (\\d+\\.\\d+(?:\\.\\d+){1,2}) Copyright"),
+            "haxx:libcurl", Pattern.compile("libcurl/(\\d+\\.\\d+\\.\\d+)"),
+            "haxx:curl", Pattern.compile("^curl (\\d+\\.\\d+\\.\\d+) \\("),
+            "osgeo:gdal", Pattern.compile("^GDAL (\\d+\\.\\d+\\.\\d+), released"),
+            "ffmpeg:ffmpeg", Pattern.compile("(?i)FFmpeg version n?(\\d+\\.\\d+(?:\\.\\d+)?)"),
+            "libpng:libpng", Pattern.compile("libpng version (\\d+\\.\\d+\\.\\d+)"),
+            "libtiff:libtiff", Pattern.compile("LIBTIFF, Version (\\d+\\.\\d+\\.\\d+)"),
+            "libexpat_project:libexpat", Pattern.compile("^expat_(\\d+\\.\\d+\\.\\d+)$"),
+            "libjpeg-turbo:libjpeg-turbo", Pattern.compile("libjpeg-turbo version (\\d+\\.\\d+\\.\\d+)"));
+
     private KnownProducts() {
+    }
+
+    /** The pattern of the version string this component builds into its binaries; null when none is known. */
+    static Pattern versionString(String id) {
+        return VERSION_STRINGS.get(id);
     }
 
     private static void known(String id, String... names) {

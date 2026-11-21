@@ -46,6 +46,7 @@ import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.PackageSummary;
+import org.jtools.cvescanner.model.ScanMode;
 import org.jtools.cvescanner.model.ScanResult;
 import org.jtools.cvescanner.model.Unresolved;
 
@@ -123,6 +124,8 @@ public final class Reports {
         sb.append("# ").append(I18n.text(language, "markdown.title")).append("\n\n");
         sb.append("- **").append(I18n.text(language, "markdown.generated")).append(":** ").append(ScanResult.TIMESTAMP_UTC.format(Instant.now())).append('\n');
         sb.append("- **").append(I18n.text(language, "markdown.scanned")).append(":** `").append(code(r.root().toString())).append("`\n");
+        if (r.mode() == ScanMode.INSTALLED)
+            sb.append("- **").append(I18n.text(language, "markdown.scanMode")).append(":** ").append(I18n.text(language, "markdown.scanMode.installed")).append('\n');
         r.snapshots().forEach((file, desc) -> sb.append("- **").append(I18n.text(language, "markdown.database")).append(":** `")
                 .append(code(file)).append("` (").append(md(desc.text(language))).append(")\n"));
         sb.append("- **").append(I18n.text(language, "markdown.files")).append(":** ").append(r.fileCounts().entrySet().stream()
@@ -250,6 +253,7 @@ public final class Reports {
         var root = new LinkedHashMap<String, Object>();
         root.put("generated", ScanResult.TIMESTAMP_UTC.format(Instant.now()));
         root.put("scanned_directory", r.root().toString());
+        if (r.mode() == ScanMode.INSTALLED) root.put("scan_mode", "installed");
         var databases = new LinkedHashMap<String, Object>();
         r.snapshots().forEach((file, desc) -> databases.put(file, desc.text(I18nLanguage.ENGLISH)));
         root.put("databases", databases);

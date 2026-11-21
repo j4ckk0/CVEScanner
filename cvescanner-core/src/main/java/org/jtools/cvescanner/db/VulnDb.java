@@ -71,8 +71,9 @@ public final class VulnDb {
             var keys = new HashSet<String>();
             var products = new HashSet<String>();
             for (var d : deps) {
-                by.computeIfAbsent(d.ecosystem().id(), _ -> new HashSet<>()).add(d.name());
+                by.computeIfAbsent(d.ecosystem().id(), _ -> new HashSet<>()).add(d.ecosystem().matchName(d.name()));
                 all.add(d.name());
+                all.add(d.ecosystem().matchName(d.name()));
                 keys.addAll(CveList.keysFor(d));
                 if (d.ecosystem() == Ecosystem.COTS) products.addAll(KnownProducts.products(Ecosystem.product(d.name())));
             }
@@ -95,7 +96,7 @@ public final class VulnDb {
         }
 
         public List<Osv.Match> osvFor(Dependency d) {
-            return osv.getOrDefault(d.ecosystem().id(), Map.of()).getOrDefault(d.name(), List.of());
+            return osv.getOrDefault(d.ecosystem().id(), Map.of()).getOrDefault(d.ecosystem().matchName(d.name()), List.of());
         }
 
         public List<CveList.Rule> cveFor(Dependency d) {
@@ -204,7 +205,7 @@ public final class VulnDb {
         var m = p.matcher(text);
         while (m.find()) {
             String v = normalize ? CveList.normalize(m.group(1)) : m.group(1);
-            if (keys.contains(v)) return true;
+            if (keys.contains(v) || (!normalize && keys.contains(Ecosystem.pep503(v)))) return true;   // a Python name, as written
         }
         return false;
     }
@@ -236,6 +237,7 @@ public final class VulnDb {
                 var pkg = Json.obj(aff.get("package"));
                 String eco = Objects.requireNonNullElse(Json.str(pkg, "ecosystem"), "").split(":")[0];
                 String name = Json.str(pkg, "name");
+                if (name != null && Ecosystem.PYPI.id().equals(eco)) name = Ecosystem.pep503(name);
                 if (name != null && wanted.byEcosystem().getOrDefault(eco, Set.of()).contains(name)) {
                     index.osv.computeIfAbsent(eco, _ -> new HashMap<>()).computeIfAbsent(name, _ -> new ArrayList<>())
                             .add(new Osv.Match(vuln, aff));

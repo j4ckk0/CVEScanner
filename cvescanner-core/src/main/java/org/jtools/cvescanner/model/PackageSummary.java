@@ -34,10 +34,11 @@ import org.jtools.cvescanner.i18n.I18nLanguage;
 
 /**
  * A vulnerable package version and its findings together: {@code fixedIn} is the lowest version that fixes every one
- * of them that has a fix, empty when none has; {@code someUnfixed} when some have none.
+ * of them that has a fix, empty when none has; {@code someUnfixed} when some have none; {@code installed} when every
+ * finding comes from an installed product's binaries, which no project of the folder declares.
  */
 public record PackageSummary(Severity worst, Ecosystem ecosystem, String pkg, String version, boolean approximate,
-                      String fixedIn, boolean someUnfixed, int vulnerabilities, String advisories, String files) {
+                      String fixedIn, boolean someUnfixed, int vulnerabilities, String advisories, String files, boolean installed) {
     public String displayVersion() { return approximate ? version + " ≈" : version; }
 
     /** The version to upgrade to, said: "2.15.0", "2.15.0 (some unfixed)", "no fix". */
@@ -58,7 +59,7 @@ public record PackageSummary(Severity worst, Ecosystem ecosystem, String pkg, St
             final Set<String> ids = new HashSet<>(), files = new TreeSet<>(), labels = new TreeSet<>();
             final List<String> fixes = new ArrayList<>();
             Severity worst = Severity.UNKNOWN;
-            boolean approximate;
+            boolean approximate, installed = true;
         }
         var map = new LinkedHashMap<Key, Agg>();
         for (var f : findings) {
@@ -69,13 +70,14 @@ public record PackageSummary(Severity worst, Ecosystem ecosystem, String pkg, St
             a.fixes.add(f.fixedIn());
             if (f.severity().compareTo(a.worst) > 0) a.worst = f.severity();
             a.approximate |= f.approximate();
+            a.installed &= f.scope().equals("installed");
         }
         var out = new ArrayList<PackageSummary>();
         map.forEach((k, a) -> {
             var fixed = a.fixes.stream().filter(s -> !s.isEmpty()).max(k.eco().versionOrder());
             boolean someUnfixed = a.fixes.stream().anyMatch(String::isEmpty);
             out.add(new PackageSummary(a.worst, k.eco(), k.pkg(), k.version(), a.approximate, fixed.orElse(""), someUnfixed, a.ids.size(),
-                    String.join(", ", a.labels), String.join(", ", a.files)));
+                    String.join(", ", a.labels), String.join(", ", a.files), a.installed));
         });
         out.sort(Comparator.comparing(PackageSummary::worst).reversed()
                 .thenComparing(Comparator.comparingInt(PackageSummary::vulnerabilities).reversed())

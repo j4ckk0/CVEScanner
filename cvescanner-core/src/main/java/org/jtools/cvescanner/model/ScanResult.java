@@ -34,7 +34,8 @@ import org.jtools.cvescanner.ignore.Ignores;
  * are scored), the dependencies, those that could not be checked, the databases read, the files counted, the warnings.
  */
 public record ScanResult(Path root, List<Finding> findings, List<Dependency> dependencies, List<Unresolved> unresolved,
-                  Map<String, Phrase> snapshots, Map<String, Integer> fileCounts, List<Phrase> warnings, Ignores ignores) {
+                  Map<String, Phrase> snapshots, Map<String, Integer> fileCounts, List<Phrase> warnings, Ignores ignores,
+                  ScanMode mode) {
 
     /** A moment as the reports and the databases' descriptions write it, the same wherever the program runs. */
     public static final DateTimeFormatter TIMESTAMP_UTC = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm 'UTC'").withZone(ZoneOffset.UTC);
