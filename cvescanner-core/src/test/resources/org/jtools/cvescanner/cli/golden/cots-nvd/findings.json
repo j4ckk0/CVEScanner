@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-21 08:15 UTC",
+  "generated": "2026-11-21 08:19 UTC",
   "scanned_directory": "/home/j4ckk0/Developpement/github/CVEScanner/samples/cots-projects",
   "databases": {
     "nvdcve-2.0-2024.json.zip": "NVD CVE feed (JSON 2.0), 11 records (10 relevant), file dated 2026-11-21 08:14 UTC"
@@ -13,6 +13,32 @@
     "availability_requirement": "X"
   },
   "findings": [
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": "4.0",
+      "base_score": 8.7,
+      "base_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "COTS",
+      "package": "ffmpeg:ffmpeg",
+      "version": "4.4.2",
+      "approximate": true,
+      "scope": "binary",
+      "file": "binaries/ffmpeg-4.4.2.exe",
+      "id": "CVE-2024-1002",
+      "cves": [
+        "CVE-2024-1002"
+      ],
+      "aliases": [],
+      "match": "CPE",
+      "match_note": "NVD lists this vendor and product as affected (cpe:2.3:a:ffmpeg:ffmpeg:4.4.2:*:*:*:*:*:*:*).",
+      "fixed_in": "",
+      "summary": "Test NVD description.",
+      "published": "2024-05-01T10:00:00.000",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1002"
+    },
     {
       "severity": "HIGH",
       "base_severity": "HIGH",
@@ -142,6 +168,32 @@
       "summary": "Test NVD description.",
       "published": "2024-05-01T10:00:00.000",
       "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1003"
+    },
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": "3.1",
+      "base_score": 8.8,
+      "base_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "COTS",
+      "package": "osgeo:gdal",
+      "version": "3.4.1",
+      "approximate": false,
+      "scope": "binary",
+      "file": "binaries/gdal304.dll",
+      "id": "CVE-2024-1001",
+      "cves": [
+        "CVE-2024-1001"
+      ],
+      "aliases": [],
+      "match": "CPE",
+      "match_note": "NVD lists this vendor and product as affected (cpe:2.3:a:osgeo:gdal:*:*:*:*:*:*:*:*).",
+      "fixed_in": "3.4.2",
+      "summary": "Heap overflow in GDAL's reader.",
+      "published": "2024-05-01T10:00:00.000",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1001"
     },
     {
       "severity": "HIGH",
@@ -335,6 +387,27 @@
       "declared": "[>=1.2.11 <2]",
       "file": "manifests/conanfile.txt",
       "reason": "version range"
+    },
+    {
+      "ecosystem": "COTS",
+      "name": "ffmpeg:ffmpeg",
+      "declared": "",
+      "file": "binaries/avcodec-58.dll",
+      "reason": "no version in the binary"
+    },
+    {
+      "ecosystem": "COTS",
+      "name": "openssl:openssl",
+      "declared": "",
+      "file": "binaries/libssl-1_1-x64.dll",
+      "reason": "no version in the binary"
+    },
+    {
+      "ecosystem": "COTS",
+      "name": "osgeo:gdal",
+      "declared": "",
+      "file": "binaries/linux/libgdal.so.30",
+      "reason": "no version in the binary"
     }
   ]
 }

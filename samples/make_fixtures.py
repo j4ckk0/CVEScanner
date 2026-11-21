@@ -251,6 +251,47 @@ CMakeDeps
 """)
 write(os.path.join(out, "cots-projects/manifests/conan.lock"), json.dumps({
     "version": "0.5", "requires": ["openssl/1.1.1k#a1b2c3%1650000000.0"], "build_requires": [], "python_requires": []}, indent=2))
+
+def pad4(b):
+    return b + b"\0" * (-len(b) % 4)
+
+def vs_block(key, value=b"", wtype=1, children=b""):
+    """A block of a version resource (VS_VERSIONINFO): wLength, wValueLength, wType, key, value, children."""
+    import struct
+    body = pad4(struct.pack("<HHH", 0, 0, 0) + (key + "\0").encode("utf-16-le"))
+    body = pad4(body + value) + children
+    value_length = len(value) // 2 if wtype == 1 else len(value)
+    return struct.pack("<HHH", len(body), value_length, wtype) + body[6:]
+
+def pe_dll(strings):
+    """A minimal 64-bit PE DLL holding only a version resource with these strings: never meant to run."""
+    import struct
+    fixed = struct.pack("<13I", 0xFEEF04BD, 0x00010000, 0x00030004, 0x00010000, 0x00030004, 0x00010000, 0x3F, 0, 4, 2, 0, 0, 0)
+    table = b"".join(pad4(vs_block(k, (v + "\0").encode("utf-16-le"))) for k, v in strings.items())
+    blob = vs_block("VS_VERSION_INFO", fixed, 0,
+                    pad4(vs_block("StringFileInfo", b"", 1, pad4(vs_block("040904B0", b"", 1, table)))))
+    def directory(entry_id, target):
+        return struct.pack("<IIHHHH", 0, 0, 0, 0, 0, 1) + struct.pack("<II", entry_id, target)
+    rsrc = directory(16, 0x80000000 | 0x18) + directory(1, 0x80000000 | 0x30) + directory(0x409, 0x48)
+    rsrc += struct.pack("<IIII", 0x1000 + 0x58, len(blob), 0, 0) + blob
+    raw = len(rsrc) + (-len(rsrc) % 0x200)
+    dos = b"MZ" + b"\0" * 58 + struct.pack("<I", 0x40)
+    coff = b"PE\0\0" + struct.pack("<HHIIIHH", 0x8664, 1, 0, 0, 0, 240, 0x2022)
+    optional = bytearray(240)
+    struct.pack_into("<H", optional, 0, 0x20B)
+    struct.pack_into("<I", optional, 108, 16)
+    struct.pack_into("<II", optional, 112 + 2 * 8, 0x1000, len(rsrc))
+    section = b".rsrc\0\0\0" + struct.pack("<IIIIIIHHI", len(rsrc), 0x1000, raw, 0x200, 0, 0, 0, 0, 0x40000040)
+    head = dos + coff + bytes(optional) + section
+    return head + b"\0" * (0x200 - len(head)) + rsrc + b"\0" * (raw - len(rsrc))
+
+binaries = os.path.join(out, "cots-projects/binaries")
+os.makedirs(os.path.join(binaries, "linux"), exist_ok=True)
+with open(os.path.join(binaries, "gdal304.dll"), "wb") as f:
+    f.write(pe_dll({"CompanyName": "OSGeo", "FileDescription": "GDAL", "FileVersion": "3.4.1.0",
+                    "ProductName": "GDAL", "ProductVersion": "3.4.1"}))
+for name in ("avcodec-58.dll", "avformat-58.dll", "ffmpeg-4.4.2.exe", "libssl-1_1-x64.dll", "unrelated.dll", "linux/libgdal.so.30"):
+    open(os.path.join(binaries, name), "wb").close()
 feed = {"resultsPerPage": len(records), "startIndex": 0, "totalResults": len(records), "format": "NVD_CVE",
         "version": "2.0", "timestamp": "2026-11-21T00:00:00.000", "vulnerabilities": records}
 with zipfile.ZipFile(os.path.join(out, "db/nvdcve-2.0-2024.json.zip"), "w", zipfile.ZIP_DEFLATED) as z:

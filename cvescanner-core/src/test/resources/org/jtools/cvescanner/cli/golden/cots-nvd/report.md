@@ -1,10 +1,10 @@
 # Dependency Vulnerability Report
 
-- **Generated:** 2026-11-21 08:15 UTC
+- **Generated:** 2026-11-21 08:19 UTC
 - **Scanned directory:** `/home/j4ckk0/Developpement/github/CVEScanner/samples/cots-projects`
 - **Database:** `nvdcve-2.0-2024.json.zip` (NVD CVE feed (JSON 2.0), 11 records (10 relevant), file dated 2026-11-21 08:14 UTC)
-- **Files scanned:** 0 pom.xml, 0 Gradle build files, 0 version catalogs, 0 package.json, 1 component inventories, 2 SBOMs, 4 C/C++ build manifests
-- **Dependencies analysed:** 16 (plus 5 that could not be resolved to a version)
+- **Files scanned:** 0 pom.xml, 0 Gradle build files, 0 version catalogs, 0 package.json, 1 component inventories, 2 SBOMs, 4 C/C++ build manifests, 7 binaries examined
+- **Dependencies analysed:** 18 (plus 8 that could not be resolved to a version)
 - **Scoring:** CVSS 4.0 preferred (CVSS 3.x when an advisory has no 4.0 vector)
 - **Environment:** Not applied (base score)
 
@@ -13,11 +13,11 @@
 | Severity | Findings |
 |---|---|
 | CRITICAL | 0 |
-| HIGH | 7 |
+| HIGH | 9 |
 | MEDIUM | 4 |
 | LOW | 0 |
 | UNKNOWN | 0 |
-| **Total** | **11** (8 unique vulnerabilities in 8 package versions) |
+| **Total** | **13** (8 unique vulnerabilities in 8 package versions) |
 
 ## Packages to upgrade
 
@@ -25,10 +25,10 @@
 
 | Worst severity | Ecosystem | Package | Current | Upgrade to | Vulns | Found in |
 |---|---|---|---|---|---|---|
-| HIGH | COTS | `ffmpeg:ffmpeg` | 4.4.2 | no fix | 1 | inventory/cots.csv, sbom/app.spdx.json |
+| HIGH | COTS | `ffmpeg:ffmpeg` | 4.4.2 ≈ | no fix | 1 | binaries/ffmpeg-4.4.2.exe, inventory/cots.csv, sbom/app.spdx.json |
 | HIGH | COTS | `haxx:libcurl` | 7.79.1 | 7.80.0 | 1 | manifests/conanfile.txt |
 | HIGH | COTS | `openssl:openssl` | 1.1.1k | 1.1.1l | 1 | inventory/cots.csv, manifests/conan.lock |
-| HIGH | COTS | `osgeo:gdal` | 3.4.1 | 3.4.2 | 1 | inventory/cots.csv, manifests/vcpkg.json |
+| HIGH | COTS | `osgeo:gdal` | 3.4.1 | 3.4.2 | 1 | binaries/gdal304.dll, inventory/cots.csv, manifests/vcpkg.json |
 | MEDIUM | COTS | `libbar` | 2.0 | 3.0 | 1 | inventory/cots.csv |
 | MEDIUM | COTS | `libpng:libpng` | 1.6.37 | 1.6.38 | 1 | sbom/bom.cdx.json |
 | MEDIUM | COTS | `libtiff:libtiff` | 4.3.0 | no fix | 1 | manifests/libtiff-4.pc |
@@ -37,6 +37,18 @@
 > ≈ = lowest version allowed by the range in package.json (no lockfile found). The installed version may be newer; add a lockfile for exact results.
 
 ## Findings by file
+
+### `binaries/ffmpeg-4.4.2.exe`
+
+| Severity | Base score | Environment score | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
+|---|---|---|---|---|---|---|---|---|---|---|
+| HIGH | 8.7 (v4.0) | — | `ffmpeg:ffmpeg` | 4.4.2 | binary | [CVE-2024-1002](https://nvd.nist.gov/vuln/detail/CVE-2024-1002) | CPE match | CVE-2024-1002 | — | Test NVD description. |
+
+### `binaries/gdal304.dll`
+
+| Severity | Base score | Environment score | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
+|---|---|---|---|---|---|---|---|---|---|---|
+| HIGH | 8.8 (v3.1) | — | `osgeo:gdal` | 3.4.1 | binary | [CVE-2024-1001](https://nvd.nist.gov/vuln/detail/CVE-2024-1001) | CPE match | CVE-2024-1001 | 3.4.2 | Heap overflow in GDAL's reader. |
 
 ### `inventory/cots.csv`
 
@@ -84,10 +96,13 @@
 |---|---|---|---|---|---|---|---|---|---|---|
 | MEDIUM | 6.5 (v3.1) | — | `libpng:libpng` | 1.6.37 | sbom | [CVE-2024-1008](https://nvd.nist.gov/vuln/detail/CVE-2024-1008) | CPE match | CVE-2024-1008 | 1.6.38 | Test NVD description. |
 
-## Dependencies that could not be checked (5)
+## Dependencies that could not be checked (8)
 
 | File | Ecosystem | Package | Declared | Reason |
 |---|---|---|---|---|
+| binaries/avcodec-58.dll | COTS | `ffmpeg:ffmpeg` | — | no version in the binary |
+| binaries/libssl-1\_1-x64.dll | COTS | `openssl:openssl` | — | no version in the binary |
+| binaries/linux/libgdal.so.30 | COTS | `osgeo:gdal` | — | no version in the binary |
 | inventory/cots.csv | COTS | `zlib:zlib` | — | no version given |
 | manifests/conanfile.txt | COTS | `zlib:zlib` | \[\>=1.2.11 \<2\] | version range |
 | manifests/vcpkg.json | COTS | `xmlsoft:libxml2` | — | version set by the vcpkg baseline |

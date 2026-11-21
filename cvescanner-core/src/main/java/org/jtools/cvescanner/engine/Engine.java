@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import org.jtools.cvescanner.cots.BinaryReader;
 import org.jtools.cvescanner.cots.InventoryReader;
 import org.jtools.cvescanner.cots.ManifestReader;
 import org.jtools.cvescanner.cots.SbomReader;
@@ -76,6 +77,7 @@ public final class Engine {
         InventoryReader.scan(files.cotsInventories, col, l::warn);
         SbomReader.scan(files.sboms, col, l::warn);
         ManifestReader.scan(files.pkgConfigs, files.vcpkgManifests, files.conanFiles, col, l::warn);
+        BinaryReader.scan(files.binaries, col);
 
         var wanted = VulnDb.Wanted.of(col.deps);
         var index = new VulnDb.Index();
@@ -137,6 +139,7 @@ public final class Engine {
         if (!files.sboms.isEmpty()) counts.put("files.sboms", files.sboms.size());
         int manifests = files.pkgConfigs.size() + files.vcpkgManifests.size() + files.conanFiles.size();
         if (manifests > 0) counts.put("files.manifests", manifests);
+        if (!files.binaries.isEmpty()) counts.put("files.binaries", files.binaries.size());
         return new ScanResult(root, List.copyOf(findings), List.copyOf(col.deps), List.copyOf(col.unresolved),
                 index.sources, counts, List.copyOf(warnings));
     }
