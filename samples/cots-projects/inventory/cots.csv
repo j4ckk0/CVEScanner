@@ -1,0 +1,8 @@
+# the sample's components off-the-shelf: name,version[,vendor][,cpe]
+name,version,vendor,cpe
+GDAL,3.4.1
+ffmpeg,4.4.2
+libfoo,1.0,acme
+renamed,,,cpe:2.3:a:openssl:openssl:1.1.1k:*:*:*:*:*:*:*
+libbar,2.0
+zlib,

@@ -164,4 +164,54 @@ with zipfile.ZipFile(inner, "w", zipfile.ZIP_DEFLATED) as z:
     z.writestr("cves/deltaLog.json", json.dumps([{"fetchTime": "x", "new": [], "updated": []}]))
 with zipfile.ZipFile(os.path.join(out, "db/2026-11-19_all_CVEs_at_midnight.zip.zip"), "w", zipfile.ZIP_STORED) as z:
     z.writestr("cves.zip", inner.getvalue())
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Components off-the-shelf: a project naming them, a mock NVD feed (JSON 2.0, one file for the year), a mock CVE List
+write(os.path.join(out, "cots-projects/inventory/cots.csv"), """# the sample's components off-the-shelf: name,version[,vendor][,cpe]
+name,version,vendor,cpe
+GDAL,3.4.1
+ffmpeg,4.4.2
+libfoo,1.0,acme
+renamed,,,cpe:2.3:a:openssl:openssl:1.1.1k:*:*:*:*:*:*:*
+libbar,2.0
+zlib,
+""")
+
+def nvd(id, matches, status="Analyzed", v31=None, v40=None, desc="Test NVD description. More text."):
+    metrics = {}
+    if v31: metrics["cvssMetricV31"] = [{"source": "nvd@nist.gov", "type": "Primary", "cvssData": {"version": "3.1", "vectorString": v31[0], "baseScore": v31[1]}}]
+    if v40: metrics["cvssMetricV40"] = [{"source": "nvd@nist.gov", "type": "Primary", "cvssData": {"version": "4.0", "vectorString": v40[0], "baseScore": v40[1]}}]
+    return {"cve": {"id": id, "sourceIdentifier": "test", "published": "2024-05-01T10:00:00.000", "vulnStatus": status,
+                    "descriptions": [{"lang": "en", "value": desc}], "metrics": metrics,
+                    "configurations": [{"nodes": [{"operator": "OR", "negate": False, "cpeMatch": matches}]}]}}
+
+def cpe(vendor, product, version="*", **bounds):
+    return dict({"vulnerable": True, "criteria": f"cpe:2.3:a:{vendor}:{product}:{version}:*:*:*:*:*:*:*", "matchCriteriaId": "X"}, **bounds)
+
+records = [
+    nvd("CVE-2024-1001", [cpe("osgeo", "gdal", versionStartIncluding="3.0.0", versionEndExcluding="3.4.2")],
+        v31=("CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H", 8.8), desc="Heap overflow in GDAL's reader. More text."),
+    nvd("CVE-2024-1002", [cpe("ffmpeg", "ffmpeg", "4.4.2")],
+        v40=("CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N", 8.5)),
+    nvd("CVE-2024-1003", [cpe("openssl", "openssl", versionEndExcluding="1.1.1l")],
+        v31=("CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H", 7.5)),
+    nvd("CVE-2024-1004", [cpe("osgeo", "gdal")], status="Rejected"),
+    nvd("CVE-2024-1005", [cpe("someoneelse", "gdal", versionEndExcluding="9.0")]),
+    nvd("CVE-2024-1006", [cpe("bar_project", "libbar", versionEndExcluding="3.0")],
+        v31=("CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N", 4.4)),
+    nvd("CVE-2024-1007", [cpe("ffmpeg", "ffmpeg", versionEndExcluding="4.0")]),
+]
+feed = {"resultsPerPage": len(records), "startIndex": 0, "totalResults": len(records), "format": "NVD_CVE",
+        "version": "2.0", "timestamp": "2026-11-21T00:00:00.000", "vulnerabilities": records}
+with zipfile.ZipFile(os.path.join(out, "db/nvdcve-2.0-2024.json.zip"), "w", zipfile.ZIP_DEFLATED) as z:
+    z.writestr("nvdcve-2.0-2024.json", json.dumps(feed))
+cots_cves = [
+    cve("CVE-2024-2001", [{"vendor": "OSGeo", "product": "GDAL", "versions": [{"version": "0", "lessThan": "3.5.0", "status": "affected"}]}],
+        title="GDAL out-of-bounds read", metrics=v31("CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:H", 8.1)),
+    cve("CVE-2024-1001", [{"vendor": "OSGeo", "product": "GDAL", "versions": [{"version": "3.0.0", "lessThan": "3.4.2", "status": "affected"}]}]),
+    cve("CVE-2024-2002", [{"vendor": "n/a", "product": "libbar", "versions": [{"version": "0", "lessThan": "2.5", "status": "affected"}]}]),
+]
+with zipfile.ZipFile(os.path.join(out, "db/cots-cvelist.zip"), "w", zipfile.ZIP_DEFLATED) as z:
+    for r in cots_cves:
+        z.writestr(f"cves/2024/{r['cveMetadata']['cveId']}.json", json.dumps(r, indent=2))
 print("fixtures written to", out)

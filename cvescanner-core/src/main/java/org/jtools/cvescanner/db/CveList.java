@@ -71,6 +71,7 @@ public final class CveList {
 
     static List<String> keysFor(Dependency d) {
         String name = normalize(d.name());
+        if (d.ecosystem().equals(VulnDb.COTS)) return List.of(VulnDb.product(d));
         if (!d.ecosystem().equals("Maven")) return List.of(name);
         return List.of(name, name.replace(':', '/'), name.substring(name.indexOf(':') + 1));
     }
@@ -151,6 +152,13 @@ public final class CveList {
         }
         if (!meaningful(r.product())) return null;
         String product = normalize(r.product());
+        if (d.ecosystem().equals(VulnDb.COTS)) {
+            // the record's vendor is free text ("The OpenSSL Project"): a word of it in the component's CPE vendor will do
+            if (!product.equals(VulnDb.product(d))) return null;
+            int colon = d.name().indexOf(':');
+            return colon > 0 && vendorMatchesGroup(r.vendor(), normalize(d.name().substring(0, colon)))
+                    ? MatchBasis.CVE_PACKAGE : MatchBasis.CVE_NAME;
+        }
         if (!maven) return product.equals(name) ? MatchBasis.CVE_NAME : null;
         if (product.equals(name) || product.equals(name.replace(':', '/'))) return MatchBasis.CVE_PACKAGE;
         String group = name.substring(0, name.indexOf(':')), artifact = name.substring(name.indexOf(':') + 1);

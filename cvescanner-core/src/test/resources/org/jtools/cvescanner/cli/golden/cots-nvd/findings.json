@@ -1,0 +1,130 @@
+{
+  "generated": "2026-11-21 08:10 UTC",
+  "scanned_directory": "/home/j4ckk0/Developpement/github/CVEScanner/samples/cots-projects",
+  "databases": {
+    "nvdcve-2.0-2024.json.zip": "NVD CVE feed (JSON 2.0), 7 records (6 relevant), file dated 2026-11-21 08:09 UTC"
+  },
+  "scoring": {
+    "preferred_cvss_version": "4.0",
+    "environment": "Not applied (base score)",
+    "reach": "UNRESTRICTED",
+    "confidentiality_requirement": "X",
+    "integrity_requirement": "X",
+    "availability_requirement": "X"
+  },
+  "findings": [
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": "4.0",
+      "base_score": 8.7,
+      "base_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "COTS",
+      "package": "ffmpeg:ffmpeg",
+      "version": "4.4.2",
+      "approximate": false,
+      "scope": "inventory",
+      "file": "inventory/cots.csv",
+      "id": "CVE-2024-1002",
+      "cves": [
+        "CVE-2024-1002"
+      ],
+      "aliases": [],
+      "match": "CPE",
+      "match_note": "NVD lists this vendor and product as affected (cpe:2.3:a:ffmpeg:ffmpeg:4.4.2:*:*:*:*:*:*:*).",
+      "fixed_in": "",
+      "summary": "Test NVD description.",
+      "published": "2024-05-01T10:00:00.000",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1002"
+    },
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": "3.1",
+      "base_score": 7.5,
+      "base_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "COTS",
+      "package": "openssl:openssl",
+      "version": "1.1.1k",
+      "approximate": false,
+      "scope": "inventory",
+      "file": "inventory/cots.csv",
+      "id": "CVE-2024-1003",
+      "cves": [
+        "CVE-2024-1003"
+      ],
+      "aliases": [],
+      "match": "CPE",
+      "match_note": "NVD lists this vendor and product as affected (cpe:2.3:a:openssl:openssl:*:*:*:*:*:*:*:*).",
+      "fixed_in": "1.1.1l",
+      "summary": "Test NVD description.",
+      "published": "2024-05-01T10:00:00.000",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1003"
+    },
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": "3.1",
+      "base_score": 8.8,
+      "base_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "COTS",
+      "package": "osgeo:gdal",
+      "version": "3.4.1",
+      "approximate": false,
+      "scope": "inventory",
+      "file": "inventory/cots.csv",
+      "id": "CVE-2024-1001",
+      "cves": [
+        "CVE-2024-1001"
+      ],
+      "aliases": [],
+      "match": "CPE",
+      "match_note": "NVD lists this vendor and product as affected (cpe:2.3:a:osgeo:gdal:*:*:*:*:*:*:*:*).",
+      "fixed_in": "3.4.2",
+      "summary": "Heap overflow in GDAL's reader.",
+      "published": "2024-05-01T10:00:00.000",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1001"
+    },
+    {
+      "severity": "MEDIUM",
+      "base_severity": "MEDIUM",
+      "cvss_version": "3.1",
+      "base_score": 4.4,
+      "base_vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "COTS",
+      "package": "libbar",
+      "version": "2.0",
+      "approximate": false,
+      "scope": "inventory",
+      "file": "inventory/cots.csv",
+      "id": "CVE-2024-1006",
+      "cves": [
+        "CVE-2024-1006"
+      ],
+      "aliases": [],
+      "match": "CPE_PRODUCT",
+      "match_note": "Product match: NVD lists product \"libbar\" from vendor \"bar_project\"; the component's vendor is not known. Check that it is this component.",
+      "fixed_in": "3.0",
+      "summary": "Test NVD description.",
+      "published": "2024-05-01T10:00:00.000",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1006"
+    }
+  ],
+  "unresolved_dependencies": [
+    {
+      "ecosystem": "COTS",
+      "name": "zlib:zlib",
+      "declared": "",
+      "file": "inventory/cots.csv",
+      "reason": "no version given"
+    }
+  ]
+}

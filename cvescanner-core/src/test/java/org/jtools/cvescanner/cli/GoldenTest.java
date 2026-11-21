@@ -40,7 +40,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * The scan of the samples gives what the prototype gave (the jar of the Claude-web session, SESSION_HANDOFF.md §8):
- * each case of golden/ holds the arguments it ran with (args.txt, the databases relative to samples/), its exit code
+ * each case of golden/ holds the arguments it ran with (args.txt, the databases — and a folder to scan other than
+ * samples/projects, -d — relative to samples/), its exit code
  * and its three reports. What differs from one run to the next is set aside: the time, the folder scanned, the
  * databases' file dates. The JSON is compared as values, the order of an object's keys aside.
  */
@@ -67,7 +68,7 @@ class GoldenTest {
         String[] given = Files.readString(golden.resolve("args.txt")).trim().split("\\s+");
         for (int i = 0; i < given.length; i++) {
             args.add(given[i]);
-            if (given[i].equals("--db") && i + 1 < given.length) {
+            if ((given[i].equals("--db") || given[i].equals("-d")) && i + 1 < given.length) {
                 args.add(SAMPLES.resolve(given[++i]).toString());
             }
         }

@@ -38,14 +38,14 @@ public final class Collector {
 
     public Collector(Path root) { this.root = root; }
 
-    String rel(Path p) { return root.relativize(p.toAbsolutePath().normalize()).toString().replace('\\', '/'); }
+    public String rel(Path p) { return root.relativize(p.toAbsolutePath().normalize()).toString().replace('\\', '/'); }
 
-    void add(String eco, String name, String version, Path file, String scope, boolean approximate) {
+    public void add(String eco, String name, String version, Path file, String scope, boolean approximate) {
         String f = rel(file);
         if (seen.add(List.of(eco, name, version, f, scope))) deps.add(new Dependency(eco, name, version, f, scope, approximate));
     }
 
-    void miss(String eco, String name, String declared, Path file, Phrase reason) {
+    public void miss(String eco, String name, String declared, Path file, Phrase reason) {
         unresolved.add(new Unresolved(eco, name, declared == null ? "" : declared, rel(file), reason));
     }
 }

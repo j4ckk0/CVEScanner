@@ -70,9 +70,13 @@ public final class NvdFeed {
             records[0]++;
             onRecord.run();
             if (!mentions(text, products)) return;
-            Map<String, Object> item;
-            try { item = Json.obj(Json.parse(text)); } catch (IllegalArgumentException _) { return; }
-            for (Rule rule : rules(Json.obj(item.get("cve")))) {
+            List<Rule> rules;
+            try {
+                rules = rules(Json.obj(Json.obj(Json.parse(text)).get("cve")));
+            } catch (RuntimeException _) {
+                return;   // a record of a shape not foreseen: left out, the feed's others read
+            }
+            for (Rule rule : rules) {
                 if (products.contains(rule.product())) {
                     sink.accept(rule);
                     used.add(rule.info().id());
@@ -183,7 +187,8 @@ public final class NvdFeed {
                 else if (vector != null && !key.equals("cvssMetricV2")) v3 = Osv.higher(v3, vector);
                 if (data.get("baseScore") instanceof Number n && (reported == null || n.doubleValue() > reported))
                     reported = n.doubleValue();
-                String severity = Objects.requireNonNullElse(Json.str(data, "baseSeverity"), Json.str(m, "baseSeverity"));
+                String severity = Json.str(data, "baseSeverity");   // v3.x and v4.0 in cvssData, v2 beside it
+                if (severity == null) severity = Json.str(m, "baseSeverity");
                 if (text == null) text = severity;
             }
         }
