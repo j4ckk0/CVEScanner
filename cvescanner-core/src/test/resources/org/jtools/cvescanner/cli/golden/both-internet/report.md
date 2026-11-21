@@ -45,7 +45,7 @@
 
 | Severity | Base | Env. | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
 |---|---|---|---|---|---|---|---|---|---|---|
-| CRITICAL | 9,8 (v3.1) | 9,8 | `org.yaml:snakeyaml` | 1.33 | implementation | [GHSA-mjmj-j48q-9wg2](https://osv.dev/vulnerability/GHSA-mjmj-j48q-9wg2) | Advisory | CVE-2022-1471 | 2.0 | Test vuln in org.yaml:snakeyaml |
+| CRITICAL | 9.8 (v3.1) | 9.8 | `org.yaml:snakeyaml` | 1.33 | implementation | [GHSA-mjmj-j48q-9wg2](https://osv.dev/vulnerability/GHSA-mjmj-j48q-9wg2) | Advisory | CVE-2022-1471 | 2.0 | Test vuln in org.yaml:snakeyaml |
 | HIGH | — | — | `com.google.guava:guava` | 31.1-jre | implementation | [GHSA-7g45-4rm6-3mm3](https://osv.dev/vulnerability/GHSA-7g45-4rm6-3mm3) | Advisory | CVE-2023-2976 | 32.0.0-android | Test vuln in com.google.guava:guava |
 
 ### `gradle/gradle/libs.versions.toml`
@@ -58,7 +58,7 @@
 
 | Severity | Base | Env. | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
 |---|---|---|---|---|---|---|---|---|---|---|
-| CRITICAL | 10,0 (v4.0) | 10,0 | `org.apache.logging.log4j:log4j-core` | 2.14.1 | compile | [GHSA-jfh8-c2jp-5v3q](https://osv.dev/vulnerability/GHSA-jfh8-c2jp-5v3q) | Advisory | CVE-2021-44228 | 2.15.0 | Test vuln in org.apache.logging.log4j:log4j-core |
+| CRITICAL | 10.0 (v4.0) | 10.0 | `org.apache.logging.log4j:log4j-core` | 2.14.1 | compile | [GHSA-jfh8-c2jp-5v3q](https://osv.dev/vulnerability/GHSA-jfh8-c2jp-5v3q) | Advisory | CVE-2021-44228 | 2.15.0 | Test vuln in org.apache.logging.log4j:log4j-core |
 | HIGH | — | — | `com.fasterxml.jackson.core:jackson-databind` | 2.9.8 | compile | [GHSA-57j2-w4cx-62h2](https://osv.dev/vulnerability/GHSA-57j2-w4cx-62h2) | Advisory | CVE-2020-36518 | 2.9.10.7 | Test vuln in com.fasterxml.jackson.core:jackson-databind |
 
 ### `maven/pom.xml`
@@ -72,21 +72,21 @@
 | Severity | Base | Env. | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
 |---|---|---|---|---|---|---|---|---|---|---|
 | CRITICAL | — | — | `minimist` | 1.2.5 | transitive (dev) | [GHSA-xvch-5gv4-984h](https://osv.dev/vulnerability/GHSA-xvch-5gv4-984h) | Advisory | CVE-2021-44906 | 1.2.6 | Test vuln in minimist |
-| HIGH | 8,6 (v4.0) | 8,6 | `lodash` | 4.17.15 | direct | [GHSA-35jh-r3h4-6jhm](https://osv.dev/vulnerability/GHSA-35jh-r3h4-6jhm) | Advisory | CVE-2021-23337 | 4.17.21 | Test vuln in lodash |
+| HIGH | 8.6 (v4.0) | 8.6 | `lodash` | 4.17.15 | direct | [GHSA-35jh-r3h4-6jhm](https://osv.dev/vulnerability/GHSA-35jh-r3h4-6jhm) | Advisory | CVE-2021-23337 | 4.17.21 | Test vuln in lodash |
 
 ### `npm-nolock/package.json`
 
 | Severity | Base | Env. | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
 |---|---|---|---|---|---|---|---|---|---|---|
 | HIGH | — | — | `axios` | 0.21.0 | dependencies | [GHSA-cph5-m8f7-6c5x](https://osv.dev/vulnerability/GHSA-cph5-m8f7-6c5x) | Advisory | CVE-2021-3749 | 0.21.2 | Test vuln in axios |
-| LOW | 2,3 (v4.0) | 2,3 | `jquery` | 3.4.0 | devDependencies | [GHSA-gxr4-xjj5-5px2](https://osv.dev/vulnerability/GHSA-gxr4-xjj5-5px2) | Advisory | CVE-2020-11022 | 3.5.0 | Test vuln in jquery |
+| LOW | 2.3 (v4.0) | 2.3 | `jquery` | 3.4.0 | devDependencies | [GHSA-gxr4-xjj5-5px2](https://osv.dev/vulnerability/GHSA-gxr4-xjj5-5px2) | Advisory | CVE-2020-11022 | 3.5.0 | Test vuln in jquery |
 
 ### `yarn/yarn.lock`
 
 | Severity | Base | Env. | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
 |---|---|---|---|---|---|---|---|---|---|---|
 | CRITICAL | — | — | `minimist` | 1.2.5 | transitive | [GHSA-xvch-5gv4-984h](https://osv.dev/vulnerability/GHSA-xvch-5gv4-984h) | Advisory | CVE-2021-44906 | 1.2.6 | Test vuln in minimist |
-| HIGH | 8,6 (v4.0) | 8,6 | `lodash` | 4.17.20 | direct | [GHSA-35jh-r3h4-6jhm](https://osv.dev/vulnerability/GHSA-35jh-r3h4-6jhm) | Advisory | CVE-2021-23337 | 4.17.21 | Test vuln in lodash |
+| HIGH | 8.6 (v4.0) | 8.6 | `lodash` | 4.17.20 | direct | [GHSA-35jh-r3h4-6jhm](https://osv.dev/vulnerability/GHSA-35jh-r3h4-6jhm) | Advisory | CVE-2021-23337 | 4.17.21 | Test vuln in lodash |
 
 ## Dependencies that could not be checked (3)
 

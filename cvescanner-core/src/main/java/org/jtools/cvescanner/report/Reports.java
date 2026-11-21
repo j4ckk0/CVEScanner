@@ -31,6 +31,7 @@ import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -110,7 +111,7 @@ public final class Reports {
     }
 
     static String scoreText(Double score, String version) {
-        return score == null ? "—" : "%.1f".formatted(score) + (version != null ? " (v" + version + ")" : "");
+        return score == null ? "—" : String.format(Locale.ROOT, "%.1f", score) + (version != null ? " (v" + version + ")" : "");
     }
 
     public static String scoringText(boolean preferV4) {

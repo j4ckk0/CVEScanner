@@ -131,7 +131,7 @@ public final class VulnDb {
                     accept(data, wanted, index, counts);
                     if (++counts.entries % 500 == 0) {
                         l.progress((double) in.count / size);
-                        l.status(String.format("Reading %s… %,d records", file.getFileName(), counts.entries));
+                        l.status(String.format(Locale.ROOT, "Reading %s… %,d records", file.getFileName(), counts.entries));
                     }
                 }, 0);
             } catch (ZipException e) {
@@ -142,7 +142,7 @@ public final class VulnDb {
             total += counts.osv + counts.cve;
             if (counts.osv + counts.cve == 0)
                 l.warn(file.getFileName() + " contains no OSV, GitHub advisory or CVE JSON 5 records");
-            index.sources.put(file.getFileName().toString(), "%s, %,d records (%,d relevant), file dated %s".formatted(
+            index.sources.put(file.getFileName().toString(), String.format(Locale.ROOT, "%s, %,d records (%,d relevant), file dated %s",
                     kind, counts.osv + counts.cve, counts.osvUsed + counts.cveUsed,
                     Engine.STAMP.format(Files.getLastModifiedTime(file).toInstant())));
         }

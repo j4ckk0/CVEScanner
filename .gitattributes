@@ -1,2 +1,5 @@
 *.bat   text eol=crlf
 *.sh    text eol=lf
+# The samples and the reports the tests expect, byte for byte on every system: GoldenTest compares them as they are
+samples/**                         -text
+cvescanner-core/src/test/resources/** -text
