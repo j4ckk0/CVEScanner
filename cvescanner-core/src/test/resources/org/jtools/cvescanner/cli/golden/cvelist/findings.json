@@ -1,0 +1,222 @@
+{
+  "generated": "2026-11-21 05:48 UTC",
+  "scanned_directory": "/tmp/claude-1000/-home-j4ckk0-Developpement-git-CVEScanner/9bbecb33-1601-49ef-94d3-4104c4827408/scratchpad/OUT/projects",
+  "databases": {
+    "2026-11-19_all_CVEs_at_midnight.zip.zip": "CVE List (CVE JSON 5), 10 records (8 relevant), file dated 2026-11-21 05:30 UTC"
+  },
+  "scoring": {
+    "preferred_cvss_version": "4.0",
+    "environment": "Not applied (base score)",
+    "reach": "UNRESTRICTED",
+    "confidentiality_requirement": "X",
+    "integrity_requirement": "X",
+    "availability_requirement": "X"
+  },
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "base_severity": "CRITICAL",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "npm",
+      "package": "minimist",
+      "version": "1.2.5",
+      "approximate": false,
+      "scope": "transitive (dev)",
+      "file": "npm-lock/package-lock.json",
+      "id": "CVE-2021-44906",
+      "cves": [
+        "CVE-2021-44906"
+      ],
+      "aliases": [],
+      "match": "CVE_NAME",
+      "match_note": "Name-based match: the CVE record lists product \"minimist\" from vendor \"substack\". Check that it refers to this package.",
+      "fixed_in": "1.2.6",
+      "summary": "Test description.",
+      "published": "2022-10-13T00:00:00.000Z",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2021-44906"
+    },
+    {
+      "severity": "CRITICAL",
+      "base_severity": "CRITICAL",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "npm",
+      "package": "minimist",
+      "version": "1.2.5",
+      "approximate": false,
+      "scope": "transitive",
+      "file": "yarn/yarn.lock",
+      "id": "CVE-2021-44906",
+      "cves": [
+        "CVE-2021-44906"
+      ],
+      "aliases": [],
+      "match": "CVE_NAME",
+      "match_note": "Name-based match: the CVE record lists product \"minimist\" from vendor \"substack\". Check that it refers to this package.",
+      "fixed_in": "1.2.6",
+      "summary": "Test description.",
+      "published": "2022-10-13T00:00:00.000Z",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2021-44906"
+    },
+    {
+      "severity": "CRITICAL",
+      "base_severity": "CRITICAL",
+      "cvss_version": "4.0",
+      "base_score": 9.3,
+      "base_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "Maven",
+      "package": "org.apache.commons:commons-text",
+      "version": "1.9",
+      "approximate": false,
+      "scope": "catalog:commons-text",
+      "file": "gradle/gradle/libs.versions.toml",
+      "id": "CVE-2022-42889",
+      "cves": [
+        "CVE-2022-42889"
+      ],
+      "aliases": [],
+      "match": "CVE_NAME",
+      "match_note": "Name-based match: the CVE record lists product \"commons-text\" from vendor \"Apache Software Foundation\". Check that it refers to this package.",
+      "fixed_in": "1.10.0",
+      "summary": "Apache Commons Text performs variable interpolation.",
+      "published": "2022-10-13T00:00:00.000Z",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2022-42889"
+    },
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": "3.1",
+      "base_score": 7.2,
+      "base_vector": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "npm",
+      "package": "lodash",
+      "version": "4.17.15",
+      "approximate": false,
+      "scope": "direct",
+      "file": "npm-lock/package-lock.json",
+      "id": "CVE-2021-23337",
+      "cves": [
+        "CVE-2021-23337"
+      ],
+      "aliases": [],
+      "match": "CVE_NAME",
+      "match_note": "Name-based match: the CVE record lists product \"lodash\" from vendor \"lodash\". Check that it refers to this package.",
+      "fixed_in": "4.17.21",
+      "summary": "Command injection in lodash",
+      "published": "2022-10-13T00:00:00.000Z",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2021-23337"
+    },
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": "3.1",
+      "base_score": 7.2,
+      "base_vector": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "npm",
+      "package": "lodash",
+      "version": "4.17.20",
+      "approximate": false,
+      "scope": "direct",
+      "file": "yarn/yarn.lock",
+      "id": "CVE-2021-23337",
+      "cves": [
+        "CVE-2021-23337"
+      ],
+      "aliases": [],
+      "match": "CVE_NAME",
+      "match_note": "Name-based match: the CVE record lists product \"lodash\" from vendor \"lodash\". Check that it refers to this package.",
+      "fixed_in": "4.17.21",
+      "summary": "Command injection in lodash",
+      "published": "2022-10-13T00:00:00.000Z",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2021-23337"
+    },
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": "3.1",
+      "base_score": 8.8,
+      "base_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "Maven",
+      "package": "org.yaml:snakeyaml",
+      "version": "1.33",
+      "approximate": false,
+      "scope": "implementation",
+      "file": "gradle/build.gradle",
+      "id": "CVE-2022-1471",
+      "cves": [
+        "CVE-2022-1471"
+      ],
+      "aliases": [],
+      "match": "CVE_PACKAGE",
+      "match_note": "The CVE record names this package (org.yaml:snakeyaml).",
+      "fixed_in": "2.0",
+      "summary": "Constructor Deserialization Remote Code Execution",
+      "published": "2022-10-13T00:00:00.000Z",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2022-1471"
+    },
+    {
+      "severity": "MEDIUM",
+      "base_severity": "MEDIUM",
+      "cvss_version": "3.1",
+      "base_score": 4.7,
+      "base_vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:C/C:L/I:L/A:N",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "npm",
+      "package": "jquery",
+      "version": "3.4.0",
+      "approximate": true,
+      "scope": "devDependencies",
+      "file": "npm-nolock/package.json",
+      "id": "CVE-2020-11022",
+      "cves": [
+        "CVE-2020-11022"
+      ],
+      "aliases": [],
+      "match": "CVE_NAME",
+      "match_note": "Name-based match: the CVE record lists product \"jQuery\" from vendor \"jquery\". Check that it refers to this package.",
+      "fixed_in": "3.5.0",
+      "summary": "Test description.",
+      "published": "2022-10-13T00:00:00.000Z",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2020-11022"
+    }
+  ],
+  "unresolved_dependencies": [
+    {
+      "name": "org.springframework:spring-core",
+      "declared": "",
+      "reason": "version managed outside this repo (external parent/BOM)",
+      "ecosystem": "Maven",
+      "file": "maven/child/pom.xml"
+    },
+    {
+      "name": "org.foo:bar",
+      "declared": "1.+",
+      "reason": "dynamic version",
+      "ecosystem": "Maven",
+      "file": "gradle/build.gradle"
+    },
+    {
+      "name": "left",
+      "declared": "git+https://x/y.git",
+      "reason": "non-registry source",
+      "ecosystem": "npm",
+      "file": "npm-nolock/package.json"
+    }
+  ]
+}

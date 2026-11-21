@@ -1,0 +1,94 @@
+CVEScanner
+Copyright 2026 jtools.org
+
+This product is licensed under the Apache License, Version 2.0. The full text is in
+the LICENSE file beside this one.
+
+
+CVSS v4.0 calculator
+====================
+
+The CVSS v4.0 scoring of org.jtools.cvescanner.cvss.Cvss (its macrovector lookup table,
+the severity distances and their interpolation) is ported from the reference calculator
+of FIRST and Red Hat, https://github.com/RedHatProductSecurity/cvss-v4-calculator,
+distributed under the BSD 2-Clause License:
+
+  Copyright (c) 2023 FIRST.ORG, Inc., Red Hat, and contributors
+
+  Redistribution and use in source and binary forms, with or without modification, are
+  permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice, this list of
+     conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice, this list
+     of conditions and the following disclaimer in the documentation and/or other
+     materials provided with the distribution.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+  EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+  THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+FlatLaf
+=======
+
+cvescanner.jar, in the self-contained distributions, holds the classes of FlatLaf
+3.7.2 (https://www.formdev.com/flatlaf/), Copyright FormDev Software GmbH, the
+window's looks, licensed under the Apache License, Version 2.0. Its licence travels
+with it, in licenses/FlatLaf-LICENSE.txt of each distribution.
+
+
+Embedded Java runtime
+=====================
+
+The self-contained distributions — the Windows and Linux archives — carry a Java runtime
+linked (jlink) from the Eclipse Temurin 25 JDK: the modules the program needs, with the
+program and FlatLaf among them.
+
+Eclipse Temurin (OpenJDK) is licensed under the GNU General Public License, version 2,
+with the Classpath Exception (GPLv2 + CPE). The Classpath Exception is what permits
+distributing CVEScanner together with this runtime without affecting the licence of
+CVEScanner's own code.
+
+The runtime's own licence and notices travel with it, in the jre/legal/ directory of
+each distribution:
+  - jre/legal/java.base/LICENSE              the GNU General Public License, version 2
+  - jre/legal/java.base/ASSEMBLY_EXCEPTION   the Classpath Exception
+  - jre/legal/java.base/ADDITIONAL_LICENSE_INFO
+  - jre/legal/<module>/*                     the per-component notices of each module
+The exact runtime build is recorded in jre/release.
+
+Source code for the OpenJDK runtime is available from:
+  - Eclipse Temurin:  https://adoptium.net/temurin/releases/?version=25
+  - OpenJDK project:  https://github.com/openjdk/jdk25u
+
+
+Vulnerability databases
+=======================
+
+CVEScanner holds no vulnerability data: its user downloads the databases and gives
+their zip files to the program, which reads them where they are. Each comes with its
+own terms, which bind whoever downloads and uses it:
+  - GitHub Advisory Database (https://github.com/github/advisory-database): Creative
+    Commons Attribution 4.0 International (CC BY 4.0).
+  - CVE List (https://github.com/CVEProject/cvelistV5): the CVE Program's terms of use,
+    https://www.cve.org/Legal/TermsOfUse.
+  - OSV.dev exports (https://osv.dev): each record under the licence of the source it
+    comes from, as osv.dev documents.
+The reports CVEScanner writes quote the advisories' identifiers, summaries and links.
+
+
+Sample files
+============
+
+The projects and databases of samples/ are original, written for this project by
+samples/make_fixtures.py; they fall under the same licence. Their advisories are made
+up for the tests, though some borrow the identifiers of real CVEs: they are not
+vulnerability data. The samples are not part of the distributions.

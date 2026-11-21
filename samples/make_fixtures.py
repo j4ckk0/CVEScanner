@@ -1,0 +1,167 @@
+#!/usr/bin/env python3
+"""Creates the test fixtures used during development of CVE Dependency Scanner.
+
+Usage: python3 make_fixtures.py OUTDIR
+Creates:
+  OUTDIR/projects/...                              sample Maven / Gradle / npm projects
+  OUTDIR/db/osv/Maven-all.zip, npm-all.zip         mock OSV.dev exports (use with -c OUTDIR/db/osv -s)
+  OUTDIR/db/advisory-database-main.zip             mock GitHub Advisory Database repo zip (OSV format)
+  OUTDIR/db/2026-11-19_all_CVEs_at_midnight.zip.zip  mock CVE List release (zip containing cves.zip)
+Expected results are listed in the handoff document (section "Testing").
+"""
+import io, json, os, sys, zipfile
+
+out = sys.argv[1] if len(sys.argv) > 1 else "fixtures"
+
+def write(path, text):
+    path = os.path.join(out, path)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        f.write(text)
+
+# ------------------------------------------------------------------ projects
+write("projects/maven/pom.xml", """<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId><artifactId>parent</artifactId><version>1.0</version>
+  <packaging>pom</packaging>
+  <properties><log4j.version>2.14.1</log4j.version></properties>
+  <dependencyManagement><dependencies>
+    <dependency><groupId>com.fasterxml.jackson.core</groupId><artifactId>jackson-databind</artifactId><version>2.9.8</version></dependency>
+  </dependencies></dependencyManagement>
+</project>
+""")
+write("projects/maven/child/pom.xml", """<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>com.example</groupId><artifactId>parent</artifactId><version>1.0</version></parent>
+  <artifactId>child</artifactId>
+  <dependencies>
+    <dependency><groupId>org.apache.logging.log4j</groupId><artifactId>log4j-core</artifactId><version>${log4j.version}</version></dependency>
+    <dependency><groupId>com.fasterxml.jackson.core</groupId><artifactId>jackson-databind</artifactId></dependency>
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-core</artifactId></dependency>
+  </dependencies>
+</project>
+""")
+write("projects/gradle/build.gradle", """ext { snakeVersion = '1.33' }
+dependencies {
+    implementation 'org.yaml:snakeyaml:$snakeVersion'
+    implementation "org.yaml:snakeyaml:${snakeVersion}"
+    // implementation 'commented:out:1.0'
+    implementation group: 'commons-text', name: 'commons-text', version: '1.9'
+    implementation 'com.google.guava:guava:31.1-jre'
+    implementation 'org.foo:bar:1.+'
+}
+""")
+write("projects/gradle/gradle/libs.versions.toml", """[versions]
+text = "1.9"
+[libraries]
+commons-text = { module = "org.apache.commons:commons-text", version.ref = "text" }
+""")
+write("projects/npm-lock/package.json", '{"dependencies":{"lodash":"^4.17.0"}}\n')
+write("projects/npm-lock/package-lock.json", """{"lockfileVersion":3,"packages":{"":{"dependencies":{"lodash":"^4.17.0"}},
+"node_modules/lodash":{"version":"4.17.15"},
+"node_modules/minimist":{"version":"1.2.5","dev":true}}}
+""")
+write("projects/npm-nolock/package.json",
+      '{"dependencies":{"axios":"^0.21.0","left":"git+https://x/y.git"},"devDependencies":{"jquery":"~3.4.0"}}\n')
+write("projects/yarn/package.json", '{"dependencies":{"lodash":"^4.17.0","foo":"npm:minimist@^1.2.0"}}\n')
+write("projects/yarn/yarn.lock", """# yarn lockfile v1
+
+lodash@^4.17.0, lodash@^4.17.20:
+  version "4.17.20"
+
+"foo@npm:minimist@^1.2.0":
+  version "1.2.5"
+""")
+
+# ------------------------------------------------------------------ OSV records
+def osv(id, eco, name, events, aliases=(), vec=None, sev=None, v4=None):
+    a = {"package": {"ecosystem": eco, "name": name},
+         "ranges": [{"type": "ECOSYSTEM" if eco == "Maven" else "SEMVER", "events": events}]}
+    r = {"id": id, "aliases": list(aliases), "summary": f"Test vuln in {name}", "affected": [a]}
+    if vec: r["severity"] = [{"type": "CVSS_V3", "score": vec}]
+    if v4: r.setdefault("severity", []).append({"type": "CVSS_V4", "score": v4})
+    if sev: r["database_specific"] = {"severity": sev}
+    return r
+
+maven = [
+    osv("GHSA-jfh8-c2jp-5v3q", "Maven", "org.apache.logging.log4j:log4j-core", [{"introduced": "2.0-beta9"}, {"fixed": "2.15.0"}],
+        ["CVE-2021-44228"], "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+        v4="CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H"),
+    osv("GHSA-xxxx-old", "Maven", "org.apache.logging.log4j:log4j-core", [{"introduced": "0"}, {"fixed": "2.0-rc1"}], ["CVE-2000-0001"], sev="LOW"),
+    osv("GHSA-57j2-w4cx-62h2", "Maven", "com.fasterxml.jackson.core:jackson-databind",
+        [{"introduced": "2.9.0"}, {"fixed": "2.9.10.7"}, {"introduced": "2.10.0"}, {"fixed": "2.10.5"}], ["CVE-2020-36518"], sev="HIGH"),
+    osv("GHSA-mjmj-j48q-9wg2", "Maven", "org.yaml:snakeyaml", [{"introduced": "0"}, {"fixed": "2.0"}], ["CVE-2022-1471"],
+        "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"),
+    osv("GHSA-599f-7c49-w659", "Maven", "org.apache.commons:commons-text", [{"introduced": "1.5"}, {"fixed": "1.10.0"}], ["CVE-2022-42889"], sev="CRITICAL"),
+    osv("GHSA-7g45-4rm6-3mm3", "Maven", "com.google.guava:guava", [{"introduced": "1.0"}, {"fixed": "32.0.0-android"}], ["CVE-2023-2976"], sev="HIGH"),
+    osv("GHSA-guava-old", "Maven", "com.google.guava:guava", [{"introduced": "0"}, {"last_affected": "24.1-jre"}], ["CVE-2018-10237"], sev="MODERATE"),
+]
+npm = [
+    osv("GHSA-35jh-r3h4-6jhm", "npm", "lodash", [{"introduced": "0"}, {"fixed": "4.17.21"}], ["CVE-2021-23337"],
+        "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H", v4="CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N"),
+    osv("GHSA-xvch-5gv4-984h", "npm", "minimist", [{"introduced": "0"}, {"fixed": "1.2.6"}], ["CVE-2021-44906"], sev="CRITICAL"),
+    osv("GHSA-cph5-m8f7-6c5x", "npm", "axios", [{"introduced": "0"}, {"fixed": "0.21.2"}], ["CVE-2021-3749"], sev="HIGH"),
+    osv("GHSA-gxr4-xjj5-5px2", "npm", "jquery", [{"introduced": "1.2.0"}, {"fixed": "3.5.0"}], ["CVE-2020-11022"], sev="MODERATE",
+        v4="CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:P/VC:L/VI:L/VA:N/SC:L/SI:L/SA:N"),
+    osv("GHSA-noncve", "npm", "jquery", [{"introduced": "0"}, {"fixed": "3.4.0"}], sev="LOW"),
+]
+os.makedirs(os.path.join(out, "db/osv"), exist_ok=True)
+for eco, recs in (("Maven", maven), ("npm", npm)):
+    with zipfile.ZipFile(os.path.join(out, f"db/osv/{eco}-all.zip"), "w", zipfile.ZIP_DEFLATED) as z:
+        for r in recs:
+            z.writestr(r["id"] + ".json", json.dumps(r))
+        z.writestr("other.json", json.dumps(osv("X", "Maven", "other:thing", [{"introduced": "0"}])))
+
+with zipfile.ZipFile(os.path.join(out, "db/advisory-database-main.zip"), "w", zipfile.ZIP_DEFLATED) as z:
+    z.writestr("advisory-database-main/README.md", "# GitHub Advisory Database")
+    for r in maven + npm:
+        z.writestr(f"advisory-database-main/advisories/github-reviewed/2021/12/{r['id']}/{r['id']}.json", json.dumps(r, indent=2))
+
+# ------------------------------------------------------------------ CVE List (CVE JSON 5) records
+def cve(id, affected, title=None, desc="Test description. More text.", metrics=None, state="PUBLISHED", adp=None):
+    cna = {"affected": affected, "descriptions": [{"lang": "en", "value": desc}]}
+    if title: cna["title"] = title
+    if metrics: cna["metrics"] = metrics
+    c = {"cna": cna}
+    if adp: c["adp"] = adp
+    return {"dataType": "CVE_RECORD", "dataVersion": "5.1",
+            "cveMetadata": {"cveId": id, "state": state, "datePublished": "2022-10-13T00:00:00.000Z"}, "containers": c}
+
+v31 = lambda vec, score: [{"cvssV3_1": {"vectorString": vec, "baseScore": score}}]
+cves = [
+    cve("CVE-2022-1471", [{"vendor": "SnakeYAML", "product": "SnakeYAML", "packageName": "org.yaml:snakeyaml",
+                           "collectionURL": "https://repo.maven.apache.org/maven2",
+                           "versions": [{"version": "0", "lessThan": "2.0", "status": "affected", "versionType": "maven"}]}],
+        title="Constructor Deserialization Remote Code Execution", metrics=v31("CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H", 8.8)),
+    cve("CVE-2022-42889", [{"vendor": "Apache Software Foundation", "product": "commons-text",
+                            "versions": [{"version": "1.5", "lessThan": "1.10.0", "status": "affected", "versionType": "maven"}]}],
+        desc="Apache Commons Text performs variable interpolation. Upgrade to 1.10.0.",
+        adp=[{"metrics": v31("CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H", 9.8)}],
+        metrics=[{"cvssV4_0": {"vectorString": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N", "baseScore": 9.3}}]),
+    cve("CVE-2021-23337", [{"vendor": "lodash", "product": "lodash", "versions": [{"version": ">= 4.0.0, < 4.17.21", "status": "affected"}]}],
+        title="Command injection in lodash", metrics=v31("CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H", 7.2)),
+    cve("CVE-2021-44906", [{"vendor": "substack", "product": "minimist", "defaultStatus": "affected",
+                            "versions": [{"version": "1.2.6", "lessThan": "*", "status": "unaffected", "versionType": "semver"}]}],
+        metrics=[{"other": {"type": "x", "content": {"text": "critical"}}}]),
+    cve("CVE-2020-11022", [{"vendor": "jquery", "product": "jQuery",
+                            "versions": [{"version": "1.2", "lessThan": "3.5.0", "status": "affected", "versionType": "semver"}]}],
+        metrics=v31("CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:C/C:L/I:L/A:N", 6.1)),
+    cve("CVE-2021-3749", [{"vendor": "axios", "product": "axios", "versions": [{"version": "0.21.1", "status": "affected"}]}]),
+    cve("CVE-2020-36518", [{"vendor": "n/a", "product": "jackson-databind",
+                            "versions": [{"version": "2.9.0", "lessThan": "2.12.6.1", "status": "affected"}]}]),
+    cve("CVE-2023-2976", [{"vendor": "Google", "product": "guava",
+                           "versions": [{"version": "1.0", "lessThan": "32.0.0", "status": "affected"}]}], state="REJECTED"),
+    cve("CVE-2021-44228", [{"vendor": "Apache Software Foundation", "product": "Apache Log4j2",
+                            "versions": [{"version": "2.0-beta9", "lessThan": "log4j-core*", "status": "affected", "versionType": "custom"}]}],
+        title="Log4Shell"),
+    cve("CVE-2099-0001", [{"vendor": "Acme", "product": "guava", "versions": [{"version": "0", "lessThan": "99", "status": "affected"}]}]),
+]
+inner = io.BytesIO()
+with zipfile.ZipFile(inner, "w", zipfile.ZIP_DEFLATED) as z:
+    for r in cves:
+        cid = r["cveMetadata"]["cveId"]; y, n = cid.split("-")[1], cid.split("-")[2]
+        z.writestr(f"cves/{y}/{n[:-3]}xxx/{cid}.json", json.dumps(r, indent=2))
+    z.writestr("cves/deltaLog.json", json.dumps([{"fetchTime": "x", "new": [], "updated": []}]))
+with zipfile.ZipFile(os.path.join(out, "db/2026-11-19_all_CVEs_at_midnight.zip.zip"), "w", zipfile.ZIP_STORED) as z:
+    z.writestr("cves.zip", inner.getvalue())
+print("fixtures written to", out)

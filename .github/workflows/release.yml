@@ -1,0 +1,151 @@
+# A pushed tag vX.Y publishes the release: the two self-contained distributions, each built on its own system (its
+# runtime is linked there, with the program in it, then Java's AOT cache of the program made by running it once), the
+# notes from CHANGELOG.md's "## X.Y" section, the checksums. The by-hand way is scripts/package.sh on Linux and
+# scripts\package.bat on Windows, then scripts/release.sh (see PUBLISHING.md, section 2).
+# Run by hand (Actions, release, Run workflow), it is a dry run: the two distributions of the version pom.xml names
+# built and checked on their systems, kept as the run's artefacts, nothing published.
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: The version, said once, in the pom
+        run: echo "VERSION=$(sed -n 's:.*<revision>\(.*\)</revision>.*:\1:p' pom.xml | head -1)" >> "$GITHUB_ENV"
+
+      - name: Check that the tag matches the pom and the changelog
+        if: github.event_name == 'push'
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          [ "$tag_version" = "$VERSION" ] || { echo "pom.xml is at version $VERSION, not $tag_version"; exit 1; }
+          scripts/changelog-section.py "$VERSION" > /dev/null
+
+      - name: Keep the externals' downloads from one release to the next
+        uses: actions/cache@v6
+        with:
+          path: external/downloads
+          key: externals-linux-${{ hashFiles('externals.conf') }}
+
+      - name: Deploy the externals (JDK, Maven)
+        run: scripts/setup.sh
+
+      - name: A display for the run that makes the AOT cache
+        run: command -v xvfb-run || { sudo apt-get update -q && sudo apt-get install -y -q xvfb; }
+
+      - name: Build and test, then package (scripts/package.sh checks the cache is used once unpacked)
+        run: scripts/package.sh
+
+      - name: Say so should the archive lack its AOT cache (it still works, starting slower)
+        run: |
+          tar tzf "releases/cvescanner-$VERSION-linux.tar.gz" | grep -q '/cvescanner.aot$' \
+            || echo "::warning::the Linux archive goes without its AOT cache: see the package step's log"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: linux
+          path: releases/cvescanner-*-linux.tar.gz
+          if-no-files-found: error
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: The version, said once, in the pom
+        shell: pwsh
+        run: |
+          $found = Select-String -Path pom.xml -Pattern '<revision>(.*)</revision>' | Select-Object -First 1
+          "VERSION=$($found.Matches[0].Groups[1].Value)" >> $env:GITHUB_ENV
+
+      - name: Keep the externals' downloads from one release to the next
+        uses: actions/cache@v6
+        with:
+          path: external/downloads
+          key: externals-windows-${{ hashFiles('externals.conf') }}
+
+      - name: Deploy the externals (JDK, Maven)
+        shell: cmd
+        run: scripts\setup.bat
+
+      - name: Build and test, then package
+        shell: cmd
+        run: scripts\package.bat
+
+      # Unpacked under a name with a space and parentheses, as "Program Files (x86)" would be, then started by each
+      # launcher: the program's classes must come from the cache ("shared objects file"). Said, not fatal.
+      - name: Check that each launcher uses the AOT cache
+        shell: pwsh
+        run: |
+          $version = $env:VERSION
+          $zip = "releases\cvescanner-$version-windows.zip"
+          $dir = Join-Path $env:RUNNER_TEMP 'CVE Scanner (check)'
+          Expand-Archive $zip -DestinationPath $env:RUNNER_TEMP
+          Rename-Item (Join-Path $env:RUNNER_TEMP "cvescanner-$version") $dir
+          if (-not (Test-Path "$dir\cvescanner.aot")) {
+            echo "::warning::the Windows archive goes without its AOT cache: see the package step's log"
+            exit 0
+          }
+          foreach ($launcher in 'CVEScanner.exe', 'cvescanner.bat') {
+            # a log beside the program (the launchers start it there): a path of its own would hold a drive's colon
+            $env:JAVA_TOOL_OPTIONS = '-Dcvescanner.training=true -Xlog:class+load=info:file=classes.log'
+            Remove-Item "$dir\classes.log" -ErrorAction SilentlyContinue
+            $arguments = if ($launcher -eq 'CVEScanner.exe') { @('--l4j-debug') } else { @() }
+            if ($arguments) {
+              Start-Process -FilePath "$dir\$launcher" -ArgumentList $arguments -WorkingDirectory $dir -Wait
+            } else {
+              Start-Process -FilePath "$dir\$launcher" -WorkingDirectory $dir -Wait
+            }
+            Start-Sleep -Seconds 2
+            Get-Process javaw -ErrorAction SilentlyContinue | Wait-Process -Timeout 120 -ErrorAction SilentlyContinue
+            $used = (Test-Path "$dir\classes.log") -and
+                (Select-String -Path "$dir\classes.log" -Quiet `
+                    -Pattern 'org.jtools.cvescanner.Launcher source: shared objects file')
+            if ($used) {
+              echo "$launcher uses the AOT cache"
+            } else {
+              echo "::warning::$launcher does not use the AOT cache"
+              if (Test-Path "$dir\launch4j.log") { Get-Content "$dir\launch4j.log" }
+              if (Test-Path "$dir\classes.log") {
+                Select-String -Path "$dir\classes.log" -Pattern 'cvescanner.Launcher'
+              }
+            }
+          }
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows
+          path: releases/cvescanner-*-windows.zip
+          if-no-files-found: error
+
+  release:
+    needs: [linux, windows]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: releases
+          merge-multiple: true
+
+      - name: Release notes
+        run: scripts/release.sh --body "${GITHUB_REF_NAME#v}" > body.md && cat body.md
+
+      - name: Create the release with the archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          gh release create "$GITHUB_REF_NAME" --title "CVEScanner $version" --notes-file body.md \
+            "releases/cvescanner-$version-windows.zip" "releases/cvescanner-$version-linux.tar.gz"

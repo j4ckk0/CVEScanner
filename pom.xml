@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.jtools</groupId>
+  <artifactId>cvescanner-parent</artifactId>
+  <version>${revision}</version>
+  <packaging>pom</packaging>
+
+  <name>CVEScanner (parent)</name>
+  <description>Which known vulnerabilities apply to the dependencies of Maven, Gradle and npm projects, from vulnerability databases loaded offline (GitHub Advisory Database, CVE List, OSV.dev exports), scored with CVSS for the environment the software runs in. Two jars: the scan (cvescanner-core), the program (cvescanner).</description>
+  <url>https://github.com/j4ckk0/CVEScanner</url>
+  <inceptionYear>2026</inceptionYear>
+
+  <organization>
+    <name>jtools.org</name>
+    <url>https://github.com/j4ckk0</url>
+  </organization>
+
+  <licenses>
+    <license>
+      <name>Apache License Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>j4ckk0</id>
+      <name>Jacques HENRY</name>
+      <email>j4ckk057@gmail.com</email>
+      <organization>jtools.org</organization>
+      <organizationUrl>https://github.com/j4ckk0</organizationUrl>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:https://github.com/j4ckk0/CVEScanner.git</connection>
+    <developerConnection>scm:git:git@github.com:j4ckk0/CVEScanner.git</developerConnection>
+    <url>https://github.com/j4ckk0/CVEScanner</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <issueManagement>
+    <system>GitHub</system>
+    <url>https://github.com/j4ckk0/CVEScanner/issues</url>
+  </issueManagement>
+
+  <!-- Built in this order, each a jar and a Java module: the scan, then the program (README, "Layout"). -->
+  <modules>
+    <module>cvescanner-core</module>
+    <module>cvescanner-app</module>
+  </modules>
+
+  <properties>
+    <revision>1.0</revision>
+    <!-- The same version in the four parts Windows wants of an .exe (launch4j refuses anything else). -->
+    <windowsVersion>1.0.0.0</windowsVersion>
+    <!-- The one library shipped, a decision taken knowingly (README, "No network"): its classes read by
+         NoNetworkTest at each build. Another version is another decision: the enforcer rule names this one. -->
+    <flatlaf.version>3.7.2</flatlaf.version>
+    <maven.compiler.release>25</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.jtools</groupId>
+        <artifactId>cvescanner-core</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <!-- core's tests' helpers and the samples' expected results: the program's tests use them too -->
+        <groupId>org.jtools</groupId>
+        <artifactId>cvescanner-core</artifactId>
+        <version>${project.version}</version>
+        <type>test-jar</type>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <!-- The window's looks, a dark one among them: the program's alone -->
+        <groupId>com.formdev</groupId>
+        <artifactId>flatlaf</artifactId>
+        <version>${flatlaf.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>5.12.2</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>3.4.1</version>
+          <configuration>
+            <archive>
+              <manifest>
+                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              </manifest>
+            </archive>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>3.6.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>3.1.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <version>3.7.1</version>
+        </plugin>
+        <plugin>
+          <groupId>com.akathist.maven.plugins.launch4j</groupId>
+          <artifactId>launch4j-maven-plugin</artifactId>
+          <version>2.7.0</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <plugin>
+        <!-- Apache 2.0 header at the top of every Java source (same convention as the jtools projects) -->
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <version>2.4.0</version>
+        <configuration>
+          <verbose>false</verbose>
+          <licenseName>apache_v2</licenseName>
+          <!-- the program's name in every module's headers, as in DocComparator -->
+          <projectName>CVEScanner</projectName>
+          <organizationName>jtools.org</organizationName>
+          <inceptionYear>2026</inceptionYear>
+          <canUpdateCopyright>true</canUpdateCopyright>
+        </configuration>
+        <executions>
+          <execution>
+            <id>add-license-headers</id>
+            <phase>process-sources</phase>
+            <goals>
+              <goal>update-file-header</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>**/*.java</include>
+              </includes>
+              <roots>
+                <root>src/main/java</root>
+                <root>src/test</root>
+              </roots>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <!-- Nothing ships but the two modules' classes, FlatLaf's and the JRE: NoNetworkTest reads those only,
+             so another library would bring code it never checks (README, "No network"). -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>no-shipped-library</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <excludes>
+                    <exclude>*:*:*:*:compile</exclude>
+                    <exclude>*:*:*:*:runtime</exclude>
+                    <exclude>*:*:*:*:system</exclude>
+                  </excludes>
+                  <includes>
+                    <!-- the jar of this build, read by NoNetworkTest -->
+                    <include>org.jtools:cvescanner-core:${project.version}</include>
+                    <!-- read by NoNetworkTest, this version only -->
+                    <include>com.formdev:flatlaf:${flatlaf.version}</include>
+                  </includes>
+                  <message>CVEScanner ships no library but FlatLaf, this version: another would carry code NoNetworkTest does not read (README, "No network").</message>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+        <executions>
+          <execution>
+            <id>default-compile</id>
+            <configuration>
+              <compilerArgs>
+                <!-- the version the program shows when it runs from the distributions' runtime image -->
+                <arg>--module-version</arg>
+                <arg>${project.version}</arg>
+              </compilerArgs>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+        <configuration>
+          <!-- the tests on the class path, as the jar runs: module-info.java is for the runtime image -->
+          <useModulePath>false</useModulePath>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <!-- The distribution of the system that builds, for the program's dist profile (cvescanner-app):
+         jlink links only for its own. -->
+    <profile>
+      <id>dist-windows</id>
+      <activation>
+        <os>
+          <family>windows</family>
+        </os>
+      </activation>
+      <properties>
+        <dist.system>windows</dist.system>
+        <launch4j.skip>false</launch4j.skip>
+        <exe>.exe</exe>
+      </properties>
+    </profile>
+    <profile>
+      <id>dist-linux</id>
+      <activation>
+        <os>
+          <family>unix</family>
+        </os>
+      </activation>
+      <properties>
+        <dist.system>linux</dist.system>
+        <launch4j.skip>true</launch4j.skip>
+        <exe></exe>
+      </properties>
+    </profile>
+  </profiles>
+</project>

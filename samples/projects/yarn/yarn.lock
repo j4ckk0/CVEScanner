@@ -1,0 +1,7 @@
+# yarn lockfile v1
+
+lodash@^4.17.0, lodash@^4.17.20:
+  version "4.17.20"
+
+"foo@npm:minimist@^1.2.0":
+  version "1.2.5"

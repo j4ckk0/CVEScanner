@@ -1,0 +1,9 @@
+ext { snakeVersion = '1.33' }
+dependencies {
+    implementation 'org.yaml:snakeyaml:$snakeVersion'
+    implementation "org.yaml:snakeyaml:${snakeVersion}"
+    // implementation 'commented:out:1.0'
+    implementation group: 'commons-text', name: 'commons-text', version: '1.9'
+    implementation 'com.google.guava:guava:31.1-jre'
+    implementation 'org.foo:bar:1.+'
+}
