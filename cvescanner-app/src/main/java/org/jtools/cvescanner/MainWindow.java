@@ -1092,6 +1092,14 @@ final class MainWindow extends JFrame {
         applyFilters();
     }
 
+    /** The status tooltip after the ignore file is read again: the scan's warnings, the file's own read anew. */
+    private void updateStatusTipAfterReread(List<Phrase> reread) {
+        var warnings = new ArrayList<Phrase>();
+        if (result != null) result.warnings().stream().filter(w -> !w.key().startsWith("ignore.")).forEach(warnings::add);
+        warnings.addAll(reread);
+        updateStatusTip(warnings);
+    }
+
     /** The status line's tooltip: the databases read, the scan's warnings, the ignore file's. */
     private void updateStatusTip(List<Phrase> warnings) {
         var tip = new ArrayList<String>();
@@ -1122,7 +1130,7 @@ final class MainWindow extends JFrame {
             return;
         }
         refreshFindings();
-        updateStatusTip(warnings);
+        updateStatusTipAfterReread(warnings);
         say(() -> I18n.text("ignore.applied", split.ignored().size()));
     }
 
@@ -1192,7 +1200,7 @@ final class MainWindow extends JFrame {
             JOptionPane.showMessageDialog(this, Gui.plain(e.getMessage()), I18n.text("ignore.failed.title"), JOptionPane.ERROR_MESSAGE);
         }
         refreshFindings();
-        updateStatusTip(warnings);
+        updateStatusTipAfterReread(warnings);
     }
 
     // ----------------------------------------------------------------------------- export, misc

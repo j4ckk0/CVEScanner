@@ -53,7 +53,7 @@ public final class Cli {
             if (!Files.isDirectory(o.scanDir)) throw new IOException(I18n.text("error.scanDirMissing", o.scanDir));
             var r = Engine.scan(o.scanDir, o.dbFiles, o.ignoreChoice(), l);
             var scored = Scoring.applyAll(r.findings(), o.environment, o.preferV4);
-            // set apart before --cve-only, so that an entry naming a finding without a CVE is not said to name none
+            // set apart before --cve-only, so that an entry naming a finding without a CVE is not said to set none aside
             var split = r.ignores().split(scored, LocalDate.now());
             split.warnings().forEach(l::warn);
             if (o.cveOnly) split = split.filter(f -> !f.cves().isEmpty());

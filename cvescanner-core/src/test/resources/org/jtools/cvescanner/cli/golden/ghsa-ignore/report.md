@@ -99,7 +99,7 @@ Entries past their date, their findings reported again:
 
 - line 6: `CVE-2020-36518` — expired after 2020-01-01
 
-Entries that name none of the findings:
+Entries that set none of the findings aside:
 
 - line 7: `CVE-2099-0001`
 

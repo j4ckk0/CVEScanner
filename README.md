@@ -161,9 +161,9 @@ package; a reason; a last day if any. The entry is written to the file (created 
 at once, without scanning again; in the **Ignored** tab, **Stop ignoring** takes the entry's line out, the file's other
 lines and comments kept as written. *Ignore file* above the table names another file, for every folder scanned.
 
-On the command line `--ignore FILE` names another file, `--no-ignore` reads none (every finding reported, for an audit).
-The scan warns of a line it cannot read, of an entry past its date, and of one that names none of the findings — an
-entry to clean up.
+On the command line `--ignore FILE` names another file, `--no-ignore` reads none (every finding reported, for an
+audit). The scan warns of a line it cannot read, of an entry past its date, and of one that sets none of the
+findings aside (it names none, or a line above sets them aside first) — an entry to clean up.
 
 ## Understanding the results
 

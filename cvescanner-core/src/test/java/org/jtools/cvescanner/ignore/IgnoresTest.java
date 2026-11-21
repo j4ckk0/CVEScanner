@@ -96,7 +96,7 @@ class IgnoresTest {
     }
 
     @Test
-    void theFirstEntryNamingAFindingSetsItAsideAndAnEntryNamingNoneIsSaid() {
+    void theFirstEntryNamingAFindingSetsItAsideAndAnEntrySettingNoneAsideIsSaid() {
         var log4j = finding("org.apache.logging.log4j:log4j-core", "2.14.1", "GHSA-jfh8", List.of("CVE-2021-44228"), List.of());
         var other = finding("g:a", "1.0", "GHSA-bbbb", List.of(), List.of());
         var first = rule("CVE-2021-44228", "", "", null, 3);
