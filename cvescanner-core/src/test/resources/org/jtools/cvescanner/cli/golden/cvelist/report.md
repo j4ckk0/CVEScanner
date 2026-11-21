@@ -38,32 +38,32 @@
 
 ### `gradle/build.gradle`
 
-| Severity | Base | Env. | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
+| Severity | Base score | Environment score | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
 |---|---|---|---|---|---|---|---|---|---|---|
 | HIGH | 8.8 (v3.1) | — | `org.yaml:snakeyaml` | 1.33 | implementation | [CVE-2022-1471](https://www.cve.org/CVERecord?id=CVE-2022-1471) | CVE record | CVE-2022-1471 | 2.0 | Constructor Deserialization Remote Code Execution |
 
 ### `gradle/gradle/libs.versions.toml`
 
-| Severity | Base | Env. | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
+| Severity | Base score | Environment score | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
 |---|---|---|---|---|---|---|---|---|---|---|
 | CRITICAL | 9.3 (v4.0) | — | `org.apache.commons:commons-text` | 1.9 | catalog:commons-text | [CVE-2022-42889](https://www.cve.org/CVERecord?id=CVE-2022-42889) | CVE name match ⚠ | CVE-2022-42889 | 1.10.0 | Apache Commons Text performs variable interpolation. |
 
 ### `npm-lock/package-lock.json`
 
-| Severity | Base | Env. | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
+| Severity | Base score | Environment score | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
 |---|---|---|---|---|---|---|---|---|---|---|
 | CRITICAL | — | — | `minimist` | 1.2.5 | transitive (dev) | [CVE-2021-44906](https://www.cve.org/CVERecord?id=CVE-2021-44906) | CVE name match ⚠ | CVE-2021-44906 | 1.2.6 | Test description. |
 | HIGH | 7.2 (v3.1) | — | `lodash` | 4.17.15 | direct | [CVE-2021-23337](https://www.cve.org/CVERecord?id=CVE-2021-23337) | CVE name match ⚠ | CVE-2021-23337 | 4.17.21 | Command injection in lodash |
 
 ### `npm-nolock/package.json`
 
-| Severity | Base | Env. | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
+| Severity | Base score | Environment score | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
 |---|---|---|---|---|---|---|---|---|---|---|
 | MEDIUM | 4.7 (v3.1) | — | `jquery` | 3.4.0 | devDependencies | [CVE-2020-11022](https://www.cve.org/CVERecord?id=CVE-2020-11022) | CVE name match ⚠ | CVE-2020-11022 | 3.5.0 | Test description. |
 
 ### `yarn/yarn.lock`
 
-| Severity | Base | Env. | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
+| Severity | Base score | Environment score | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
 |---|---|---|---|---|---|---|---|---|---|---|
 | CRITICAL | — | — | `minimist` | 1.2.5 | direct | [CVE-2021-44906](https://www.cve.org/CVERecord?id=CVE-2021-44906) | CVE name match ⚠ | CVE-2021-44906 | 1.2.6 | Test description. |
 | HIGH | 7.2 (v3.1) | — | `lodash` | 4.17.20 | direct | [CVE-2021-23337](https://www.cve.org/CVERecord?id=CVE-2021-23337) | CVE name match ⚠ | CVE-2021-23337 | 4.17.21 | Command injection in lodash |
@@ -82,4 +82,4 @@
 - npm results include transitive dependencies when a lockfile is present.
 - A match means the version is inside an advisory's affected range; whether the vulnerable code is reachable in your application still needs review.
 - *CVE name match ⚠* findings come from CVE List records that describe the product only by name (e.g. product `commons-text`, vendor `Apache Software Foundation`); check that they really refer to your package. The GitHub Advisory Database gives exact package matches.
-- *Base* is computed from the advisory's CVSS vector (version in brackets), or the advisory's rating when there is no vector. *Env.* applies the chosen environment (security requirements and maximum attack vector) as CVSS environmental metrics. `MAL-` advisories are known-malicious packages and are rated CRITICAL.
+- *Base score* is computed from the advisory's CVSS vector (version in brackets), or the advisory's rating when there is no vector. *Environment score* applies the chosen environment (security requirements and maximum attack vector) as CVSS environmental metrics. `MAL-` advisories are known-malicious packages and are rated CRITICAL.

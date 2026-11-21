@@ -129,11 +129,11 @@ final class MainWindow extends JFrame {
     }
 
     private static final List<Column<Finding>> FINDING_COLUMNS = List.of(
-            new Column<Finding>("column.severity", Severity.class, 112, Finding::severity),
-            new Column<Finding>("column.base", Double.class, 50, Finding::cvss),
-            new Column<Finding>("column.env", Double.class, 50, Finding::envScore),
-            new Column<Finding>("column.cvss", String.class, 45, f -> Objects.requireNonNullElse(f.score().version(), "")),
-            new Column<Finding>("column.ecosystem", String.class, 75, Finding::ecosystem),
+            new Column<Finding>("column.severity", Severity.class, 175, Finding::severity),
+            new Column<Finding>("column.base", Double.class, 95, Finding::cvss),
+            new Column<Finding>("column.env", Double.class, 140, Finding::envScore),
+            new Column<Finding>("column.cvss", String.class, 95, f -> Objects.requireNonNullElse(f.score().version(), "")),
+            new Column<Finding>("column.ecosystem", String.class, 100, Finding::ecosystem),
             new Column<Finding>("column.package", String.class, 320, Finding::pkg),
             new Column<Finding>("column.version", String.class, 95, Finding::displayVersion),
             new Column<Finding>("column.fixedIn", String.class, 95, f -> f.fixedIn().isEmpty() ? "—" : f.fixedIn()),
@@ -710,7 +710,7 @@ final class MainWindow extends JFrame {
         for (int c = 0; c < columns.size(); c++) {
             var col = table.getColumnModel().getColumn(c);
             col.setPreferredWidth(columns.get(c).width());
-            if (columns.get(c).width() <= 112) col.setMinWidth(columns.get(c).width());   // keep short columns readable
+            if (columns.get(c).width() <= 175) col.setMinWidth(columns.get(c).width());   // keep short columns readable
         }
         // the headers in the language in use: each column by its model index, wherever it was dragged
         labels.on(() -> {
