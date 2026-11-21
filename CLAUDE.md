@@ -49,4 +49,6 @@ Tests speak English (`I18nEnglishInTests`).
 - Comments tell the intention (why the code is as it is), never what the next line does, never the history.
 - A unit does one thing; a name says what the thing is. Past ~1000 lines a file is a finding.
 - Trials of the window never open on the user's desktop: render off-screen, or `xvfb-run`.
+- Build with `clean` (the scripts do): without it the shade plugin reuses the previous `cvescanner.jar`, whose old core
+  classes win over the new ones.
 - Commit messages: a feature title in plain English.

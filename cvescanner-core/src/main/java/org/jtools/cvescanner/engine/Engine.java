@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import org.jtools.cvescanner.cots.InventoryReader;
+import org.jtools.cvescanner.cots.SbomReader;
 import org.jtools.cvescanner.db.CveList;
 import org.jtools.cvescanner.db.NvdFeed;
 import org.jtools.cvescanner.db.Osv;
@@ -72,6 +73,7 @@ public final class Engine {
         GradleScanner.scanCatalogs(files.catalogs, col);
         NpmScanner.scan(files.packageJsons, root, col, l::warn);
         InventoryReader.scan(files.cotsInventories, col, l::warn);
+        SbomReader.scan(files.sboms, col, l::warn);
 
         var wanted = VulnDb.Wanted.of(col.deps);
         var index = new VulnDb.Index();
@@ -130,6 +132,7 @@ public final class Engine {
         counts.put("files.packageJson", files.packageJsons.size());
         // the files of components off-the-shelf, said only when there are some
         if (!files.cotsInventories.isEmpty()) counts.put("files.cotsInventories", files.cotsInventories.size());
+        if (!files.sboms.isEmpty()) counts.put("files.sboms", files.sboms.size());
         return new ScanResult(root, List.copyOf(findings), List.copyOf(col.deps), List.copyOf(col.unresolved),
                 index.sources, counts, List.copyOf(warnings));
     }

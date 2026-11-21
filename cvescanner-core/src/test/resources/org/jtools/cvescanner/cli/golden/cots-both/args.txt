@@ -1,1 +1,1 @@
--d cots-projects --db db/nvdcve-2.0-2024.json.zip --db db/cots-cvelist.zip --env internal
+-d cots-projects --db db/nvdcve-2.0-2024.json.zip --db db/cots-cvelist.zip --db db/advisory-database-main.zip --env internal

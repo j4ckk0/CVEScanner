@@ -1,10 +1,10 @@
 # Dependency Vulnerability Report
 
-- **Generated:** 2026-11-21 08:10 UTC
+- **Generated:** 2026-11-21 08:13 UTC
 - **Scanned directory:** `/home/j4ckk0/Developpement/github/CVEScanner/samples/cots-projects`
-- **Database:** `nvdcve-2.0-2024.json.zip` (NVD CVE feed (JSON 2.0), 7 records (6 relevant), file dated 2026-11-21 08:09 UTC)
-- **Files scanned:** 0 pom.xml, 0 Gradle build files, 0 version catalogs, 0 package.json, 1 component inventories
-- **Dependencies analysed:** 5 (plus 1 that could not be resolved to a version)
+- **Database:** `nvdcve-2.0-2024.json.zip` (NVD CVE feed (JSON 2.0), 8 records (7 relevant), file dated 2026-11-21 08:11 UTC)
+- **Files scanned:** 0 pom.xml, 0 Gradle build files, 0 version catalogs, 0 package.json, 1 component inventories, 2 SBOMs
+- **Dependencies analysed:** 11 (plus 3 that could not be resolved to a version)
 - **Scoring:** CVSS 4.0 preferred (CVSS 3.x when an advisory has no 4.0 vector)
 - **Environment:** Not applied (base score)
 
@@ -13,11 +13,11 @@
 | Severity | Findings |
 |---|---|
 | CRITICAL | 0 |
-| HIGH | 3 |
-| MEDIUM | 1 |
+| HIGH | 4 |
+| MEDIUM | 2 |
 | LOW | 0 |
 | UNKNOWN | 0 |
-| **Total** | **4** (4 unique vulnerabilities in 4 package versions) |
+| **Total** | **6** (5 unique vulnerabilities in 5 package versions) |
 
 ## Packages to upgrade
 
@@ -25,10 +25,11 @@
 
 | Worst severity | Ecosystem | Package | Current | Upgrade to | Vulns | Found in |
 |---|---|---|---|---|---|---|
-| HIGH | COTS | `ffmpeg:ffmpeg` | 4.4.2 | no fix | 1 | inventory/cots.csv |
+| HIGH | COTS | `ffmpeg:ffmpeg` | 4.4.2 | no fix | 1 | inventory/cots.csv, sbom/app.spdx.json |
 | HIGH | COTS | `openssl:openssl` | 1.1.1k | 1.1.1l | 1 | inventory/cots.csv |
 | HIGH | COTS | `osgeo:gdal` | 3.4.1 | 3.4.2 | 1 | inventory/cots.csv |
 | MEDIUM | COTS | `libbar` | 2.0 | 3.0 | 1 | inventory/cots.csv |
+| MEDIUM | COTS | `libpng:libpng` | 1.6.37 | 1.6.38 | 1 | sbom/bom.cdx.json |
 
 ## Findings by file
 
@@ -41,11 +42,25 @@
 | HIGH | 8.8 (v3.1) | — | `osgeo:gdal` | 3.4.1 | inventory | [CVE-2024-1001](https://nvd.nist.gov/vuln/detail/CVE-2024-1001) | CPE match | CVE-2024-1001 | 3.4.2 | Heap overflow in GDAL's reader. |
 | MEDIUM | 4.4 (v3.1) | — | `libbar` | 2.0 | inventory | [CVE-2024-1006](https://nvd.nist.gov/vuln/detail/CVE-2024-1006) | CPE product match ⚠ | CVE-2024-1006 | 3.0 | Test NVD description. |
 
-## Dependencies that could not be checked (1)
+### `sbom/app.spdx.json`
+
+| Severity | Base score | Environment score | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
+|---|---|---|---|---|---|---|---|---|---|---|
+| HIGH | 8.7 (v4.0) | — | `ffmpeg:ffmpeg` | 4.4.2 | sbom | [CVE-2024-1002](https://nvd.nist.gov/vuln/detail/CVE-2024-1002) | CPE match | CVE-2024-1002 | — | Test NVD description. |
+
+### `sbom/bom.cdx.json`
+
+| Severity | Base score | Environment score | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
+|---|---|---|---|---|---|---|---|---|---|---|
+| MEDIUM | 6.5 (v3.1) | — | `libpng:libpng` | 1.6.37 | sbom | [CVE-2024-1008](https://nvd.nist.gov/vuln/detail/CVE-2024-1008) | CPE match | CVE-2024-1008 | 1.6.38 | Test NVD description. |
+
+## Dependencies that could not be checked (3)
 
 | File | Ecosystem | Package | Declared | Reason |
 |---|---|---|---|---|
 | inventory/cots.csv | COTS | `zlib:zlib` | — | no version given |
+| sbom/app.spdx.json | COTS | `something` | — | no version given |
+| sbom/bom.cdx.json | COTS | `<b>unnamed</b>` | — | no version given |
 
 ## Notes and limitations
 

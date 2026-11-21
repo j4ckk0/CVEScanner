@@ -201,6 +201,30 @@ records = [
         v31=("CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N", 4.4)),
     nvd("CVE-2024-1007", [cpe("ffmpeg", "ffmpeg", versionEndExcluding="4.0")]),
 ]
+records.append(nvd("CVE-2024-1008", [cpe("libpng", "libpng", versionEndExcluding="1.6.38")],
+                   v31=("CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H", 6.5)))
+write(os.path.join(out, "cots-projects/sbom/bom.cdx.json"), json.dumps({
+    "bomFormat": "CycloneDX", "specVersion": "1.5", "version": 1,
+    "metadata": {"component": {"type": "application", "name": "sample-app", "version": "1.0"}},
+    "components": [
+        {"type": "library", "group": "org.apache.logging.log4j", "name": "log4j-core", "version": "2.14.1",
+         "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1"},
+        {"type": "library", "name": "core", "version": "1.0.0", "purl": "pkg:npm/%40scope/core@1.0.0"},
+        {"type": "library", "name": "libpng", "version": "1.6.37", "cpe": "cpe:2.3:a:libpng:libpng:1.6.37:*:*:*:*:*:*:*",
+         "components": [{"type": "library", "name": "zlib", "version": "1.2.11"}]},
+        {"type": "library", "name": "<b>unnamed</b>"},
+    ]}, indent=2))
+write(os.path.join(out, "cots-projects/sbom/app.spdx.json"), json.dumps({
+    "spdxVersion": "SPDX-2.3", "SPDXID": "SPDXRef-DOCUMENT", "name": "sample",
+    "packages": [
+        {"SPDXID": "SPDXRef-1", "name": "FFmpeg", "versionInfo": "4.4.2",
+         "externalRefs": [{"referenceCategory": "SECURITY", "referenceType": "cpe23Type",
+                           "referenceLocator": "cpe:2.3:a:ffmpeg:ffmpeg:4.4.2:*:*:*:*:*:*:*"}]},
+        {"SPDXID": "SPDXRef-2", "name": "lodash", "versionInfo": "4.17.15",
+         "externalRefs": [{"referenceCategory": "PACKAGE-MANAGER", "referenceType": "purl",
+                           "referenceLocator": "pkg:npm/lodash@4.17.15"}]},
+        {"SPDXID": "SPDXRef-3", "name": "something", "versionInfo": "NOASSERTION"},
+    ]}, indent=2))
 feed = {"resultsPerPage": len(records), "startIndex": 0, "totalResults": len(records), "format": "NVD_CVE",
         "version": "2.0", "timestamp": "2026-11-21T00:00:00.000", "vulnerabilities": records}
 with zipfile.ZipFile(os.path.join(out, "db/nvdcve-2.0-2024.json.zip"), "w", zipfile.ZIP_DEFLATED) as z:

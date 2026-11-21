@@ -1,0 +1,36 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "sample",
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-1",
+      "name": "FFmpeg",
+      "versionInfo": "4.4.2",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:ffmpeg:ffmpeg:4.4.2:*:*:*:*:*:*:*"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-2",
+      "name": "lodash",
+      "versionInfo": "4.17.15",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/lodash@4.17.15"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-3",
+      "name": "something",
+      "versionInfo": "NOASSERTION"
+    }
+  ]
+}
