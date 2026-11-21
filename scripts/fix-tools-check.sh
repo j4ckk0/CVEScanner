@@ -23,14 +23,26 @@ db=$root/samples/db/advisory-database-main.zip
 [ -f "$jar" ] || { echo "$jar missing: build first (scripts/build.sh)" >&2; exit 1; }
 for tool in java node npm yarn pnpm gradle; do command -v "$tool" >/dev/null || { echo "$tool not found on the PATH" >&2; exit 1; }; done
 export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-# a step that fails is said, in GitHub Actions as an annotation too: its output is not shown otherwise
-trap 'code=$?; echo "  FAILED  line $LINENO: $BASH_COMMAND (exit $code)"; [ -n "${GITHUB_ACTIONS:-}" ] && echo "::error::fix-tools: line $LINENO: $BASH_COMMAND"' ERR
-
 # A path as Java reads it: Git Bash's /c/... is C:/... on Windows.
 native() { if command -v cygpath >/dev/null; then cygpath -m "$1"; else echo "$1"; fi; }
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
+
+# A step that fails is said with the end of what its tool wrote; in GitHub Actions as an annotation too, since the
+# run's page shows annotations to anyone and its log only to the repository's members.
+step_log=$work/step.log
+quiet() { "$@" > "$step_log" 2>&1; }
+failed_step() {
+  local code=$1 line=$2 command=$3 tail
+  tail=$(tail -n 15 "$step_log" 2>/dev/null || true)
+  echo "  FAILED  line $line: $command (exit $code)"; echo "$tail"
+  if [ -n "${GITHUB_ACTIONS:-}" ]; then
+    tail=${tail//'%'/'%25'}; tail=${tail//$'\r'/}; tail=${tail//$'\n'/'%0A'}
+    echo "::error::fix-tools: line $line: $command%0A$tail"
+  fi
+}
+trap 'failed_step $? $LINENO "$BASH_COMMAND"' ERR
 failures=0
 check() {   # check DESCRIPTION FILE TEXT [absent]: the file holds the text, or does not with "absent"
   if grep -qF -- "$3" "$2"; then found=yes; else found=no; fi
@@ -46,11 +58,11 @@ check() {   # check DESCRIPTION FILE TEXT [absent]: the file holds the text, or 
 echo "==> Filling the tools' caches (online)"
 mkdir -p "$work/prime"
 cp -a samples/fix-tools/. "$work/prime/"
-(cd "$work/prime/npm" && npm ci --ignore-scripts --no-audit --no-fund >/dev/null && npm cache add lodash@4.17.21 >/dev/null)
-(cd "$work/prime/yarn1" && yarn install --frozen-lockfile --ignore-scripts --silent >/dev/null)
-(cd "$work/prime/yarn4" && yarn install --immutable >/dev/null)
-(cd "$work/prime/pnpm" && pnpm install --frozen-lockfile >/dev/null)
-(cd "$work/prime/gradle" && gradle -q dependencies >/dev/null)
+(cd "$work/prime/npm" && quiet npm ci --ignore-scripts --no-audit --no-fund && quiet npm cache add lodash@4.17.21)
+(cd "$work/prime/yarn1" && quiet yarn install --frozen-lockfile --ignore-scripts)
+(cd "$work/prime/yarn4" && quiet yarn install --immutable)
+(cd "$work/prime/pnpm" && quiet pnpm install --frozen-lockfile)
+(cd "$work/prime/gradle" && quiet gradle dependencies)
 for tool in yarn1 yarn4 pnpm; do   # the fixed version, through a project of its own
   mkdir -p "$work/prime/fixed-$tool"
   manager=$([ $tool = yarn4 ] && echo ', "packageManager": "yarn@4.9.2"' || true)
@@ -59,15 +71,15 @@ for tool in yarn1 yarn4 pnpm; do   # the fixed version, through a project of its
   [ $tool = yarn4 ] && printf 'nodeLinker: node-modules\n' > "$work/prime/fixed-$tool/.yarnrc.yml"
   # a CI runner makes yarn 4 and pnpm refuse to write a lockfile: this project has none yet
   (cd "$work/prime/fixed-$tool" && case $tool in
-     pnpm) pnpm install --no-frozen-lockfile >/dev/null ;;
-     *) YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install >/dev/null ;;
+     pnpm) quiet pnpm install --no-frozen-lockfile ;;
+     *) YARN_ENABLE_IMMUTABLE_INSTALLS=false quiet yarn install ;;
    esac)
 done
 mkdir -p "$work/prime/fixed-gradle"
 cp samples/fix-tools/gradle/settings.gradle "$work/prime/fixed-gradle/"
 sed 's/commons-text:1.9/commons-text:1.10.0/' samples/fix-tools/gradle/build.gradle > "$work/prime/fixed-gradle/build.gradle"
 echo "tasks.register('fetch') { doLast { configurations.runtimeClasspath.files } }" >> "$work/prime/fixed-gradle/build.gradle"
-(cd "$work/prime/fixed-gradle" && gradle -q fetch >/dev/null)
+(cd "$work/prime/fixed-gradle" && quiet gradle fetch)
 
 echo "==> Applying the fixes (the tools offline)"
 mkdir -p "$work/run"
