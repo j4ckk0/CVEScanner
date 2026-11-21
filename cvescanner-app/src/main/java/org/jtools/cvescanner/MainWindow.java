@@ -935,6 +935,11 @@ final class MainWindow extends JFrame {
     }
 
     // ---------------------------------------------------------------------------------- details
+    /** Whether a scan's findings are shown. */
+    boolean scanned() {
+        return result != null;
+    }
+
     private Finding selectedFinding() {
         int row = findingsTable.getSelectedRow();
         return row < 0 ? null : findingsModel.row(findingsTable.convertRowIndexToModel(row));

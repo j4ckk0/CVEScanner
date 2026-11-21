@@ -23,6 +23,7 @@ package org.jtools.cvescanner;
 
 import java.awt.GraphicsEnvironment;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import org.jtools.cvescanner.cli.Cli;
 import org.jtools.cvescanner.cli.Options;
 import org.jtools.cvescanner.i18n.I18n;
@@ -34,6 +35,15 @@ import org.jtools.cvescanner.i18n.I18nLanguage;
  * else French.
  */
 public final class Launcher {
+
+    /**
+     * Set to make the AOT cache (pom.xml, profile dist): the program shows its window, scans the folder given, then
+     * exits, for Java to record what it loaded.
+     */
+    static final String TRAINING = "cvescanner.training";
+
+    /** How long the training run waits for its scan before it gives up, failing. */
+    private static final int TRAINING_LIMIT_MS = 120_000;
 
     private Launcher() {
     }
@@ -51,6 +61,11 @@ public final class Launcher {
     }
 
     public static void main(String[] args) {
+        if (Boolean.getBoolean(TRAINING) && GraphicsEnvironment.isHeadless()) {
+            // nothing shown, a cache of little use: failing says so (pom.xml, profile dist)
+            System.err.println("training: no display");
+            System.exit(1);
+        }
         Settings settings = Settings.load();
         I18nLanguage requested = Options.requestedLanguage(args);
         I18n.use(requested != null ? requested : I18nLanguage.ofCode(settings.get(Settings.LANGUAGE, I18nLanguage.DEFAULT.code())));
@@ -73,7 +88,28 @@ public final class Launcher {
         }
         SwingUtilities.invokeLater(() -> {
             Looks.use(settings.get(Settings.LOOK, Looks.DEFAULT));
-            new MainWindow(opts, settings).setVisible(true);
+            MainWindow window = new MainWindow(opts, settings);
+            window.setVisible(true);
+            if (Boolean.getBoolean(TRAINING)) {
+                exitOnceShown(window, opts.dirGiven);
+            }
         });
+    }
+
+    /** Exits once the window is shown and, with a folder, its scan too, given a moment to be drawn. */
+    private static void exitOnceShown(MainWindow window, boolean scanning) {
+        long limit = System.currentTimeMillis() + TRAINING_LIMIT_MS;
+        boolean[] ready = {false};
+        new Timer(100, _ -> {
+            if (ready[0]) {
+                window.dispose();
+                System.exit(0);
+            }
+            ready[0] = window.isShowing() && (!scanning || window.scanned());
+            if (System.currentTimeMillis() > limit) {
+                System.err.println("training: nothing scanned after " + TRAINING_LIMIT_MS / 1000 + " s");
+                System.exit(1);
+            }
+        }).start();
     }
 }

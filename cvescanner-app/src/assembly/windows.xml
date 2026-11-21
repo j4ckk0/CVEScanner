@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Windows distribution: zip with the bundled JRE and its launchers, CVEScanner.exe and cvescanner.bat, and cvescanner-cli.bat for the command line. -->
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0 http://maven.apache.org/xsd/assembly-2.2.0.xsd">
+  <id>windows</id>
+  <formats>
+    <format>zip</format>
+  </formats>
+  <baseDirectory>${project.artifactId}-${project.version}</baseDirectory>
+
+  <files>
+    <file>
+      <source>${project.build.directory}/${project.build.finalName}.jar</source>
+      <destName>cvescanner.jar</destName>
+    </file>
+    <file>
+      <source>${project.build.directory}/CVEScanner.exe</source>
+    </file>
+    <file>
+      <source>src/dist/cvescanner.bat</source>
+      <lineEnding>crlf</lineEnding>
+    </file>
+    <file>
+      <!-- the command line, in its console, its exit code returned -->
+      <source>src/dist/cvescanner-cli.bat</source>
+      <lineEnding>crlf</lineEnding>
+    </file>
+    <file>
+      <!-- the program's licence, and what it holds of others' -->
+      <source>../LICENSE</source>
+      <lineEnding>crlf</lineEnding>
+    </file>
+    <file>
+      <source>../NOTICE</source>
+      <lineEnding>crlf</lineEnding>
+    </file>
+    <file>
+      <!-- the licence of FlatLaf, whose classes cvescanner.jar holds -->
+      <source>src/dist/licenses/FlatLaf-LICENSE.txt</source>
+      <outputDirectory>licenses</outputDirectory>
+    </file>
+    <file>
+      <source>../README.md</source>
+      <lineEnding>crlf</lineEnding>
+    </file>
+  </files>
+
+  <fileSets>
+    <!-- the folder of the database zips, loaded at the start by the launchers, with what to put there -->
+    <fileSet>
+      <directory>src/dist/database</directory>
+      <outputDirectory>database</outputDirectory>
+      <lineEnding>crlf</lineEnding>
+    </fileSet>
+    <!-- Java's AOT cache of the program, when it could be made (see pom.xml, profile dist) -->
+    <fileSet>
+      <directory>${project.build.directory}</directory>
+      <outputDirectory>.</outputDirectory>
+      <includes>
+        <include>cvescanner.aot</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>${runtime.image}</directory>
+      <outputDirectory>jre</outputDirectory>
+    </fileSet>
+  </fileSets>
+</assembly>
