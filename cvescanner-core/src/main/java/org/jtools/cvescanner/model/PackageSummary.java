@@ -1,8 +1,16 @@
 package org.jtools.cvescanner.model;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
+import org.jtools.cvescanner.version.Versions;
 
 /*-
  * #%L
@@ -40,4 +48,39 @@ public record PackageSummary(Severity worst, String ecosystem, String pkg, Strin
     }
 
     public String upgradeTo() { return upgradeTo(I18n.language()); }
+
+    /**
+     * Findings grouped by package version, the worst first: the lowest version fixing every finding that has a fix, the
+     * advisories, the files.
+     */
+    public static List<PackageSummary> of(List<Finding> findings) {
+        record Key(String eco, String pkg, String version) {}
+        final class Agg {
+            final Set<String> ids = new HashSet<>(), files = new TreeSet<>(), labels = new TreeSet<>();
+            final List<String> fixes = new ArrayList<>();
+            Severity worst = Severity.UNKNOWN;
+            boolean approximate;
+        }
+        var map = new LinkedHashMap<Key, Agg>();
+        for (var f : findings) {
+            var a = map.computeIfAbsent(new Key(f.ecosystem(), f.pkg(), f.version()), _ -> new Agg());
+            a.ids.add(f.id());
+            if (f.cves().isEmpty()) a.labels.add(f.id()); else a.labels.addAll(f.cves());
+            a.files.add(f.file());
+            a.fixes.add(f.fixedIn());
+            if (f.severity().compareTo(a.worst) > 0) a.worst = f.severity();
+            a.approximate |= f.approximate();
+        }
+        var out = new ArrayList<PackageSummary>();
+        map.forEach((k, a) -> {
+            var fixed = a.fixes.stream().filter(s -> !s.isEmpty()).max(Versions.comparator(k.eco()));
+            boolean someUnfixed = a.fixes.stream().anyMatch(String::isEmpty);
+            out.add(new PackageSummary(a.worst, k.eco(), k.pkg(), k.version(), a.approximate, fixed.orElse(""), someUnfixed, a.ids.size(),
+                    String.join(", ", a.labels), String.join(", ", a.files)));
+        });
+        out.sort(Comparator.comparing(PackageSummary::worst).reversed()
+                .thenComparing(Comparator.comparingInt(PackageSummary::vulnerabilities).reversed())
+                .thenComparing(PackageSummary::pkg));
+        return out;
+    }
 }

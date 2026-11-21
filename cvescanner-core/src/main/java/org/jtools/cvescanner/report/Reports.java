@@ -27,15 +27,10 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -53,50 +48,11 @@ import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.PackageSummary;
 import org.jtools.cvescanner.model.ScanResult;
 import org.jtools.cvescanner.model.Unresolved;
-import org.jtools.cvescanner.version.Versions;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class Reports {
     private Reports() {}
-
-    public static List<PackageSummary> packages(List<Finding> findings) {
-        record Key(String eco, String pkg, String version) {}
-        final class Agg {
-            final Set<String> ids = new HashSet<>(), files = new TreeSet<>(), labels = new TreeSet<>();
-            final List<String> fixes = new ArrayList<>();
-            Severity worst = Severity.UNKNOWN;
-            boolean approximate;
-        }
-        var map = new LinkedHashMap<Key, Agg>();
-        for (var f : findings) {
-            var a = map.computeIfAbsent(new Key(f.ecosystem(), f.pkg(), f.version()), _ -> new Agg());
-            a.ids.add(f.id());
-            if (f.cves().isEmpty()) a.labels.add(f.id()); else a.labels.addAll(f.cves());
-            a.files.add(f.file());
-            a.fixes.add(f.fixedIn());
-            if (f.severity().compareTo(a.worst) > 0) a.worst = f.severity();
-            a.approximate |= f.approximate();
-        }
-        var out = new ArrayList<PackageSummary>();
-        map.forEach((k, a) -> {
-            var fixed = a.fixes.stream().filter(s -> !s.isEmpty()).max(Versions.comparator(k.eco()));
-            boolean someUnfixed = a.fixes.stream().anyMatch(String::isEmpty);
-            out.add(new PackageSummary(a.worst, k.eco(), k.pkg(), k.version(), a.approximate, fixed.orElse(""), someUnfixed, a.ids.size(),
-                    String.join(", ", a.labels), String.join(", ", a.files)));
-        });
-        out.sort(Comparator.comparing(PackageSummary::worst).reversed()
-                .thenComparing(Comparator.comparingInt(PackageSummary::vulnerabilities).reversed())
-                .thenComparing(PackageSummary::pkg));
-        return out;
-    }
-
-    public static Map<Severity, Long> counts(List<Finding> findings) {
-        var m = new EnumMap<Severity, Long>(Severity.class);
-        for (var s : Severity.values()) m.put(s, 0L);
-        findings.forEach(f -> m.merge(f.severity(), 1L, Long::sum));
-        return m;
-    }
 
     /**
      * Writes report.md, in this language, and findings.csv and findings.json, in English whatever the language: their
@@ -163,7 +119,7 @@ public final class Reports {
                            I18nLanguage language) {
         var findings = split.active();
         var sb = new StringBuilder();
-        var counts = counts(findings);
+        var counts = Finding.countBySeverity(findings);
         sb.append("# ").append(I18n.text(language, "markdown.title")).append("\n\n");
         sb.append("- **").append(I18n.text(language, "markdown.generated")).append(":** ").append(ScanResult.TIMESTAMP_UTC.format(Instant.now())).append('\n');
         sb.append("- **").append(I18n.text(language, "markdown.scanned")).append(":** `").append(code(r.root().toString())).append("`\n");
@@ -183,7 +139,7 @@ public final class Reports {
         sb.append("\n## ").append(I18n.text(language, "markdown.summary")).append("\n\n").append(I18n.text(language, "markdown.summary.header")).append("\n|---|---|\n");
         for (var s : List.of(Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM, Severity.LOW, Severity.UNKNOWN))
             sb.append("| ").append(severity(s, language)).append(" | ").append(counts.get(s)).append(" |\n");
-        var pkgs = packages(findings);
+        var pkgs = PackageSummary.of(findings);
         sb.append("| **").append(I18n.text(language, "markdown.total")).append("** | **").append(findings.size()).append("** ")
                 .append(I18n.text(language, "markdown.total.detail", findings.stream().map(Finding::id).distinct().count(), pkgs.size()))
                 .append(" |\n\n");

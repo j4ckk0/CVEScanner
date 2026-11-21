@@ -108,7 +108,6 @@ import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.ignore.IgnoreFile;
-import org.jtools.cvescanner.ignore.IgnoreRule;
 import org.jtools.cvescanner.ignore.IgnoredFinding;
 import org.jtools.cvescanner.ignore.Ignores;
 import org.jtools.cvescanner.model.Finding;
@@ -875,7 +874,7 @@ final class MainWindow extends JFrame {
             }
         });
         // the package view is rebuilt from the findings that pass the facet filters, then searched
-        packagesModel.setRows(Reports.packages(findingsModel.rows().stream().filter(this::passesFacets).toList()));
+        packagesModel.setRows(PackageSummary.of(findingsModel.rows().stream().filter(this::passesFacets).toList()));
         packagesSorter.setRowFilter(new RowFilter<>() {
             @Override
             public boolean include(Entry<? extends ListTableModel<PackageSummary>, ? extends Integer> e) {
@@ -927,7 +926,7 @@ final class MainWindow extends JFrame {
     }
 
     private void updateChips() {
-        var counts = Reports.counts(findingsModel.rows());
+        var counts = Finding.countBySeverity(findingsModel.rows());
         chips.forEach((s, chip) -> chip.setText(s.label() + "  " + counts.get(s)));
     }
 

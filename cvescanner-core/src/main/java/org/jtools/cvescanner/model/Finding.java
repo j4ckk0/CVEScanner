@@ -22,7 +22,9 @@ package org.jtools.cvescanner.model;
 
 
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import org.jtools.cvescanner.cvss.Rating;
 import org.jtools.cvescanner.cvss.Score;
 import org.jtools.cvescanner.cvss.Severity;
@@ -55,4 +57,12 @@ public record Finding(Severity severity, Score score, String ecosystem, String p
     public String displayVersion() { return approximate ? version + " ≈" : version; }
 
     public String publishedDate() { return published.length() >= 10 ? published.substring(0, 10) : published; }
+
+    /** How many findings of each severity, every severity counted, none left out. */
+    public static Map<Severity, Long> countBySeverity(List<Finding> findings) {
+        var m = new EnumMap<Severity, Long>(Severity.class);
+        for (var s : Severity.values()) m.put(s, 0L);
+        findings.forEach(x -> m.merge(x.severity(), 1L, Long::sum));
+        return m;
+    }
 }

@@ -60,7 +60,7 @@ public final class Cli {
             var findings = split.active();
             var written = Reports.writeAll(r, split, o.outDir, o.cveOnly ? Phrase.of("filter.cveOnly") : null,
                     o.environment, o.preferV4, language);
-            var counts = Reports.counts(findings);
+            var counts = Finding.countBySeverity(findings);
             System.out.println("\n" + "=".repeat(60) + "\n " + I18n.text("cli.complete") + "\n" + "=".repeat(60));
             System.out.printf("  %-11s: %s%n", I18n.text("cli.scoring"), Reports.scoringText(o.preferV4, language));
             System.out.printf("  %-11s: %s%n%n", I18n.text("cli.environment"), o.environment.describe(language));
