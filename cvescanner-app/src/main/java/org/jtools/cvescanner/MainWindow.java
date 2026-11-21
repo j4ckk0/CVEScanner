@@ -999,7 +999,7 @@ final class MainWindow extends JFrame {
             protected void done() {
                 setBusy(false);
                 try {
-                    show(get());
+                    showResult(get());
                 } catch (ExecutionException e) {
                     say(() -> I18n.text("scan.failed"));
                     JOptionPane.showMessageDialog(MainWindow.this, Gui.plain(e.getCause().getMessage()), I18n.text("scan.failed.title"),
@@ -1026,7 +1026,7 @@ final class MainWindow extends JFrame {
         if (fraction >= 0) progressBar.setValue((int) (fraction * 1000));
     }
 
-    private void show(ScanResult r) {
+    private void showResult(ScanResult r) {
         result = r;
         ignores = r.ignores();
         findingsTable.clearSelection();
