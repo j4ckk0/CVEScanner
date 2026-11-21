@@ -53,7 +53,7 @@ import org.jtools.cvescanner.model.Dependency;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Database loading from zip files: OSV / GitHub Advisory Database records and CVE List (CVE JSON 5) records.
+ * Database loading from zip files: OSV / GitHub Advisory Database records, CVE List (CVE JSON 5) records and NVD feeds.
  * Zips are streamed (never extracted) and nested zips are followed, so the cvelistV5 release asset works.
  * Only records that mention a package the project uses are parsed and kept.
  */

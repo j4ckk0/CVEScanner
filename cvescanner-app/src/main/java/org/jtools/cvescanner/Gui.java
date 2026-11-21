@@ -56,7 +56,7 @@ final class Gui {
         return area;
     }
 
-    /** A label that shows its text as it is, never as HTML (see plain). */
+    /** A component (a label, a button, a cell) that shows its text as it is, never as HTML (see plain). */
     static <T extends JComponent> T noHtml(T component) {
         component.putClientProperty("html.disable", Boolean.TRUE);
         return component;

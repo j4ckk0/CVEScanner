@@ -33,7 +33,7 @@ import java.util.TreeMap;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/** npm's declared ranges read without a lockfile, and Gradle's variables. */
+/** npm's declared ranges read without a lockfile, a yarn alias, and Gradle's variables. */
 class NpmAndGradleTest {
 
     @Test

@@ -38,7 +38,6 @@ import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.version.Versions;
 
-// ------------------------------------------------------------------------------------------------- npm
 public final class NpmScanner {
     private static final List<String> LOCKFILES = List.of("package-lock.json", "npm-shrinkwrap.json", "yarn.lock", "pnpm-lock.yaml");
     private static final Pattern NON_REGISTRY = Pattern.compile("^(file:|link:|portal:|workspace:|catalog:|git|github:|https?:)");

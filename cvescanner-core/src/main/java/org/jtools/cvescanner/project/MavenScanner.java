@@ -43,7 +43,6 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-// ----------------------------------------------------------------------------------------------- Maven
 public final class MavenScanner {
     private static final Pattern PROP = Pattern.compile("\\$\\{([^}]+)\\}");
 

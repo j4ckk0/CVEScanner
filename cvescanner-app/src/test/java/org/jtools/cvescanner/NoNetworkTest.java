@@ -51,7 +51,7 @@ import org.junit.jupiter.api.Test;
  */
 class NoNetworkTest {
 
-    /** This module's classes; the comparison's and the view's are found where the tests load them from. */
+    /** This module's classes; the scan's are found where the tests load them from (programClasses). */
     private static final Path CLASSES = Path.of("target", "classes");
 
     /** The JDK's packages that reach the network, as class files spell them. */
@@ -151,15 +151,8 @@ class NoNetworkTest {
 
     /**
      * The one library shipped (pom.xml), FlatLaf, read as the program's own classes, every one of them, with two
-     * allowances, each the narrowest found to hold:
-     * <ul>
-     * <li>java.net's URL and URI, their exceptions, and nothing else of java.net: FlatLaf reads its themes and fonts
-     * from its own jar, by the URLs Class.getResource gives (UIDefaultsLoader derives a variant's from its theme's,
-     * beside it); no socket, no connection, no name looked up.</li>
-     * <li>Loading native code, in its two classes that do it only: FlatLaf is told to load none
-     * (flatlaf.useNativeLibrary, Looks), and none is shipped (pom.xml).</li>
-     * </ul>
-     * Another version of it is read here before it can be built: the enforcer rule names this one.
+     * allowances, each the narrowest found to hold: LIBRARY_NET_NAMES and LIBRARY_NATIVE_LOADERS. Another version of
+     * it is read here before it can be built: the enforcer rule names this one.
      */
     @Test
     void theLibraryShippedReachesNoNetwork() throws Exception {
@@ -189,11 +182,15 @@ class NoNetworkTest {
         assertTrue(uses.contains("calls java/lang/Runtime.exec"), uses);
     }
 
-    /** java.net's names FlatLaf may use: those of a resource's address, nothing that connects. */
+    /**
+     * java.net's names FlatLaf may use: those of a resource's address, nothing that connects. It reads its themes
+     * and fonts from its own jar, by the URLs Class.getResource gives (UIDefaultsLoader derives a variant's from its
+     * theme's).
+     */
     private static final Pattern LIBRARY_NET_NAMES =
             Pattern.compile("java/net/(URL|URI|URISyntaxException|MalformedURLException)(?![\\w$])");
 
-    /** FlatLaf's classes that load native code, which it is told not to. */
+    /** FlatLaf's classes that load native code: it is told to load none (Looks), and none is shipped (pom.xml). */
     private static final List<String> LIBRARY_NATIVE_LOADERS = List.of(
             "com/formdev/flatlaf/util/NativeLibrary", "com/formdev/flatlaf/ui/FlatNativeLibrary");
 

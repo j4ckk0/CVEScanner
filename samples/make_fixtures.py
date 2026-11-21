@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-"""Creates the test fixtures used during development of CVE Dependency Scanner.
+"""Writes CVEScanner's samples: the projects cli/GoldenTest scans, and the made-up databases it scans them with.
 
-Usage: python3 make_fixtures.py OUTDIR
-Creates:
-  OUTDIR/projects/...                              sample Maven / Gradle / npm projects
-  OUTDIR/db/osv/Maven-all.zip, npm-all.zip         mock OSV.dev exports (use with -c OUTDIR/db/osv -s)
-  OUTDIR/db/advisory-database-main.zip             mock GitHub Advisory Database repo zip (OSV format)
-  OUTDIR/db/2026-11-19_all_CVEs_at_midnight.zip.zip  mock CVE List release (zip containing cves.zip)
-Expected results are listed in the handoff document (section "Testing").
+Usage: python3 samples/make_fixtures.py OUTDIR    (the repository's: samples)
+Writes in OUTDIR:
+  projects/  Maven, Gradle, npm, yarn            cots-projects/  inventory, SBOMs, manifests, binaries
+  ignore/    an ignore file                      db/  OSV.dev exports, GitHub Advisory Database, CVE List, NVD
+The results expected are the golden files: cvescanner-core/src/test/resources/org/jtools/cvescanner/cli/golden/.
 """
 import io, json, os, sys, zipfile
 
@@ -180,7 +178,8 @@ CVE-2022-1471,,,soon,not a date
 """)
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Components off-the-shelf: a project naming them, a mock NVD feed (JSON 2.0, one file for the year), a mock CVE List
+# Components off-the-shelf: a project naming them (inventory, SBOMs, manifests, binaries), a mock NVD feed (JSON 2.0,
+# one file for the year), a mock CVE List
 write(os.path.join(out, "cots-projects/inventory/cots.csv"), """# the sample's components off-the-shelf: name,version[,vendor][,cpe]
 name,version,vendor,cpe
 GDAL,3.4.1

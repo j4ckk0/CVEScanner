@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 /** A CVE JSON 5 record's rules (handoff §5.3): which dependency they name, and which versions they affect. */
 class CveListTest {
 
-    /** The rules of a record whose cna.affected is the JSON given; its state PUBLISHED unless one is given. */
+    /** The rules of a record whose cna.affected is the JSON given, in the state given. */
     private static List<CveList.Rule> rules(String affected, String state) {
         return CveList.rules(Json.obj(Json.parse("""
                 {"cveMetadata":{"cveId":"CVE-2026-0001","state":"%s"},

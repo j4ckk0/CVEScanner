@@ -57,7 +57,7 @@ public final class Cvss {
         return m;
     }
 
-    /** Base score only (threat/temporal and environmental metrics _); null if the vector is invalid. */
+    /** Base score only (threat/temporal and environmental metrics ignored); null if the vector is invalid. */
     public static Double baseScore(String vector) {
         var m = parse(vector);
         if (m == null) return null;

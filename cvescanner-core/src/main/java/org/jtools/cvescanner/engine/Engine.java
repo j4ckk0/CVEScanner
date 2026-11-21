@@ -123,7 +123,7 @@ public final class Engine {
             }
             findings.addAll(bestNvd.values());
             coveredCves.addAll(bestNvd.keySet());
-            // CVE List records: skip CVEs already reported by an advisory, prefer package matches over name matches
+            // CVE List records: skip CVEs already reported by an advisory or NVD, prefer package matches over name matches
             var best = new LinkedHashMap<String, Finding>();
             for (var rule : index.cveFor(d)) {
                 String id = rule.info().id();

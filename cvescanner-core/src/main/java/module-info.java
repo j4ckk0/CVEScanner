@@ -20,7 +20,7 @@
 /**
  * CVEScanner's scan, with no window: the projects' dependencies (project), the vulnerability databases read from
  * their zips (db), the matching and the scan as a whole (engine), the CVSS scores for an environment (cvss), what a
- * scan finds (model), the reports (report), the command line (cli)
+ * scan finds (model), the findings an ignore file sets aside (ignore), the reports (report), the command line (cli)
  * and the languages (i18n). It needs nothing but the JDK.
  */
 module org.jtools.cvescanner.core {

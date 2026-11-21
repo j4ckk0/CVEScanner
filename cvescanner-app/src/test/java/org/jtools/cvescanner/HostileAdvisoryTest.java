@@ -49,9 +49,10 @@ import org.jtools.cvescanner.model.Severity;
 import org.junit.jupiter.api.Test;
 
 /**
- * What a database writes cannot make the window reach the network (README, "No network"): Swing's HTML fetches the
- * image or the style sheet a page names, so an advisory's text must reach the details pane as text, every field of
- * it; and a table cell, a label, shows what it is given as text even when it begins with &lt;html&gt;.
+ * What a database or an ignore file writes cannot make the window reach the network (README, "No network"): Swing's
+ * HTML fetches the image or the style sheet a page names, so an advisory's text, or an entry's reason, must reach the
+ * details pane as text, every field of it; and a table cell, a label, shows what it is given as text even when it
+ * begins with &lt;html&gt;.
  */
 class HostileAdvisoryTest {
 

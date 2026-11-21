@@ -122,9 +122,9 @@ import org.jtools.cvescanner.report.Reports;
 import org.jtools.cvescanner.version.Versions;
 
 /**
- * The window: the folder and the databases to scan, the environment to score for, the findings' table with its
- * filters, the details of the finding selected. Every text is bound to its key (I18nLabels) and set again when the
- * language changes; a column or a choice is known by its key, never by the text it shows.
+ * The window: the folder and the databases to scan, the ignore file to read, the environment to score for, the
+ * findings' table with its filters, the details of the finding selected. Every text is bound to its key (I18nLabels)
+ * and set again when the language changes; a column or a choice is known by its key, never by the text it shows.
  */
 final class MainWindow extends JFrame {
 
@@ -236,7 +236,7 @@ final class MainWindow extends JFrame {
     private final Timer searchTimer = new Timer(200, _ -> applyFilters());
 
     private ScanResult result;
-    /** The scan's ignore file, read again after the window writes it. */
+    /** The ignore file in use, the scan's or the one chosen since; read again after the window writes it. */
     private Ignores ignores = Ignores.NONE;
     /** The scan's findings scored for the environment, those the ignore file sets aside apart. */
     private Ignores.Split split = Ignores.Split.none(List.of());
@@ -1064,7 +1064,7 @@ final class MainWindow extends JFrame {
         return row < 0 ? null : ignoredModel.row(ignoredTable.convertRowIndexToModel(row));
     }
 
-    /** The details of what is selected in the tab shown: a finding, or a finding set aside. */
+    /** The details of the finding selected in the findings' table; in the Ignored tab, of the one set aside there. */
     private void showSelected() {
         if (tabs.getSelectedIndex() != 3) {
             showDetails(selectedFinding());

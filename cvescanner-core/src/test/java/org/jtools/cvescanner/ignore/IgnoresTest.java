@@ -41,7 +41,7 @@ import org.jtools.cvescanner.model.Severity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/** Which findings an ignore file's entries set aside, and which entries have expired or name nothing. */
+/** Which findings an ignore file's entries set aside, and which entries have expired or set nothing aside. */
 class IgnoresTest {
 
     private static final LocalDate TODAY = LocalDate.of(2026, 11, 21);

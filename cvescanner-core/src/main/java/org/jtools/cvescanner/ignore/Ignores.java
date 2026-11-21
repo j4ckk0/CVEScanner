@@ -83,7 +83,7 @@ public record Ignores(Path file, String shown, List<IgnoreRule> rules, boolean r
 
     /**
      * The findings it sets aside and those it leaves, after the first entry naming each that has not expired; the
-     * entries that have expired, and those that name none of these findings.
+     * entries that have expired, and those in force that set none of these findings aside.
      *
      * @param today the day it is: an entry applies up to its date, that day included
      */
@@ -126,13 +126,13 @@ public record Ignores(Path file, String shown, List<IgnoreRule> rules, boolean r
             return new Split(NONE, findings, List.of(), List.of(), List.of());
         }
 
-        /** The findings, set aside or not, that pass this filter (--cve-only, the window's); the entries kept. */
+        /** The findings, set aside or not, that pass this filter (--cve-only); the entries kept. */
         public Split filter(Predicate<Finding> keep) {
             return new Split(ignores, active.stream().filter(keep).toList(),
                     ignored.stream().filter(i -> keep.test(i.finding())).toList(), expired, unused);
         }
 
-        /** The same findings, others shown (the window's filtered table, exported). */
+        /** The same set aside, these reported in place of the active ones (the window's filtered table, exported). */
         public Split withActive(List<Finding> shown) {
             return new Split(ignores, shown, ignored, expired, unused);
         }

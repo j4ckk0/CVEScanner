@@ -231,7 +231,7 @@ public final class Reports {
         return sb.toString();
     }
 
-    /** The findings the ignore file sets aside, why and until when; its entries that expired, and those that name none. */
+    /** The findings the ignore file sets aside, why and until when; its entries expired, and those setting none aside. */
     private static void ignored(StringBuilder sb, Ignores.Split split, I18nLanguage language) {
         sb.append("## ").append(I18n.text(language, "markdown.ignored", split.ignored().size())).append("\n\n");
         if (split.ignored().isEmpty()) {
@@ -317,7 +317,7 @@ public final class Reports {
             m.put("reason", u.reason().text(I18nLanguage.ENGLISH));
             return m;
         }).toList());
-        // the ignore file's, when there is one: what it sets aside, its entries expired and those naming nothing
+        // the ignore file's, when there is one: what it sets aside, its entries expired and those setting nothing aside
         if (split.ignores().read()) {
             root.put("ignore_file", split.ignores().shown());
             root.put("ignored_findings", split.ignored().stream().map(i -> {

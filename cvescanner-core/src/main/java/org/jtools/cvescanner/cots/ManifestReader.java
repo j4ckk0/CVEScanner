@@ -67,7 +67,7 @@ public final class ManifestReader {
         }
     }
 
-    /** A pkg-config file: its Name (else the file's), its Version. */
+    /** A pkg-config file: its Name when a known one (else the file's), its Version. */
     private static void pkgConfig(String text, Path file, Collector col) {
         String name = null, version = null;
         for (String line : text.lines().toList()) {

@@ -33,7 +33,7 @@ import org.junit.jupiter.api.Test;
 /**
  * The program's CVSS scores are those of another implementation: reference.tsv, 9,000 random vectors — CVSS 3.0 and
  * 3.1 with temporal and environmental metrics, CVSS 4.0 with threat and environmental ones — scored by the Python
- * library cvss (scripts/cvss-reference.py). Every mismatch is listed, not only the first.
+ * library cvss (scripts/cvss-reference.py). Up to 20 mismatches are shown, with their count, not only the first.
  */
 class CvssReferenceTest {
 

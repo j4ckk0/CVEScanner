@@ -144,7 +144,7 @@ public final class PeVersionInfo {
         return -1;
     }
 
-    /** The strings of a VS_VERSIONINFO block: those of its StringFileInfo's first table. */
+    /** The strings of a VS_VERSIONINFO block: those of its StringFileInfo, a key's first value kept. */
     private static Optional<Info> strings(ByteBuffer b) {
         Map<String, String> values = new HashMap<>();
         Block root = Block.at(b, 0, b.limit());

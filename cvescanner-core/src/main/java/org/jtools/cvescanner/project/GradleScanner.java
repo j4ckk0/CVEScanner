@@ -34,7 +34,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jtools.cvescanner.i18n.Phrase;
 
-// ---------------------------------------------------------------------------------------------- Gradle
 public final class GradleScanner {
     private static final Pattern DEP_STRING = Pattern.compile(
             "[\"']([A-Za-z0-9_.\\-]+):([A-Za-z0-9_.\\-]+):([^\"'\\s:@]+)(?::[A-Za-z0-9_.\\-]+)?(?:@[A-Za-z0-9]+)?[\"']");
