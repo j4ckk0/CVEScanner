@@ -29,12 +29,25 @@ import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
 
 /**
- * The entry point: the window, or with --no-gui (or no display) the command line. Both speak the language --lang asks
- * for, else the one chosen in the window (Settings), else French.
+ * The entry point: the window, in the look chosen (View ▸ Look; FlatLaf Light until one is), or with --no-gui (or no
+ * display) the command line. Both speak the language --lang asks for, else the one chosen in the window (Settings),
+ * else French.
  */
 public final class Launcher {
 
     private Launcher() {
+    }
+
+    /**
+     * The program's version: its module's, linked into the distributions' runtime image, or its jar's manifest's on
+     * the class path; null when it runs from its classes.
+     */
+    static String version() {
+        Module module = Launcher.class.getModule();
+        if (module.isNamed() && module.getDescriptor().rawVersion().isPresent()) {
+            return module.getDescriptor().rawVersion().get();
+        }
+        return Launcher.class.getPackage().getImplementationVersion();
     }
 
     public static void main(String[] args) {
@@ -59,7 +72,7 @@ public final class Launcher {
             System.exit(Cli.run(opts));
         }
         SwingUtilities.invokeLater(() -> {
-            Gui.installLookAndFeel();
+            Looks.use(settings.get(Settings.LOOK, Looks.DEFAULT));
             new MainWindow(opts, settings).setVisible(true);
         });
     }

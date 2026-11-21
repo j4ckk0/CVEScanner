@@ -30,17 +30,6 @@ import org.jtools.cvescanner.i18n.I18n;
 final class Gui {
     private Gui() {}
 
-    static void installLookAndFeel() {
-        try {
-            String system = UIManager.getSystemLookAndFeelClassName();
-            if (system.contains("Metal")) {
-                for (var info : UIManager.getInstalledLookAndFeels())
-                    if (info.getName().equals("Nimbus")) { UIManager.setLookAndFeel(info.getClassName()); return; }
-            }
-            UIManager.setLookAndFeel(system);
-        } catch (Exception _) { /* keep the default look and feel */ }
-    }
-
     static String hex(Color c) { return String.format("#%02x%02x%02x", c.getRed(), c.getGreen(), c.getBlue()); }
 
     /** A score as the language in use writes numbers: 9.8, 9,8. */

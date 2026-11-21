@@ -58,6 +58,7 @@ import java.util.stream.IntStream;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -73,6 +74,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
@@ -161,6 +163,9 @@ final class MainWindow extends JFrame {
     private final Settings settings;
     private final I18nLabels labels = new I18nLabels();
     private final I18nLanguageBox languageBox = new I18nLanguageBox(labels);
+    /** The look items of View ▸ Look, each holding its look's class under LOOK_CLASS. */
+    private final List<JRadioButtonMenuItem> lookItems = new ArrayList<>();
+    private static final String LOOK_CLASS = "lookClass";
     private final JTextField dirField = new JTextField(40);
     private final JTextField dbField = new JTextField(40);
     private final JButton clearDbButton = new JButton();
@@ -273,6 +278,7 @@ final class MainWindow extends JFrame {
         labels.on(() -> statusLabel.setText(statusMessage.get()));
         labels.on(this::updateDatabaseField);
         labels.on(this::updateChips);
+        showSeverityColors();
         labels.on(this::updateCounts);
         labels.on(() -> showDetails(selectedFinding()));
         labels.on(this::syncEnvironmentControls);
@@ -295,14 +301,61 @@ final class MainWindow extends JFrame {
         file.add(export);
         file.addSeparator();
         file.add(exit);
+        JMenu view = labels.menu(new JMenu(), "menu.view");
+        view.add(lookMenu());
         JMenuBar bar = new JMenuBar();
         bar.add(file);
+        bar.add(view);
+        bar.add(HelpMenu.of(this, labels));
         // the language on the right of the menus
         bar.add(Box.createHorizontalGlue());
         languageBox.onChoice(this::useLanguage);
         bar.add(languageBox);
         bar.add(Box.createHorizontalStrut(4));
         return bar;
+    }
+
+    /**
+     * View ▸ Look: FlatLaf's looks, light and dark, and those Java has here — the system's, Nimbus, Metal… —, the one
+     * chosen kept for the next time (Settings), the window shown in it at once.
+     */
+    private JMenu lookMenu() {
+        JMenu menu = labels.menu(new JMenu(), "menu.look");
+        String current = currentLook();
+        String system = UIManager.getSystemLookAndFeelClassName();
+        List<UIManager.LookAndFeelInfo> installed = new ArrayList<>(List.of(UIManager.getInstalledLookAndFeels()));
+        // FlatLaf's first, then the system's, then the others as Java lists them
+        installed.sort(Comparator.comparingInt((UIManager.LookAndFeelInfo look) ->
+                look.getClassName().startsWith("com.formdev.flatlaf") ? 0
+                        : look.getClassName().equals(system) ? 1 : 2));
+        ButtonGroup looks = new ButtonGroup();
+        for (UIManager.LookAndFeelInfo look : installed) {
+            JRadioButtonMenuItem item = new JRadioButtonMenuItem(look.getName(), look.getClassName().equals(current));
+            if (look.getClassName().equals(system)) {
+                labels.on(() -> item.setText(I18n.text("menu.look.system", look.getName())));
+            }
+            item.putClientProperty(LOOK_CLASS, look.getClassName());
+            item.addActionListener(_ -> applyLook(look.getClassName()));
+            looks.add(item);
+            lookItems.add(item);
+            menu.add(item);
+        }
+        return menu;
+    }
+
+    private static String currentLook() {
+        return UIManager.getLookAndFeel().getClass().getName();
+    }
+
+    /** Shows the window in this look, keeps it for the next time, and says so in the menu. */
+    private void applyLook(String className) {
+        Looks.use(className);
+        SwingUtilities.updateComponentTreeUI(this);
+        showSeverityColors();
+        settings.set(Settings.LOOK, currentLook());
+        for (JRadioButtonMenuItem item : lookItems) {
+            item.setSelected(currentLook().equals(item.getClientProperty(LOOK_CLASS)));
+        }
     }
 
     /** Speaks this language from now on, and the next time (Settings). */
@@ -540,9 +593,7 @@ final class MainWindow extends JFrame {
         int index = 1;
         for (var s : List.of(Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM, Severity.LOW, Severity.UNKNOWN)) {
             var chip = new JLabel();
-            chip.setIcon(new DotIcon(SeverityColors.of(s), 12));
             chip.setFont(chip.getFont().deriveFont(Font.BOLD, chip.getFont().getSize2D() + 1f));
-            chip.setForeground(SeverityColors.of(s));
             if (s != Severity.UNKNOWN) {
                 int comboIndex = index++;
                 chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -749,6 +800,15 @@ final class MainWindow extends JFrame {
         tabs.setTitleAt(2, I18n.text("tab.unresolved", unresolvedTable.getRowCount()));
         showingLabel.setText(result == null ? " " : shown == total ? I18n.text("showing.all", total)
                 : I18n.text("showing.some", shown, total));
+    }
+
+    /** The severities' colours, those of the look in use: light or dark (SeverityColors). */
+    private void showSeverityColors() {
+        chips.forEach((s, chip) -> {
+            chip.setIcon(new DotIcon(SeverityColors.of(s), 12));
+            chip.setForeground(SeverityColors.of(s));
+        });
+        showDetails(selectedFinding());
     }
 
     private void updateChips() {

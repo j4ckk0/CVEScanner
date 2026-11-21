@@ -29,13 +29,15 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 /**
- * The program's settings — its language, the database zips chosen, the environment and the CVSS version preferred —,
+ * The program's settings — its look, its language, the database zips chosen, the environment and the CVSS version preferred —,
  * kept in cvescanner.properties, beside the program (cvescanner.jar): in its folder, as a portable program keeps them,
  * never in the registry or the user's folder. Written only when a setting changes; a folder that cannot be written in
  * keeps nothing, and the program goes on.
  */
 final class Settings {
 
+    /** The look's class (View ▸ Look). */
+    static final String LOOK = "look";
     /** The language's code: "fr", "en". */
     static final String LANGUAGE = "language";
     /** The database zips chosen, their paths separated by the system's path separator. */

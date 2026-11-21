@@ -20,6 +20,10 @@
       <artifactId>cvescanner-core</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.formdev</groupId>
+      <artifactId>flatlaf</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.jtools</groupId>
       <artifactId>cvescanner-core</artifactId>
       <type>test-jar</type>
@@ -29,6 +33,19 @@
 
   <build>
     <finalName>cvescanner</finalName>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <!-- The program's own licence, inside it: Help ▸ Licence shows it, with nothing else to open. -->
+      <resource>
+        <directory>${project.basedir}/..</directory>
+        <targetPath>org/jtools/cvescanner</targetPath>
+        <includes>
+          <include>LICENSE</include>
+        </includes>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -42,7 +59,8 @@
         </configuration>
       </plugin>
       <plugin>
-        <!-- cvescanner.jar holds the scan's classes too: one jar, the launchers as they are -->
+        <!-- cvescanner.jar holds the scan's and FlatLaf's classes too: one jar, the launchers as they are. Not
+             FlatLaf's native libraries, which it would unpack in a temporary directory: the program does without them. -->
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
         <executions>
@@ -55,6 +73,15 @@
               <createDependencyReducedPom>false</createDependencyReducedPom>
               <filters>
                 <filter>
+                  <artifact>com.formdev:flatlaf</artifact>
+                  <excludes>
+                    <exclude>com/formdev/flatlaf/natives/**</exclude>
+                    <exclude>module-info.class</exclude>
+                    <exclude>META-INF/versions/*/module-info.class</exclude>
+                    <exclude>META-INF/MANIFEST.MF</exclude>
+                  </excludes>
+                </filter>
+                <filter>
                   <!-- the jar holds the two modules' classes: it is neither of them -->
                   <artifact>org.jtools:*</artifact>
                   <excludes>
@@ -63,6 +90,12 @@
                 </filter>
               </filters>
               <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <manifestEntries>
+                    <!-- FlatLaf's classes for later Javas, in META-INF/versions -->
+                    <Multi-Release>true</Multi-Release>
+                  </manifestEntries>
+                </transformer>
                 <!-- the services of the two modules, one file each, merged rather than one kept -->
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
               </transformers>
