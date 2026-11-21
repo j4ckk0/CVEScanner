@@ -35,10 +35,10 @@ import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Dependency;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
 import org.jtools.cvescanner.model.Scoring;
-import org.jtools.cvescanner.version.Versions;
 
 /**
  * CVE List (CVE JSON 5) support. CVE records describe products in free text (vendor/product), so a record is
@@ -72,8 +72,8 @@ public final class CveList {
 
     static List<String> keysFor(Dependency d) {
         String name = normalize(d.name());
-        if (d.ecosystem().equals(VulnDb.COTS)) return List.copyOf(KnownProducts.products(VulnDb.product(d)));
-        if (!d.ecosystem().equals("Maven")) return List.of(name);
+        if (d.ecosystem() == Ecosystem.COTS) return List.copyOf(KnownProducts.products(Ecosystem.product(d.name())));
+        if (d.ecosystem() != Ecosystem.MAVEN) return List.of(name);
         return List.of(name, name.replace(':', '/'), name.substring(name.indexOf(':') + 1));
     }
 
@@ -143,7 +143,7 @@ public final class CveList {
 
     /** Returns how this CVE affected-entry relates to the dependency, or null if it doesn't apply. */
     public static MatchBasis basis(Dependency d, Rule r) {
-        boolean maven = d.ecosystem().equals("Maven");
+        boolean maven = d.ecosystem() == Ecosystem.MAVEN;
         String name = normalize(d.name());
         if (meaningful(r.packageName())) {
             String pn = normalize(r.packageName());
@@ -153,9 +153,9 @@ public final class CveList {
         }
         if (!meaningful(r.product())) return null;
         String product = normalize(r.product());
-        if (d.ecosystem().equals(VulnDb.COTS)) {
+        if (d.ecosystem() == Ecosystem.COTS) {
             // the record's vendor is free text ("The OpenSSL Project"): a word of it in the component's CPE vendor will do
-            if (!KnownProducts.products(VulnDb.product(d)).contains(product)) return null;
+            if (!KnownProducts.products(Ecosystem.product(d.name())).contains(product)) return null;
             int colon = d.name().indexOf(':');
             return colon > 0 && vendorMatchesGroup(r.vendor(), normalize(d.name().substring(0, colon)))
                     ? MatchBasis.CVE_PACKAGE : MatchBasis.CVE_NAME;
@@ -182,7 +182,7 @@ public final class CveList {
     private static boolean startsWithDigit(String s) { return s != null && !s.isEmpty() && Character.isDigit(s.charAt(0)); }
 
     /** Whether version v falls in this CVE version entry; null if the entry can't be evaluated. */
-    static Boolean contains(String eco, String v, Map<String, Object> e) {
+    static Boolean contains(Ecosystem eco, String v, Map<String, Object> e) {
         String base = clean(Json.str(e, "version")), lt = clean(Json.str(e, "lessThan")), lte = clean(Json.str(e, "lessThanOrEqual"));
         if (lt != null || lte != null) {
             String upper = lt != null ? lt : lte;
@@ -190,8 +190,8 @@ public final class CveList {
             boolean lowerOk;
             if (base == null || !meaningful(base) || base.equals("0")) lowerOk = true;
             else if (!startsWithDigit(base)) return null;
-            else lowerOk = Versions.compare(eco, v, base) >= 0;
-            boolean upperOk = upper.equals("*") || (lt != null ? Versions.compare(eco, v, lt) < 0 : Versions.compare(eco, v, lte) <= 0);
+            else lowerOk = eco.compare(v, base) >= 0;
+            boolean upperOk = upper.equals("*") || (lt != null ? eco.compare(v, lt) < 0 : eco.compare(v, lte) <= 0);
             return lowerOk && upperOk;
         }
         if (base == null) return null;
@@ -200,7 +200,7 @@ public final class CveList {
             boolean any = false, ok = true;
             while (m.find()) {
                 any = true;
-                int c = Versions.compare(eco, v, m.group(2));
+                int c = eco.compare(v, m.group(2));
                 ok &= switch (m.group(1)) {
                     case ">=" -> c >= 0;
                     case ">" -> c > 0;
@@ -211,10 +211,10 @@ public final class CveList {
             }
             return any ? ok : null;
         }
-        return startsWithDigit(base) ? Versions.compare(eco, v, base) == 0 : null;
+        return startsWithDigit(base) ? eco.compare(v, base) == 0 : null;
     }
 
-    public static boolean affected(String eco, String version, Rule r) {
+    public static boolean affected(Ecosystem eco, String version, Rule r) {
         boolean affected = false, unaffectedListed = false;
         for (var e : r.versions()) {
             String status = Objects.requireNonNullElse(Json.str(e, "status"), "affected").toLowerCase(Locale.ROOT);
@@ -230,7 +230,7 @@ public final class CveList {
         return affected || (unaffectedListed && "affected".equalsIgnoreCase(r.defaultStatus()));
     }
 
-    static String fixedVersion(String eco, String v, Rule r) {
+    static String fixedVersion(Ecosystem eco, String v, Rule r) {
         var candidates = new ArrayList<String>();
         for (var e : r.versions()) {
             String status = Objects.requireNonNullElse(Json.str(e, "status"), "affected").toLowerCase(Locale.ROOT);
@@ -241,9 +241,9 @@ public final class CveList {
                 var m = CONSTRAINT.matcher(base);
                 while (m.find()) if (m.group(1).equals("<")) candidates.add(m.group(2));
             }
-            if (status.equals("unaffected") && startsWithDigit(base) && Versions.compare(eco, base, v) > 0) candidates.add(base);
+            if (status.equals("unaffected") && startsWithDigit(base) && eco.compare(base, v) > 0) candidates.add(base);
         }
-        return Versions.nearestFix(eco, v, candidates);
+        return eco.nearestFix(v, candidates);
     }
 
     public static Finding toFinding(Dependency d, Rule r, MatchBasis basis) {

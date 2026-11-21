@@ -10,7 +10,6 @@ import java.util.TreeSet;
 import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
-import org.jtools.cvescanner.version.Versions;
 
 /*-
  * #%L
@@ -37,7 +36,7 @@ import org.jtools.cvescanner.version.Versions;
  * A vulnerable package version and its findings together: {@code fixedIn} is the lowest version that fixes every one
  * of them that has a fix, empty when none has; {@code someUnfixed} when some have none.
  */
-public record PackageSummary(Severity worst, String ecosystem, String pkg, String version, boolean approximate,
+public record PackageSummary(Severity worst, Ecosystem ecosystem, String pkg, String version, boolean approximate,
                       String fixedIn, boolean someUnfixed, int vulnerabilities, String advisories, String files) {
     public String displayVersion() { return approximate ? version + " ≈" : version; }
 
@@ -54,7 +53,7 @@ public record PackageSummary(Severity worst, String ecosystem, String pkg, Strin
      * advisories, the files.
      */
     public static List<PackageSummary> of(List<Finding> findings) {
-        record Key(String eco, String pkg, String version) {}
+        record Key(Ecosystem eco, String pkg, String version) {}
         final class Agg {
             final Set<String> ids = new HashSet<>(), files = new TreeSet<>(), labels = new TreeSet<>();
             final List<String> fixes = new ArrayList<>();
@@ -73,7 +72,7 @@ public record PackageSummary(Severity worst, String ecosystem, String pkg, Strin
         }
         var out = new ArrayList<PackageSummary>();
         map.forEach((k, a) -> {
-            var fixed = a.fixes.stream().filter(s -> !s.isEmpty()).max(Versions.comparator(k.eco()));
+            var fixed = a.fixes.stream().filter(s -> !s.isEmpty()).max(k.eco().versionOrder());
             boolean someUnfixed = a.fixes.stream().anyMatch(String::isEmpty);
             out.add(new PackageSummary(a.worst, k.eco(), k.pkg(), k.version(), a.approximate, fixed.orElse(""), someUnfixed, a.ids.size(),
                     String.join(", ", a.labels), String.join(", ", a.files)));

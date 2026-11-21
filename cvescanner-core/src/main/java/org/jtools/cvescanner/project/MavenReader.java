@@ -42,6 +42,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+import org.jtools.cvescanner.model.Ecosystem;
 
 public final class MavenReader {
     private static final Pattern PROP = Pattern.compile("\\$\\{([^}]+)\\}");
@@ -113,13 +114,13 @@ public final class MavenReader {
                 String raw = d.version() != null ? d.version() : managed ? null : index.managedVersion(pom, g, a);
                 String scope = managed ? "dependencyManagement" : d.scope();
                 if (raw == null) {
-                    col.miss("Maven", name, "", pom.path, Phrase.of("reason.managedOutside"));
+                    col.miss(Ecosystem.MAVEN, name, "", pom.path, Phrase.of("reason.managedOutside"));
                     continue;
                 }
                 String v = index.resolve(pom, raw);
-                if (v.contains("${")) col.miss("Maven", name, raw, pom.path, Phrase.of("reason.unresolvedProperty"));
-                else if (v.startsWith("[") || v.startsWith("(")) col.miss("Maven", name, raw, pom.path, Phrase.of("reason.versionRange"));
-                else col.add("Maven", name, v, pom.path, scope, false);
+                if (v.contains("${")) col.miss(Ecosystem.MAVEN, name, raw, pom.path, Phrase.of("reason.unresolvedProperty"));
+                else if (v.startsWith("[") || v.startsWith("(")) col.miss(Ecosystem.MAVEN, name, raw, pom.path, Phrase.of("reason.versionRange"));
+                else col.add(Ecosystem.MAVEN, name, v, pom.path, scope, false);
             }
         }
     }

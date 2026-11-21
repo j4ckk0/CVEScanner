@@ -47,6 +47,7 @@ import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Dependency;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.ScanListener;
 import org.jtools.cvescanner.model.ScanResult;
 
@@ -70,21 +71,13 @@ public final class VulnDb {
             var keys = new HashSet<String>();
             var products = new HashSet<String>();
             for (var d : deps) {
-                by.computeIfAbsent(d.ecosystem(), _ -> new HashSet<>()).add(d.name());
+                by.computeIfAbsent(d.ecosystem().id(), _ -> new HashSet<>()).add(d.name());
                 all.add(d.name());
                 keys.addAll(CveList.keysFor(d));
-                if (d.ecosystem().equals(COTS)) products.addAll(KnownProducts.products(product(d)));
+                if (d.ecosystem() == Ecosystem.COTS) products.addAll(KnownProducts.products(Ecosystem.product(d.name())));
             }
             return new Wanted(by, all, keys, products);
         }
-    }
-
-    /** The ecosystem of the components off-the-shelf: their name vendor:product, or a product alone. */
-    public static final String COTS = "COTS";
-
-    /** A COTS component's product, in lower case: "gdal" for "osgeo:gdal" and for "gdal". */
-    public static String product(Dependency d) {
-        return d.name().substring(d.name().indexOf(':') + 1).toLowerCase(Locale.ROOT);
     }
 
     public static final class Index {
@@ -95,14 +88,14 @@ public final class VulnDb {
 
         /** The NVD rules of a COTS component's product. */
         public List<NvdFeed.Rule> nvdFor(Dependency d) {
-            if (!d.ecosystem().equals(COTS)) return List.of();
+            if (d.ecosystem() != Ecosystem.COTS) return List.of();
             var rules = new ArrayList<NvdFeed.Rule>();
-            for (String product : KnownProducts.products(product(d))) rules.addAll(nvd.getOrDefault(product, List.of()));
+            for (String product : KnownProducts.products(Ecosystem.product(d.name()))) rules.addAll(nvd.getOrDefault(product, List.of()));
             return rules;
         }
 
         public List<Osv.Match> osvFor(Dependency d) {
-            return osv.getOrDefault(d.ecosystem(), Map.of()).getOrDefault(d.name(), List.of());
+            return osv.getOrDefault(d.ecosystem().id(), Map.of()).getOrDefault(d.name(), List.of());
         }
 
         public List<CveList.Rule> cveFor(Dependency d) {

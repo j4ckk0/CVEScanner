@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Dependency;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.MatchBasis;
 import org.junit.jupiter.api.Test;
 
@@ -47,11 +48,11 @@ class CveListTest {
     }
 
     private static Dependency maven(String name, String version) {
-        return new Dependency("Maven", name, version, "pom.xml", "compile", false);
+        return new Dependency(Ecosystem.MAVEN, name, version, "pom.xml", "compile", false);
     }
 
     private static Dependency npm(String name, String version) {
-        return new Dependency("npm", name, version, "package.json", "dependencies", false);
+        return new Dependency(Ecosystem.NPM, name, version, "package.json", "dependencies", false);
     }
 
     @Test
@@ -87,32 +88,32 @@ class CveListTest {
     @Test
     void lessThanAndItsFix() {
         var r = rule("{\"product\":\"lodash\",\"versions\":[{\"version\":\"0\",\"lessThan\":\"4.17.21\",\"status\":\"affected\"}]}");
-        assertTrue(CveList.affected("npm", "4.17.20", r));
-        assertFalse(CveList.affected("npm", "4.17.21", r));
-        assertEquals("4.17.21", CveList.fixedVersion("npm", "4.17.20", r));
+        assertTrue(CveList.affected(Ecosystem.NPM, "4.17.20", r));
+        assertFalse(CveList.affected(Ecosystem.NPM, "4.17.21", r));
+        assertEquals("4.17.21", CveList.fixedVersion(Ecosystem.NPM, "4.17.20", r));
     }
 
     @Test
     void constraintsInTheVersionField() {
         var r = rule("{\"product\":\"lodash\",\"versions\":[{\"version\":\">= 4.0.0, < 4.17.21\",\"status\":\"affected\"}]}");
-        assertTrue(CveList.affected("npm", "4.17.15", r));
-        assertFalse(CveList.affected("npm", "3.10.1", r));
-        assertFalse(CveList.affected("npm", "4.17.21", r));
+        assertTrue(CveList.affected(Ecosystem.NPM, "4.17.15", r));
+        assertFalse(CveList.affected(Ecosystem.NPM, "3.10.1", r));
+        assertFalse(CveList.affected(Ecosystem.NPM, "4.17.21", r));
     }
 
     @Test
     void unaffectedWinsAndTheDefaultStatusCounts() {
         var r = rule("{\"product\":\"x\",\"defaultStatus\":\"affected\",\"versions\":["
                 + "{\"version\":\"0\",\"lessThan\":\"3.0\",\"status\":\"affected\"},{\"version\":\"2.5.1\",\"status\":\"unaffected\"}]}");
-        assertTrue(CveList.affected("npm", "2.5.0", r));
-        assertFalse(CveList.affected("npm", "2.5.1", r), "an unaffected entry wins");
-        assertTrue(CveList.affected("npm", "4.0.0", r), "nothing matched, an unaffected entry exists, defaultStatus affected");
+        assertTrue(CveList.affected(Ecosystem.NPM, "2.5.0", r));
+        assertFalse(CveList.affected(Ecosystem.NPM, "2.5.1", r), "an unaffected entry wins");
+        assertTrue(CveList.affected(Ecosystem.NPM, "4.0.0", r), "nothing matched, an unaffected entry exists, defaultStatus affected");
     }
 
     @Test
     void aNonNumericUpperBoundCannotBeEvaluated() {
         // Log4Shell's record: lessThan "log4j-core*"
         var r = rule("{\"product\":\"Apache Log4j2\",\"versions\":[{\"version\":\"2.0-beta9\",\"lessThan\":\"log4j-core*\",\"status\":\"affected\"}]}");
-        assertFalse(CveList.affected("Maven", "2.14.1", r));
+        assertFalse(CveList.affected(Ecosystem.MAVEN, "2.14.1", r));
     }
 }

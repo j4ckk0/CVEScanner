@@ -36,7 +36,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.cvss.Severity;
-import org.jtools.cvescanner.db.VulnDb;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
 import org.jtools.cvescanner.i18n.Phrase;
@@ -44,6 +43,7 @@ import org.jtools.cvescanner.ignore.IgnoreRule;
 import org.jtools.cvescanner.ignore.IgnoredFinding;
 import org.jtools.cvescanner.ignore.Ignores;
 import org.jtools.cvescanner.json.Json;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.PackageSummary;
 import org.jtools.cvescanner.model.ScanResult;
@@ -151,7 +151,7 @@ public final class Reports {
                     .append(I18n.text(language, "markdown.packages.intro")).append("\n\n");
             sb.append(I18n.text(language, "markdown.packages.header")).append("\n|---|---|---|---|---|---|---|\n");
             for (var p : pkgs)
-                sb.append("| %s | %s | `%s` | %s | %s | %d | %s |\n".formatted(severity(p.worst(), language), md(p.ecosystem()), code(p.pkg()),
+                sb.append("| %s | %s | `%s` | %s | %s | %d | %s |\n".formatted(severity(p.worst(), language), md(p.ecosystem().id()), code(p.pkg()),
                         md(p.displayVersion()), md(p.upgradeTo(language)), p.vulnerabilities(), md(p.files())));
             if (findings.stream().anyMatch(Finding::approximate))
                 sb.append("\n> ").append(I18n.text(language, "markdown.approximate")).append('\n');
@@ -173,15 +173,15 @@ public final class Reports {
             sb.append("## ").append(I18n.text(language, "markdown.unresolved", r.unresolved().size())).append("\n\n");
             sb.append(I18n.text(language, "markdown.unresolved.header")).append("\n|---|---|---|---|---|\n");
             r.unresolved().stream().sorted(Comparator.comparing(Unresolved::file).thenComparing(Unresolved::name))
-                    .forEach(u -> sb.append("| %s | %s | `%s` | %s | %s |\n".formatted(md(u.file()), md(u.ecosystem()), code(u.name()),
+                    .forEach(u -> sb.append("| %s | %s | `%s` | %s | %s |\n".formatted(md(u.file()), md(u.ecosystem().id()), code(u.name()),
                             u.declared().isEmpty() ? "—" : md(u.declared()), md(u.reason().text(language)))));
             sb.append('\n');
         }
         if (split.ignores().read()) ignored(sb, split, language);
         sb.append("## ").append(I18n.text(language, "markdown.notes")).append("\n\n").append(I18n.text(language, "markdown.notes.text")).append('\n');
         // how components off-the-shelf are found and matched: said when the report holds some
-        if (findings.stream().anyMatch(f -> f.ecosystem().equals(VulnDb.COTS))
-                || r.unresolved().stream().anyMatch(u -> u.ecosystem().equals(VulnDb.COTS)))
+        if (findings.stream().anyMatch(f -> f.ecosystem() == Ecosystem.COTS)
+                || r.unresolved().stream().anyMatch(u -> u.ecosystem() == Ecosystem.COTS))
             sb.append(I18n.text(language, "markdown.notes.cots")).append('\n');
         return sb.toString();
     }
@@ -239,7 +239,7 @@ public final class Reports {
                 + "ecosystem,package,version,approximate,scope,file,id,cves,match,fixed_in,summary,url\n");
         for (var f : findings)
             sb.append(Stream.of(f.severity(), f.score().baseSeverity(), f.cvss(), f.score().version(), f.score().baseVector(),
-                    f.envScore(), f.score().envVector(), env.name(I18nLanguage.ENGLISH), f.ecosystem(), f.pkg(), f.version(), f.approximate(), f.scope(), f.file(),
+                    f.envScore(), f.score().envVector(), env.name(I18nLanguage.ENGLISH), f.ecosystem().id(), f.pkg(), f.version(), f.approximate(), f.scope(), f.file(),
                     f.id(), String.join(" ", f.cves()), f.basis().name(), f.fixedIn(), f.summary(), f.url()).map(Reports::cell)
                     .collect(Collectors.joining(","))).append('\n');
         return sb.toString();
@@ -265,7 +265,7 @@ public final class Reports {
         // in a fixed order, as every other object of the file: two scans of the same projects write the same JSON
         root.put("unresolved_dependencies", r.unresolved().stream().map(u -> {
             var m = new LinkedHashMap<String, Object>();
-            m.put("ecosystem", u.ecosystem());
+            m.put("ecosystem", u.ecosystem().id());
             m.put("name", u.name());
             m.put("declared", u.declared());
             m.put("file", u.file());
@@ -308,7 +308,7 @@ public final class Reports {
         m.put("base_vector", f.score().baseVector());
         m.put("env_score", f.envScore());
         m.put("env_vector", f.score().envVector());
-        m.put("ecosystem", f.ecosystem());
+        m.put("ecosystem", f.ecosystem().id());
         m.put("package", f.pkg());
         m.put("version", f.version());
         m.put("approximate", f.approximate());

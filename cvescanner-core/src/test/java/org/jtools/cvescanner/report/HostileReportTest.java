@@ -35,6 +35,7 @@ import org.jtools.cvescanner.i18n.I18nLanguage;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.ignore.IgnoreRule;
 import org.jtools.cvescanner.ignore.Ignores;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
 import org.jtools.cvescanner.model.ScanResult;
@@ -53,7 +54,7 @@ class HostileReportTest {
     private static Finding hostile() {
         Score score = new Score(null, null, null, Severity.HIGH, null, null);
         Rating rating = new Rating(Severity.HIGH, null, null, null);
-        return new Finding(Severity.HIGH, score, "npm", "pkg`<b>x</b>", "1.0" + TAGS, false, "direct", "dir/" + TAGS,
+        return new Finding(Severity.HIGH, score, Ecosystem.NPM, "pkg`<b>x</b>", "1.0" + TAGS, false, "direct", "dir/" + TAGS,
                 "GHSA-x)](javascript:alert(1))", List.of("CVE-1" + TAGS), List.of(), "", FORMULA + TAGS, "details",
                 "", "https://osv.dev/vulnerability/GHSA-x)](javascript:alert(1))", MatchBasis.ADVISORY,
                 Phrase.of("match.note.advisory"), rating);
@@ -61,7 +62,7 @@ class HostileReportTest {
 
     private static ScanResult result(Finding f) {
         return new ScanResult(Path.of("/scan"), List.of(f), List.of(),
-                List.of(new Unresolved("npm", "left`" + TAGS, "git+" + TAGS, "package.json", Phrase.of("reason.unpinned", TAGS))),
+                List.of(new Unresolved(Ecosystem.NPM, "left`" + TAGS, "git+" + TAGS, "package.json", Phrase.of("reason.unpinned", TAGS))),
                 Map.of("db" + TAGS + ".zip", Phrase.of("database.kind.osv")), Map.of(), List.of(), Ignores.NONE);
     }
 

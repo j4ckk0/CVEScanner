@@ -33,6 +33,7 @@ import java.util.Set;
 import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Dependency;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.MatchBasis;
 import org.junit.jupiter.api.Test;
 
@@ -54,7 +55,7 @@ class NvdFeedTest {
     }
 
     private static Dependency component(String name, String version) {
-        return new Dependency("COTS", name, version, "cots.csv", "inventory", false);
+        return new Dependency(Ecosystem.COTS, name, version, "cots.csv", "inventory", false);
     }
 
     @Test

@@ -71,7 +71,7 @@ final class FindingDetails {
                     .append(" · ").append(I18n.text("details.ignored.entry", rule.line(), Gui.html(file))).append("</font></p>");
         }
         sb.append("<p><b>").append(Gui.html(f.summary())).append("</b></p><table cellpadding='4'>");
-        row(sb, "details.package", "<b>" + Gui.html(f.pkg()) + "</b> (" + Gui.html(f.ecosystem()) + ")");
+        row(sb, "details.package", "<b>" + Gui.html(f.pkg()) + "</b> (" + Gui.html(f.ecosystem().id()) + ")");
         row(sb, "details.version", Gui.html(f.version()) + (f.approximate()
                 ? " <font color='gray'>" + I18n.text("details.version.approximate") + "</font>" : ""));
         var sc = f.score();

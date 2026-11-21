@@ -33,6 +33,7 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jtools.cvescanner.i18n.Phrase;
+import org.jtools.cvescanner.model.Ecosystem;
 
 public final class GradleReader {
     private static final Pattern DEP_STRING = Pattern.compile(
@@ -84,10 +85,10 @@ public final class GradleReader {
     private static void addDep(DependencyCollector col, String g, String a, String raw, Path path, String scope, Map<String, String> vars) {
         String name = g + ":" + a;
         String v = resolve(raw, vars).replaceAll("!+$", "");
-        if (v.contains("$")) col.miss("Maven", name, raw, path, Phrase.of("reason.gradleVariable"));
+        if (v.contains("$")) col.miss(Ecosystem.MAVEN, name, raw, path, Phrase.of("reason.gradleVariable"));
         else if (v.contains("+") || v.startsWith("latest.") || v.startsWith("[") || v.startsWith("("))
-            col.miss("Maven", name, raw, path, Phrase.of("reason.dynamicVersion"));
-        else col.add("Maven", name, v, path, scope, false);
+            col.miss(Ecosystem.MAVEN, name, raw, path, Phrase.of("reason.dynamicVersion"));
+        else col.add(Ecosystem.MAVEN, name, v, path, scope, false);
     }
 
     public static void scan(List<Path> buildFiles, List<Path> propertyFiles, DependencyCollector col) throws IOException {
@@ -164,7 +165,7 @@ public final class GradleReader {
                     v = ref != null ? versions.get(ref)
                             : firstNonNull(pairs.get("version"), pairs.get("strictly"), pairs.get("require"), pairs.get("prefer"));
                 }
-                if (v == null) col.miss("Maven", g + ":" + a, "", path, Phrase.of("reason.catalogNoVersion"));
+                if (v == null) col.miss(Ecosystem.MAVEN, g + ":" + a, "", path, Phrase.of("reason.catalogNoVersion"));
                 else addDep(col, g, a, v, path, "catalog:" + alias, Map.of());
             }
         }

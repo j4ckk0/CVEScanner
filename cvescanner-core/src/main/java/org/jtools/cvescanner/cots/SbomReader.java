@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.json.Json;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.project.DependencyCollector;
 import org.jtools.cvescanner.project.ProjectFiles;
 
@@ -81,7 +82,7 @@ public final class SbomReader {
         if (purl.startsWith("pkg:maven/") || purl.startsWith("pkg:npm/")) {
             Purl p = Purl.parse(purl);
             String v = version.isEmpty() ? p.version() : version;
-            String ecosystem = p.type().equals("maven") ? "Maven" : "npm";
+            Ecosystem ecosystem = p.type().equals("maven") ? Ecosystem.MAVEN : Ecosystem.NPM;
             String id = p.type().equals("maven") ? p.namespace() + ":" + p.name()
                     : p.namespace().isEmpty() ? p.name() : p.namespace() + "/" + p.name();
             if (v.isEmpty()) col.miss(ecosystem, id, "", file, Phrase.of("reason.noVersion"));
@@ -99,8 +100,8 @@ public final class SbomReader {
         } else {
             return;
         }
-        if (v.isEmpty()) col.miss("COTS", id, "", file, Phrase.of("reason.noVersion"));
-        else col.add("COTS", id, v, file, "sbom", false);
+        if (v.isEmpty()) col.miss(Ecosystem.COTS, id, "", file, Phrase.of("reason.noVersion"));
+        else col.add(Ecosystem.COTS, id, v, file, "sbom", false);
     }
 
     private static String text(Object o) {

@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
 import org.jtools.cvescanner.i18n.Phrase;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.project.DependencyCollector;
 import org.jtools.cvescanner.project.ProjectFiles;
 
@@ -67,7 +68,7 @@ public final class InventoryReader {
             id = KnownProducts.identify(name);
         }
         if (name.isEmpty() && cpe.isEmpty()) return;
-        if (version.isEmpty()) col.miss("COTS", id, "", file, Phrase.of("reason.noVersion"));
-        else col.add("COTS", id, version, file, "inventory", false);
+        if (version.isEmpty()) col.miss(Ecosystem.COTS, id, "", file, Phrase.of("reason.noVersion"));
+        else col.add(Ecosystem.COTS, id, version, file, "inventory", false);
     }
 }

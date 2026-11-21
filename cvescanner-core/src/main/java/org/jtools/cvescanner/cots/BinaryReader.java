@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jtools.cvescanner.i18n.Phrase;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.project.DependencyCollector;
 
 /**
@@ -76,8 +77,8 @@ public final class BinaryReader {
             if (id == null) continue;
             Path folder = file.getParent();
             if (!seen.add(id + "|" + version + "|" + folder)) continue;
-            if (version == null) col.miss("COTS", id, "", file, Phrase.of("reason.noBinaryVersion"));
-            else col.add("COTS", id, version, file, "binary", approximate);
+            if (version == null) col.miss(Ecosystem.COTS, id, "", file, Phrase.of("reason.noBinaryVersion"));
+            else col.add(Ecosystem.COTS, id, version, file, "binary", approximate);
         }
     }
 

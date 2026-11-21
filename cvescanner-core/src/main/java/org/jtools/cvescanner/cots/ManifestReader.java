@@ -30,6 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.json.Json;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.project.DependencyCollector;
 import org.jtools.cvescanner.project.ProjectFiles;
 
@@ -129,13 +130,13 @@ public final class ManifestReader {
         if (!m.lookingAt()) return;
         String version = m.group(2);
         String id = KnownProducts.identify(m.group(1));
-        if (version.startsWith("[")) col.miss("COTS", id, version, file, Phrase.of("reason.versionRange"));
-        else col.add("COTS", id, version, file, "conan", false);
+        if (version.startsWith("[")) col.miss(Ecosystem.COTS, id, version, file, Phrase.of("reason.versionRange"));
+        else col.add(Ecosystem.COTS, id, version, file, "conan", false);
     }
 
     private static void add(DependencyCollector col, Path file, String id, String version, String scope, boolean approximate, Phrase whyNone) {
-        if (version == null || version.isBlank()) col.miss("COTS", id, "", file, whyNone);
-        else col.add("COTS", id, version.strip(), file, scope, approximate);
+        if (version == null || version.isBlank()) col.miss(Ecosystem.COTS, id, "", file, whyNone);
+        else col.add(Ecosystem.COTS, id, version.strip(), file, scope, approximate);
     }
 
     private static String firstOf(Map<String, Object> o, String... keys) {

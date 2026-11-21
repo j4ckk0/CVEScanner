@@ -44,6 +44,7 @@ import org.jtools.cvescanner.cvss.Score;
 import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.ignore.IgnoreRule;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
 import org.junit.jupiter.api.Test;
@@ -67,7 +68,7 @@ class HostileAdvisoryTest {
     private static Finding hostile() {
         Score score = new Score("3.1", BREAKOUT, 9.8, Severity.CRITICAL, BREAKOUT, 9.0);
         Rating rating = new Rating(Severity.CRITICAL, null, BREAKOUT, BREAKOUT + "4");
-        return new Finding(Severity.CRITICAL, score, "npm" + TAGS, "pkg" + TAGS, "1.0" + TAGS, false, "direct" + TAGS,
+        return new Finding(Severity.CRITICAL, score, Ecosystem.NPM, "pkg" + TAGS, "1.0" + TAGS, false, "direct" + TAGS,
                 "file" + TAGS, "GHSA" + BREAKOUT, List.of("CVE-1" + BREAKOUT, "CVE-2" + TAGS), List.of("alias" + TAGS),
                 "2.0" + TAGS, "summary" + TAGS, "details" + TAGS + "\n\nmore" + TAGS, "2026-01-01" + TAGS,
                 "file:///etc/passwd", MatchBasis.ADVISORY, Phrase.of("match.note.name", "note" + TAGS), rating);

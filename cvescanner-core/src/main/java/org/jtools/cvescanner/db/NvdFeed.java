@@ -39,10 +39,10 @@ import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.json.JsonStream;
 import org.jtools.cvescanner.model.Dependency;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
 import org.jtools.cvescanner.model.Scoring;
-import org.jtools.cvescanner.version.Versions;
 
 /**
  * NVD's CVE feeds (JSON 2.0, https://nvd.nist.gov/feeds/json/cve/2.0/): the products a CVE affects, as CPEs
@@ -150,16 +150,15 @@ public final class NvdFeed {
 
     /** Whether the version falls in the rule: its CPE's own version, or its range ("*" and no bound: every version). */
     public static boolean affected(String version, Rule r) {
-        String eco = "COTS";
         // a range bounded by dates (FFmpeg's git snapshots) says nothing of a release's number
         if (!DATE.matcher(version).matches()
                 && Stream.of(r.startIncluding(), r.startExcluding(), r.endIncluding(), r.endExcluding())
                         .anyMatch(b -> b != null && DATE.matcher(b).matches())) return false;
-        if (!r.version().equals("*") && !r.version().equals("-")) return Versions.compare(eco, version, r.version()) == 0;
-        if (r.startIncluding() != null && Versions.compare(eco, version, r.startIncluding()) < 0) return false;
-        if (r.startExcluding() != null && Versions.compare(eco, version, r.startExcluding()) <= 0) return false;
-        if (r.endIncluding() != null && Versions.compare(eco, version, r.endIncluding()) > 0) return false;
-        if (r.endExcluding() != null && Versions.compare(eco, version, r.endExcluding()) >= 0) return false;
+        if (!r.version().equals("*") && !r.version().equals("-")) return Ecosystem.COTS.compare(version, r.version()) == 0;
+        if (r.startIncluding() != null && Ecosystem.COTS.compare(version, r.startIncluding()) < 0) return false;
+        if (r.startExcluding() != null && Ecosystem.COTS.compare(version, r.startExcluding()) <= 0) return false;
+        if (r.endIncluding() != null && Ecosystem.COTS.compare(version, r.endIncluding()) > 0) return false;
+        if (r.endExcluding() != null && Ecosystem.COTS.compare(version, r.endExcluding()) >= 0) return false;
         return !r.version().equals("-");
     }
 
@@ -177,7 +176,7 @@ public final class NvdFeed {
         var i = r.info();
         Phrase note = basis == MatchBasis.CPE ? Phrase.of("match.note.cpe", r.cpe())
                 : Phrase.of("match.note.cpeProduct", r.product(), r.vendor());
-        String fixed = r.endExcluding() != null ? Versions.nearestFix("COTS", d.version(), List.of(r.endExcluding())) : "";
+        String fixed = r.endExcluding() != null ? Ecosystem.COTS.nearestFix(d.version(), List.of(r.endExcluding())) : "";
         var f = new Finding(Severity.UNKNOWN, null, d.ecosystem(), d.name(), d.version(), d.approximate(), d.scope(), d.file(),
                 i.id(), List.of(i.id()), List.of(), fixed, i.summary(), i.details(), i.published(),
                 "https://nvd.nist.gov/vuln/detail/" + i.id(), basis, note, i.rating());

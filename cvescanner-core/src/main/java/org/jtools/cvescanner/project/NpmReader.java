@@ -35,6 +35,7 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.json.Json;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.version.Versions;
 
 public final class NpmReader {
@@ -97,10 +98,10 @@ public final class NpmReader {
                     };
                     for (var e : entries) {
                         if (!Versions.isSemver(e.version())) {
-                            col.miss("npm", e.name(), e.version(), lock, Phrase.of("reason.nonRegistryLock"));
+                            col.miss(Ecosystem.NPM, e.name(), e.version(), lock, Phrase.of("reason.nonRegistryLock"));
                             continue;
                         }
-                        col.add("npm", e.name(), e.version(), lock, (e.direct() ? "direct" : "transitive") + (e.dev() ? " (dev)" : ""), false);
+                        col.add(Ecosystem.NPM, e.name(), e.version(), lock, (e.direct() ? "direct" : "transitive") + (e.dev() ? " (dev)" : ""), false);
                     }
                     continue;
                 } catch (IOException | IllegalArgumentException e) {
@@ -116,8 +117,8 @@ public final class NpmReader {
                     spec = at > 0 ? target.substring(at + 1) : "";
                 }
                 var mv = minVersion(spec);
-                if (mv.version() != null) col.add("npm", name, mv.version(), pkgPath, specAndSection[1], !mv.exact());
-                else col.miss("npm", name, specAndSection[0], pkgPath, mv.reason());
+                if (mv.version() != null) col.add(Ecosystem.NPM, name, mv.version(), pkgPath, specAndSection[1], !mv.exact());
+                else col.miss(Ecosystem.NPM, name, specAndSection[0], pkgPath, mv.reason());
             });
         }
     }

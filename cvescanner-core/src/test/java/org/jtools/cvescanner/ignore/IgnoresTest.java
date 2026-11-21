@@ -36,6 +36,7 @@ import org.jtools.cvescanner.cvss.Rating;
 import org.jtools.cvescanner.cvss.Score;
 import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.Phrase;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
 import org.junit.jupiter.api.Test;
@@ -50,7 +51,7 @@ class IgnoresTest {
     Path dir;
 
     static Finding finding(String pkg, String version, String id, List<String> cves, List<String> aliases) {
-        return new Finding(Severity.HIGH, new Score(null, null, null, Severity.HIGH, null, null), "Maven", pkg, version, false,
+        return new Finding(Severity.HIGH, new Score(null, null, null, Severity.HIGH, null, null), Ecosystem.MAVEN, pkg, version, false,
                 "compile", "pom.xml", id, cves, aliases, "", "summary", "details", "", "https://example.org/" + id,
                 MatchBasis.ADVISORY, Phrase.of("match.note.advisory"), new Rating(Severity.HIGH, null, null, null));
     }

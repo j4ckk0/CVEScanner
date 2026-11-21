@@ -23,4 +23,4 @@ import org.jtools.cvescanner.i18n.Phrase;
  */
 
 
-public record Unresolved(String ecosystem, String name, String declared, String file, Phrase reason) {}
+public record Unresolved(Ecosystem ecosystem, String name, String declared, String file, Phrase reason) {}

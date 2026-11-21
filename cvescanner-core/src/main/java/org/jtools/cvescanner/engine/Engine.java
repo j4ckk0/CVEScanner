@@ -99,7 +99,7 @@ public final class Engine {
         for (var d : col.deps) {
             var coveredCves = new HashSet<String>();
             for (var m : index.osvFor(d)) {
-                var key = List.of(d.file(), d.scope(), d.ecosystem(), d.name(), d.version(), Json.str(m.vuln(), "id"));
+                var key = List.of(d.file(), d.scope(), d.ecosystem().id(), d.name(), d.version(), Json.str(m.vuln(), "id"));
                 if (seen.contains(key) || !Osv.isAffected(d.ecosystem(), d.version(), m.affected())) continue;
                 seen.add(key);
                 var f = Osv.toFinding(d, m);

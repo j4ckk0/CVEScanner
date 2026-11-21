@@ -99,6 +99,7 @@ import org.jtools.cvescanner.i18n.I18nLanguage;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.ignore.IgnoredFinding;
 import org.jtools.cvescanner.ignore.Ignores;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
 import org.jtools.cvescanner.model.PackageSummary;
@@ -135,9 +136,9 @@ final class MainWindow extends JFrame {
             new Choice<Severity>("filter.allSeverities", null), new Choice<>("filter.critical", Severity.CRITICAL),
             new Choice<>("filter.highUp", Severity.HIGH), new Choice<>("filter.mediumUp", Severity.MEDIUM),
             new Choice<>("filter.lowUp", Severity.LOW)).toArray(Choice[]::new));
-    private final JComboBox<Choice<String>> ecosystemCombo = new JComboBox<>(List.of(
-            new Choice<String>("filter.allEcosystems", null), new Choice<>("filter.maven", "Maven"),
-            new Choice<>("filter.npm", "npm"), new Choice<>("filter.cots", "COTS")).toArray(Choice[]::new));
+    private final JComboBox<Choice<Ecosystem>> ecosystemCombo = new JComboBox<>(List.of(
+            new Choice<Ecosystem>("filter.allEcosystems", null), new Choice<>("filter.maven", Ecosystem.MAVEN),
+            new Choice<>("filter.npm", Ecosystem.NPM), new Choice<>("filter.cots", Ecosystem.COTS)).toArray(Choice[]::new));
     private final JCheckBox cveOnlyBox = new JCheckBox();
     private final JCheckBox hideApproxBox = new JCheckBox();
     private final Map<Severity, JLabel> chips = new EnumMap<>(Severity.class);
@@ -541,7 +542,7 @@ final class MainWindow extends JFrame {
         menu.add(item("menu.finding.copyNvdLink", f -> copyLink(f.cves().stream().map(FindingDetails::nvdUrl).collect(Collectors.joining(" ")))));
         menu.addSeparator();
         menu.add(item("menu.finding.copyCves", f -> copy(f.cves().isEmpty() ? f.id() : f.cveText())));
-        menu.add(item("menu.finding.copyCoordinate", f -> copy(f.pkg() + (f.ecosystem().equals("npm") ? "@" : ":") + f.version())));
+        menu.add(item("menu.finding.copyCoordinate", f -> copy(f.ecosystem().coordinate(f.pkg(), f.version()))));
         menu.add(item("menu.finding.copyRow", f -> copy(String.join("\t", f.severity().name(), f.pkg(), f.version(), f.id(), f.cveText(),
                 f.fixedIn(), f.file(), f.summary()))));
         menu.addSeparator();
@@ -583,15 +584,15 @@ final class MainWindow extends JFrame {
         return Arrays.stream(searchField.getText().toLowerCase(Locale.ROOT).split("\\s+")).filter(s -> !s.isBlank()).toList();
     }
 
-    private String ecosystemShown() {
-        return ecosystemCombo.getSelectedItem() instanceof Choice<?> choice ? (String) choice.value() : null;
+    private Ecosystem ecosystemShown() {
+        return ecosystemCombo.getSelectedItem() instanceof Choice<?> choice ? (Ecosystem) choice.value() : null;
     }
 
     private boolean passesFacets(Finding f) {
         var min = severityCombo.getSelectedItem() instanceof Choice<?> choice ? (Severity) choice.value() : null;
         if (min != null && f.severity().compareTo(min) < 0) return false;
-        String ecosystem = ecosystemShown();
-        if (ecosystem != null && !f.ecosystem().equals(ecosystem)) return false;
+        Ecosystem ecosystem = ecosystemShown();
+        if (ecosystem != null && f.ecosystem() != ecosystem) return false;
         if (cveOnlyBox.isSelected() && f.cves().isEmpty()) return false;
         if (hideNameMatchBox.isSelected() && f.basis() == MatchBasis.CVE_NAME) return false;
         return !(hideApproxBox.isSelected() && f.approximate());
@@ -627,8 +628,8 @@ final class MainWindow extends JFrame {
             @Override
             public boolean include(Entry<? extends ListTableModel<Unresolved>, ? extends Integer> e) {
                 var u = e.getModel().row(e.getIdentifier());
-                String ecosystem = ecosystemShown();
-                if (ecosystem != null && !u.ecosystem().equals(ecosystem)) return false;
+                Ecosystem ecosystem = ecosystemShown();
+                if (ecosystem != null && u.ecosystem() != ecosystem) return false;
                 return matchesSearch(e, terms, "");
             }
         });
@@ -636,8 +637,8 @@ final class MainWindow extends JFrame {
             @Override
             public boolean include(Entry<? extends ListTableModel<IgnoredFinding>, ? extends Integer> e) {
                 var i = e.getModel().row(e.getIdentifier());
-                String ecosystem = ecosystemShown();
-                if (ecosystem != null && !i.finding().ecosystem().equals(ecosystem)) return false;
+                Ecosystem ecosystem = ecosystemShown();
+                if (ecosystem != null && i.finding().ecosystem() != ecosystem) return false;
                 return matchesSearch(e, terms, i.rule().reason());
             }
         });

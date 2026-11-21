@@ -33,10 +33,10 @@ import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Dependency;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
 import org.jtools.cvescanner.model.Scoring;
-import org.jtools.cvescanner.version.Versions;
 
 public final class Osv {
     public record Match(Map<String, Object> vuln, Map<String, Object> affected) {}
@@ -49,28 +49,28 @@ public final class Osv {
         return "0";
     }
 
-    static boolean inRange(String eco, String version, List<Object> events) {
+    static boolean inRange(Ecosystem eco, String version, List<Object> events) {
         var evs = new ArrayList<Map<String, Object>>();
         for (Object o : events) evs.add(Json.obj(o));
         evs.sort((a, b) -> {
             String va = eventVersion(a), vb = eventVersion(b);
             if (va.equals("0") || vb.equals("0")) return Boolean.compare(!va.equals("0"), !vb.equals("0"));
-            return Versions.compare(eco, va, vb);
+            return eco.compare(va, vb);
         });
         boolean affected = false;
         for (var e : evs) {
             if (e.get("introduced") instanceof String intro) {
-                if (intro.equals("0") || Versions.compare(eco, version, intro) >= 0) affected = true;
+                if (intro.equals("0") || eco.compare(version, intro) >= 0) affected = true;
             } else if (e.get("fixed") instanceof String fixed) {
-                if (Versions.compare(eco, version, fixed) >= 0) affected = false;
+                if (eco.compare(version, fixed) >= 0) affected = false;
             } else if (e.get("last_affected") instanceof String last) {
-                if (Versions.compare(eco, version, last) > 0) affected = false;
+                if (eco.compare(version, last) > 0) affected = false;
             }
         }
         return affected;
     }
 
-    public static boolean isAffected(String eco, String version, Map<String, Object> affected) {
+    public static boolean isAffected(Ecosystem eco, String version, Map<String, Object> affected) {
         if (Json.arr(affected.get("versions")).contains(version)) return true;
         for (Object r : Json.arr(affected.get("ranges"))) {
             var range = Json.obj(r);
@@ -81,8 +81,8 @@ public final class Osv {
         return false;
     }
 
-    static String nextFixed(String eco, String version, Map<String, Object> affected) {
-        return Versions.nearestFix(eco, version, Json.arr(affected.get("ranges")).stream()
+    static String nextFixed(Ecosystem eco, String version, Map<String, Object> affected) {
+        return eco.nearestFix(version, Json.arr(affected.get("ranges")).stream()
                 .flatMap(r -> Json.arr(Json.obj(r).get("events")).stream())
                 .map(e -> Json.str(Json.obj(e), "fixed")).toList());
     }

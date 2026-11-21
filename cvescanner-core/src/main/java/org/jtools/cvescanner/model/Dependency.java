@@ -21,4 +21,4 @@ package org.jtools.cvescanner.model;
  */
 
 
-public record Dependency(String ecosystem, String name, String version, String file, String scope, boolean approximate) {}
+public record Dependency(Ecosystem ecosystem, String name, String version, String file, String scope, boolean approximate) {}

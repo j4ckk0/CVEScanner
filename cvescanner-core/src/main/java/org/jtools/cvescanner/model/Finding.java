@@ -35,7 +35,7 @@ import org.jtools.cvescanner.i18n.Phrase;
  * environment is applied and a CVSS vector is available, otherwise the base severity. {@code rating} holds the raw
  * CVSS data from the advisory; {@code score} the values computed by {@link Scoring} for the current environment.
  */
-public record Finding(Severity severity, Score score, String ecosystem, String pkg, String version, boolean approximate,
+public record Finding(Severity severity, Score score, Ecosystem ecosystem, String pkg, String version, boolean approximate,
                String scope, String file, String id, List<String> cves, List<String> aliases, String fixedIn,
                String summary, String details, String published, String url, MatchBasis basis, Phrase basisNote,
                Rating rating) {

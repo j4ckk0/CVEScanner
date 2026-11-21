@@ -52,7 +52,7 @@ final class FindingTables {
             new Column<Finding>("column.base", Double.class, 95, Finding::cvss),
             new Column<Finding>("column.env", Double.class, 140, Finding::envScore),
             new Column<Finding>("column.cvss", String.class, 95, f -> Objects.requireNonNullElse(f.score().version(), "")),
-            new Column<Finding>("column.ecosystem", String.class, 100, Finding::ecosystem),
+            new Column<Finding>("column.ecosystem", String.class, 100, f -> f.ecosystem().id()),
             new Column<Finding>("column.package", String.class, 320, Finding::pkg),
             new Column<Finding>("column.version", String.class, 95, Finding::displayVersion),
             new Column<Finding>("column.fixedIn", String.class, 95, f -> f.fixedIn().isEmpty() ? "—" : f.fixedIn()),
@@ -65,7 +65,7 @@ final class FindingTables {
             new Column<Finding>("column.summary", String.class, 380, Finding::summary));
     private static final List<Column<PackageSummary>> PACKAGE_COLUMNS = List.of(
             new Column<PackageSummary>("column.worst", Severity.class, 110, PackageSummary::worst),
-            new Column<PackageSummary>("column.ecosystem", String.class, 75, PackageSummary::ecosystem),
+            new Column<PackageSummary>("column.ecosystem", String.class, 75, p -> p.ecosystem().id()),
             new Column<PackageSummary>("column.package", String.class, 300, PackageSummary::pkg),
             new Column<PackageSummary>("column.current", String.class, 100, PackageSummary::displayVersion),
             new Column<PackageSummary>("column.upgradeTo", String.class, 160, p -> p.upgradeTo()),
@@ -75,7 +75,7 @@ final class FindingTables {
     private static final List<Column<IgnoredFinding>> IGNORED_COLUMNS = List.of(
             new Column<IgnoredFinding>("column.severity", Severity.class, 175, i -> i.finding().severity()),
             new Column<IgnoredFinding>("column.env", Double.class, 140, i -> i.finding().envScore()),
-            new Column<IgnoredFinding>("column.ecosystem", String.class, 100, i -> i.finding().ecosystem()),
+            new Column<IgnoredFinding>("column.ecosystem", String.class, 100, i -> i.finding().ecosystem().id()),
             new Column<IgnoredFinding>("column.package", String.class, 300, i -> i.finding().pkg()),
             new Column<IgnoredFinding>("column.version", String.class, 95, i -> i.finding().displayVersion()),
             new Column<IgnoredFinding>("column.cve", String.class, 130, i -> i.finding().cveText()),
@@ -84,7 +84,7 @@ final class FindingTables {
             new Column<IgnoredFinding>("column.reason", String.class, 330, i -> i.rule().reason()),
             new Column<IgnoredFinding>("column.file", String.class, 220, i -> i.finding().file()));
     private static final List<Column<Unresolved>> UNRESOLVED_COLUMNS = List.of(
-            new Column<Unresolved>("column.ecosystem", String.class, 75, Unresolved::ecosystem),
+            new Column<Unresolved>("column.ecosystem", String.class, 75, u -> u.ecosystem().id()),
             new Column<Unresolved>("column.package", String.class, 300, Unresolved::name),
             new Column<Unresolved>("column.declared", String.class, 160, Unresolved::declared),
             new Column<Unresolved>("column.reason", String.class, 330, u -> u.reason().text()),

@@ -91,7 +91,7 @@ public final class Versions {
 
     public static boolean isSemver(String v) { return SEMVER.matcher(v.strip()).matches(); }
 
-    static Integer compareSemver(String a, String b) {
+    public static Integer compareSemver(String a, String b) {
         var ma = SEMVER.matcher(a.strip());
         var mb = SEMVER.matcher(b.strip());
         if (!ma.matches() || !mb.matches()) return null;
@@ -115,28 +115,18 @@ public final class Versions {
         return s.length() > 18 ? Long.MAX_VALUE : Long.parseLong(s);
     }
 
-    public static int compare(String ecosystem, String a, String b) {
-        if (ecosystem.equals("npm")) {
-            Integer c = compareSemver(a, b);
-            if (c != null) return Integer.signum(c);
-        }
-        return compareMaven(a, b);
-    }
-
-    public static Comparator<String> comparator(String ecosystem) { return (a, b) -> compare(ecosystem, a, b); }
-
     /**
      * The fix to upgrade to: the lowest of these versions above the one in use, of its flavour when there is one —
      * 32.0.0-jre for 31.1-jre, not 32.0.0-android, which Maven's order puts first —, else the lowest of any; empty
      * when none is above. A fix given in another flavour word only (an advisory naming 32.0.0-android for every Guava)
      * is said in the version's own: a library released in flavours releases each fix in all of them.
      */
-    public static String nearestFix(String ecosystem, String version, Collection<String> fixes) {
-        List<String> above = fixes.stream().filter(f -> f != null && compare(ecosystem, f, version) > 0).toList();
+    public static String nearestFix(Comparator<String> order, String version, Collection<String> fixes) {
+        List<String> above = fixes.stream().filter(f -> f != null && order.compare(f, version) > 0).toList();
         String flavour = flavour(version);
-        var same = above.stream().filter(f -> flavour(f).equals(flavour)).min(comparator(ecosystem));
+        var same = above.stream().filter(f -> flavour(f).equals(flavour)).min(order);
         if (same.isPresent()) return same.get();
-        String lowest = above.stream().min(comparator(ecosystem)).orElse("");
+        String lowest = above.stream().min(order).orElse("");
         if (FLAVOUR_WORD.matcher(flavour).matches() && FLAVOUR_WORD.matcher(flavour(lowest)).matches())
             return lowest.substring(0, lowest.length() - flavour(lowest).length()) + version.strip().substring(version.strip().length() - flavour.length());
         return lowest;
