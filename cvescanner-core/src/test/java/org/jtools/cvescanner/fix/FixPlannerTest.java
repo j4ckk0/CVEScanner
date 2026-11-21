@@ -162,8 +162,11 @@ class FixPlannerTest {
         fake.program("mvn", "exit 0");
         fake.versionsPlugin();
         String log4j = "org.apache.logging.log4j:log4j-core";
-        assertEquals(Phrase.of("fix.reason.notCached", "2.17.1"), plan(Ecosystem.MAVEN, log4j, "2.14.1", "2.17.1", "child/pom.xml", "compile").notApplicable(),
+        assertEquals(Phrase.of("fix.reason.notCachedMaven", "2.17.1"), plan(Ecosystem.MAVEN, log4j, "2.14.1", "2.17.1", "child/pom.xml", "compile").notApplicable(),
                 "not cached: an offline build could not use it, nor can its Java be checked");
+        Path gradleOnly = Files.createDirectories(fake.home.resolve(".gradle/caches/modules-2/files-2.1/org.apache.logging.log4j/log4j-core/2.17.1/abc"));
+        assertEquals(Phrase.of("fix.reason.notCachedMaven", "2.17.1"), plan(Ecosystem.MAVEN, log4j, "2.14.1", "2.17.1", "child/pom.xml", "compile").notApplicable(),
+                "in Gradle's cache only: no help to a pom " + gradleOnly);
         fake.jar("org.apache.logging.log4j", "log4j-core", "2.17.1", 11);
         assertEquals(Phrase.of("fix.reason.javaTooNew", "2.17.1", 11, 8), plan(Ecosystem.MAVEN, log4j, "2.14.1", "2.17.1", "child/pom.xml", "compile").notApplicable());
         fake.jar("org.apache.logging.log4j", "log4j-core", "2.12.4", 8);

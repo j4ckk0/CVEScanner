@@ -152,7 +152,13 @@ public final class FixPlanner {
             }
             if (t.isPresent() && (target.isEmpty() || t.getAsInt() < target.getAsInt())) target = t;
         }
-        if (!ArtifactJava.cached(machine, group, artifact, r.to())) return FixPlan.not(r, Phrase.of("fix.reason.notCached", r.to()));
+        // a pom needs the version in the local Maven repository: versions:use-dep-version resolves nothing, and a version
+        // only Gradle has would leave a pom no offline Maven build resolves. Gradle's own check resolves it, offline.
+        boolean pom = r.declarations().stream().anyMatch(d -> d.file().getFileName().toString().equals("pom.xml"));
+        boolean inMaven = ArtifactJava.inMavenRepository(machine, group, artifact, r.to());
+        if (pom && !inMaven) return FixPlan.not(r, Phrase.of("fix.reason.notCachedMaven", r.to()));
+        if (!inMaven && !ArtifactJava.inGradleCache(machine, group, artifact, r.to()))
+            return FixPlan.not(r, Phrase.of("fix.reason.notCached", r.to()));
         Phrase requirement;
         if (target.isEmpty()) {
             requirement = Phrase.of("fix.requirement.noJavaTarget");
