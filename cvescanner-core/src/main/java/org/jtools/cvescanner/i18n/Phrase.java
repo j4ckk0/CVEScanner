@@ -20,6 +20,9 @@ package org.jtools.cvescanner.i18n;
  * #L%
  */
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -29,12 +32,13 @@ import java.util.List;
  */
 public record Phrase(String key, List<Object> arguments) {
 
+    /** Its arguments as given, a null among them (an exception's message may be one): said as "null". */
     public Phrase {
-        arguments = List.copyOf(arguments);
+        arguments = Collections.unmodifiableList(new ArrayList<>(arguments));
     }
 
     public static Phrase of(String key, Object... arguments) {
-        return new Phrase(key, List.of(arguments));
+        return new Phrase(key, Arrays.asList(arguments));
     }
 
     /** Said in the language in use. */

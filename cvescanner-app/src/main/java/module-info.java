@@ -17,8 +17,6 @@
  * limitations under the License.
  * #L%
  */
-/**
- * CVEScanner's scan, with no window: the projects' dependencies (project), the vulnerability databases read from
 
 /**
  * CVEScanner, the program: its window around the scan (cvescanner-core), the findings' table, its filters and
