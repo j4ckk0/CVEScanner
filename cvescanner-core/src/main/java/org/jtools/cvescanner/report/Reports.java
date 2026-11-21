@@ -246,8 +246,16 @@ public final class Reports {
             m.put("url", f.url());
             return m;
         }).toList());
-        root.put("unresolved_dependencies", r.unresolved().stream().map(u -> Map.of("ecosystem", u.ecosystem(),
-                "name", u.name(), "declared", u.declared(), "file", u.file(), "reason", u.reason())).toList());
+        // in a fixed order, as every other object of the file: two scans of the same projects write the same JSON
+        root.put("unresolved_dependencies", r.unresolved().stream().map(u -> {
+            var m = new LinkedHashMap<String, Object>();
+            m.put("ecosystem", u.ecosystem());
+            m.put("name", u.name());
+            m.put("declared", u.declared());
+            m.put("file", u.file());
+            m.put("reason", u.reason());
+            return m;
+        }).toList());
         return Json.write(root);
     }
 }
