@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jtools.cvescanner.cvss.Environment;
@@ -108,7 +109,30 @@ public final class Reports {
         return List.of(md, csv, json);
     }
 
-    private static String md(String s) { return s == null ? "" : s.replace("|", "\\|").replaceAll("\\s+", " ").strip(); }
+    /**
+     * Text of a project or a database, as Markdown shows it and nothing more: its punctuation that Markdown or HTML
+     * would read escaped, so that an advisory's summary can hold no tag (an image a viewer would fetch), no link, no
+     * table cell of its own.
+     */
+    static String md(String s) {
+        if (s == null) return "";
+        return MARKDOWN_SPECIAL.matcher(s.replaceAll("\\s+", " ").strip()).replaceAll("\\\\$0");
+    }
+
+    private static final Pattern MARKDOWN_SPECIAL = Pattern.compile("[\\\\`*_\\[\\]<>|&!#~]");
+
+    /** Text of a project or a database in a code span, where HTML is not read: no backquote to end it, no cell's pipe. */
+    static String code(String s) {
+        if (s == null) return "";
+        return s.replaceAll("\\s+", " ").strip().replace('`', '\'').replace("|", "\\|");
+    }
+
+    /** A link to an https address made of safe characters only; anything else is said as text, not linked. */
+    static String link(String text, String url) {
+        return url != null && SAFE_URL.matcher(url).matches() ? "[" + md(text) + "](" + url + ")" : md(text);
+    }
+
+    private static final Pattern SAFE_URL = Pattern.compile("https://[A-Za-z0-9._~:/?#@!$&'*+,;=%-]+");
 
     private static String shorten(String s, int n) {
         s = s.replaceAll("\\s+", " ").strip();
@@ -137,9 +161,9 @@ public final class Reports {
         var counts = counts(findings);
         sb.append("# ").append(I18n.text(language, "markdown.title")).append("\n\n");
         sb.append("- **").append(I18n.text(language, "markdown.generated")).append(":** ").append(Engine.STAMP.format(Instant.now())).append('\n');
-        sb.append("- **").append(I18n.text(language, "markdown.scanned")).append(":** `").append(r.root()).append("`\n");
+        sb.append("- **").append(I18n.text(language, "markdown.scanned")).append(":** `").append(code(r.root().toString())).append("`\n");
         r.snapshots().forEach((file, desc) -> sb.append("- **").append(I18n.text(language, "markdown.database")).append(":** `")
-                .append(file).append("` (").append(desc.text(language)).append(")\n"));
+                .append(code(file)).append("` (").append(md(desc.text(language))).append(")\n"));
         sb.append("- **").append(I18n.text(language, "markdown.files")).append(":** ").append(r.fileCounts().entrySet().stream()
                 .map(e -> I18n.text(language, e.getKey(), e.getValue())).collect(Collectors.joining(", "))).append('\n');
         sb.append("- **").append(I18n.text(language, "markdown.dependencies")).append(":** ")
@@ -147,7 +171,7 @@ public final class Reports {
         sb.append("- **").append(I18n.text(language, "markdown.scoring")).append(":** ").append(scoringText(preferV4, language)).append('\n');
         sb.append("- **").append(I18n.text(language, "markdown.environment")).append(":** ").append(env.describe(language))
                 .append(env.active() ? I18n.text(language, "markdown.environment.severity") : "").append('\n');
-        if (filterNote != null) sb.append("- **").append(I18n.text(language, "markdown.filter")).append(":** ").append(filterNote.text(language)).append('\n');
+        if (filterNote != null) sb.append("- **").append(I18n.text(language, "markdown.filter")).append(":** ").append(md(filterNote.text(language))).append('\n');
         sb.append("\n## ").append(I18n.text(language, "markdown.summary")).append("\n\n").append(I18n.text(language, "markdown.summary.header")).append("\n|---|---|\n");
         for (var s : List.of(Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM, Severity.LOW, Severity.UNKNOWN))
             sb.append("| ").append(severity(s, language)).append(" | ").append(counts.get(s)).append(" |\n");
@@ -163,7 +187,7 @@ public final class Reports {
                     .append(I18n.text(language, "markdown.packages.intro")).append("\n\n");
             sb.append(I18n.text(language, "markdown.packages.header")).append("\n|---|---|---|---|---|---|---|\n");
             for (var p : pkgs)
-                sb.append("| %s | %s | `%s` | %s | %s | %d | %s |\n".formatted(severity(p.worst(), language), p.ecosystem(), md(p.pkg()),
+                sb.append("| %s | %s | `%s` | %s | %s | %d | %s |\n".formatted(severity(p.worst(), language), md(p.ecosystem()), code(p.pkg()),
                         md(p.displayVersion()), md(p.upgradeTo(language)), p.vulnerabilities(), md(p.files())));
             if (findings.stream().anyMatch(Finding::approximate))
                 sb.append("\n> ").append(I18n.text(language, "markdown.approximate")).append('\n');
@@ -171,12 +195,12 @@ public final class Reports {
             var byFile = new TreeMap<String, List<Finding>>();
             findings.forEach(f -> byFile.computeIfAbsent(f.file(), _ -> new ArrayList<>()).add(f));
             byFile.forEach((file, list) -> {
-                sb.append("### `").append(file).append("`\n\n");
+                sb.append("### `").append(code(file)).append("`\n\n");
                 sb.append(I18n.text(language, "markdown.findings.header")).append("\n|---|---|---|---|---|---|---|---|---|---|---|\n");
-                list.stream().sorted(Finding.ORDER).forEach(f -> sb.append("| %s | %s | %s | `%s` | %s | %s | [%s](%s) | %s | %s | %s | %s |\n".formatted(
+                list.stream().sorted(Finding.ORDER).forEach(f -> sb.append("| %s | %s | %s | `%s` | %s | %s | %s | %s | %s | %s | %s |\n".formatted(
                         severity(f.severity(), language), scoreText(f.cvss(), f.score().version(), language),
-                        scoreText(f.envScore(), null, language), md(f.pkg()), md(f.version()),
-                        md(f.scope()), f.id(), f.url(), f.basis().label(language), f.cves().isEmpty() ? "—" : f.cveText(),
+                        scoreText(f.envScore(), null, language), code(f.pkg()), md(f.version()),
+                        md(f.scope()), link(f.id(), f.url()), f.basis().label(language), f.cves().isEmpty() ? "—" : md(f.cveText()),
                         f.fixedIn().isEmpty() ? "—" : md(f.fixedIn()), md(shorten(f.summary(), 110)))));
                 sb.append('\n');
             });
@@ -185,7 +209,7 @@ public final class Reports {
             sb.append("## ").append(I18n.text(language, "markdown.unresolved", r.unresolved().size())).append("\n\n");
             sb.append(I18n.text(language, "markdown.unresolved.header")).append("\n|---|---|---|---|---|\n");
             r.unresolved().stream().sorted(Comparator.comparing(Unresolved::file).thenComparing(Unresolved::name))
-                    .forEach(u -> sb.append("| %s | %s | `%s` | %s | %s |\n".formatted(md(u.file()), u.ecosystem(), md(u.name()),
+                    .forEach(u -> sb.append("| %s | %s | `%s` | %s | %s |\n".formatted(md(u.file()), md(u.ecosystem()), code(u.name()),
                             u.declared().isEmpty() ? "—" : md(u.declared()), md(u.reason().text(language)))));
             sb.append('\n');
         }
@@ -193,8 +217,14 @@ public final class Reports {
         return sb.toString();
     }
 
+    /**
+     * A CSV cell. Text that a spreadsheet would read as a formula (=, +, -, @, a tab or a carriage return first) is
+     * written after a quote, as OWASP advises: an advisory's summary opened in Excel runs nothing. Numbers are written
+     * as they are.
+     */
     private static String cell(Object o) {
         String s = o == null ? "" : o.toString();
+        if (o instanceof String && !s.isEmpty() && "=+-@\t\r".indexOf(s.charAt(0)) >= 0) s = "'" + s;
         return s.contains(",") || s.contains("\"") || s.contains("\n") || s.contains("\r") ? "\"" + s.replace("\"", "\"\"") + "\"" : s;
     }
 
