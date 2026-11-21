@@ -120,7 +120,7 @@ lockfiles: those are reported.
 ## Installed product
 
 `installed-app/` scanned in *Installed product* mode with OSV.dev's Maven, npm and PyPI exports of 2026-11-21:
-**412 findings, 411 distinct advisories, in all 22 package versions it ships**, for example:
+**325 findings, 324 distinct advisories, in all 22 package versions it ships**, for example:
 
 - **in the jars**: `log4j-core` 2.14.1 inside `shop-1.4.jar!/BOOT-INF/lib/` (CVE-2021-44228, Log4Shell), `struts2-core`
   2.5.25 inside `admin.war!/WEB-INF/lib/` (CVE-2020-17530), `tomcat-embed-core` 9.0.40, `jackson-databind` 2.9.8,

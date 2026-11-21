@@ -79,7 +79,7 @@ public final class KnownProducts {
      */
     private static final Map<String, Pattern> VERSION_STRINGS = Map.of(
             "openssl:openssl", Pattern.compile("^OpenSSL (\\d+\\.\\d+\\.\\d+[a-z]?)\\s"),
-            "zlib:zlib", Pattern.compile("^(?:deflate|inflate) (\\d+\\.\\d+(?:\\.\\d+){1,2}) Copyright"),
+            "zlib:zlib", Pattern.compile("^ ?(?:deflate|inflate) (\\d+\\.\\d+(?:\\.\\d+){1,2}) Copyright"),
             "haxx:libcurl", Pattern.compile("libcurl/(\\d+\\.\\d+\\.\\d+)"),
             "haxx:curl", Pattern.compile("^curl (\\d+\\.\\d+\\.\\d+) \\("),
             "osgeo:gdal", Pattern.compile("^GDAL (\\d+\\.\\d+\\.\\d+), released"),

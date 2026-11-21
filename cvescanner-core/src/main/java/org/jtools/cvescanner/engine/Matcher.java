@@ -22,6 +22,7 @@ package org.jtools.cvescanner.engine;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -51,11 +52,17 @@ final class Matcher {
         var findings = new ArrayList<Finding>();
         var covered = new HashSet<String>();
         var seen = new HashSet<String>();
+        var advisories = new ArrayList<Finding>();
         for (var m : index.osvFor(d)) {
             String id = Json.str(m.vuln(), "id");
             if (seen.contains(id) || !Osv.isAffected(d.ecosystem(), d.version(), m.affected())) continue;
             seen.add(id);
-            var f = Osv.toFinding(d, m);
+            advisories.add(Osv.toFinding(d, m));
+        }
+        // one CVE, several advisories (GitHub's and OSV's PYSEC for a Python package): the one with a CVSS vector kept
+        advisories.sort(Comparator.comparing((Finding f) -> f.rating().cvss3() == null && f.rating().cvss4() == null));
+        for (var f : advisories) {
+            if (!f.cves().isEmpty() && covered.containsAll(f.cves())) continue;
             findings.add(f);
             covered.add(f.id());
             covered.addAll(f.cves());

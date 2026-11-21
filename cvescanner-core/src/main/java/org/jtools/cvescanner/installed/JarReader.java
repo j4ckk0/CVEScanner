@@ -57,7 +57,7 @@ public final class JarReader {
     public static void scan(List<Path> jars, DependencyCollector col, Consumer<Phrase> warn) {
         for (Path jar : jars) {
             try (InputStream in = Files.newInputStream(jar)) {
-                read(new ZipInputStream(in), col.rel(jar), jar.getFileName().toString(), 0, col);
+                read(new ZipInputStream(in), col.rel(jar), jar.getFileName().toString(), 0, col, warn);
             } catch (IOException | RuntimeException e) {
                 warn.accept(Phrase.of("warning.skipped", col.rel(jar), e.getMessage()));
             }
@@ -70,7 +70,8 @@ public final class JarReader {
      *
      * @param shown the jar as the findings name it: "app.jar", "app.jar!/BOOT-INF/lib/x.jar"
      */
-    private static void read(ZipInputStream zip, String shown, String name, int depth, DependencyCollector col) throws IOException {
+    private static void read(ZipInputStream zip, String shown, String name, int depth, DependencyCollector col,
+                             Consumer<Phrase> warn) throws IOException {
         boolean coordinates = false, nested = false;
         Manifest manifest = null;
         int entries = 0;
@@ -86,10 +87,18 @@ public final class JarReader {
                     coordinates = true;
                 }
             } else if (n.equals("META-INF/MANIFEST.MF")) {
-                manifest = new Manifest(new ByteArrayInputStream(small(zip)));
+                try {
+                    manifest = new Manifest(new ByteArrayInputStream(small(zip)));
+                } catch (IOException | RuntimeException _) {
+                    manifest = null;   // a malformed manifest only names an unchecked jar: its file name will do
+                }
             } else if (depth < MAX_DEPTH && !e.isDirectory() && isArchive(n)) {
                 nested = true;
-                read(new ZipInputStream(new KeepOpen(zip)), shown + "!/" + n, n.substring(n.lastIndexOf('/') + 1), depth + 1, col);
+                try {
+                    read(new ZipInputStream(new KeepOpen(zip)), shown + "!/" + n, n.substring(n.lastIndexOf('/') + 1), depth + 1, col, warn);
+                } catch (IOException | RuntimeException bad) {   // one broken jar inside: said, the others still read
+                    warn.accept(Phrase.of("warning.skipped", shown + "!/" + n, bad.getMessage()));
+                }
             }
         }
         if (entries == 0) throw new IOException("not a zip archive");

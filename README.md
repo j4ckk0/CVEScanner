@@ -250,10 +250,15 @@ included:
 | Python packages | each `*.dist-info/METADATA` (or `*.egg-info/PKG-INFO`) of a `site-packages`, matched in OSV's **PyPI** ecosystem (PEP 440 versions, names compared as PEP 503 normalizes them) |
 | native libraries and programs | as for [components off-the-shelf](#components-off-the-shelf), and the version string a known library holds (`OpenSSL 1.1.1k`, `GDAL 3.4.1, released…`, `libcurl/7.79.1`, `deflate 1.2.11`…), so that a `libgdal.so.30` gets a version |
 
-SBOMs, component inventories and pkg-config files are read in both modes. A jar without Maven coordinates is listed in
-*Unchecked dependencies* with what its manifest or its name says; a native library without a known version string
-stays unchecked too. What an installed product ships is not offered to *Apply fixes*: its fix belongs to whoever
-builds it, and *Packages to upgrade* says to which version.
+SBOMs, component inventories and pkg-config files are read in both modes, and so are the version strings of binaries
+named after a known component. A jar without Maven coordinates is listed in *Unchecked dependencies* with what its
+manifest or its name says. A native library without a version string stays unchecked too, as do some distributions'
+builds (Debian's zlib holds none). A distribution that backports a fix without changing the version string makes its
+library safer than its version says: the findings then say what the version is known for. A CVE published both as a
+GitHub advisory and in OSV's own records (PYSEC) is reported once, the record with a CVSS vector kept. What an
+installed product ships is not offered to *Apply fixes*: its fix belongs to whoever builds it, and *Packages to
+upgrade* says to which version. *Ignore this finding…* writes `cvescanner-ignore.csv` into the product's folder, like
+any other.
 
 ## Understanding the results
 

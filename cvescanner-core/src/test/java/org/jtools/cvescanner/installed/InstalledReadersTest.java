@@ -80,7 +80,7 @@ class InstalledReadersTest {
         byte[] log4j = jar("META-INF/maven/org.apache.logging.log4j/log4j-core/pom.properties", pom("org.apache.logging.log4j", "log4j-core", "2.14.1"));
         byte[] plain = jar("META-INF/MANIFEST.MF", "Manifest-Version: 1.0\nImplementation-Title: plain-lib\nImplementation-Version: 1.0\n", "a/B.class", "x");
         Path app = Files.write(root.resolve("app.jar"), jar("META-INF/maven/com.example/app/pom.properties", pom("com.example", "app", "1.0"),
-                "BOOT-INF/lib/log4j-core-2.14.1.jar", log4j, "BOOT-INF/lib/plain-1.0.jar", plain));
+                "BOOT-INF/lib/broken-1.0.jar", "not a jar inside", "BOOT-INF/lib/log4j-core-2.14.1.jar", log4j, "BOOT-INF/lib/plain-1.0.jar", plain));
         byte[] text = jar("META-INF/maven/org.apache.commons/commons-text/pom.properties", pom("org.apache.commons", "commons-text", "1.9"));
         byte[] war = jar("WEB-INF/lib/commons-text-1.9.jar", text);
         Path ear = Files.write(root.resolve("shop.ear"), jar("shop.war", war));
@@ -95,6 +95,7 @@ class InstalledReadersTest {
                 "unchecked plain-lib 1.0 app.jar!/BOOT-INF/lib/plain-1.0.jar"),
                 read(List.of(app, ear, shadedJar, broken)).stream().filter(s -> !s.startsWith("warning")).toList());
         assertEquals(List.of("warning warning.skipped"), read(List.of(broken)), "not a zip: said, nothing claimed");
+        assertTrue(read(List.of(app)).contains("warning warning.skipped"), "a broken jar inside is said, and the jars after it still read");
     }
 
     @Test
@@ -105,12 +106,15 @@ class InstalledReadersTest {
         Files.writeString(root.resolve("app/package.json"), "{\"name\":\"app\",\"version\":\"1.0.0\"}");
         Files.writeString(root.resolve("app/node_modules/@scope/pkg/package.json"), "{\"name\":\"@scope/pkg\",\"version\":\"2.0.0\"}");
         Files.writeString(root.resolve("app/node_modules/@scope/pkg/node_modules/minimist/package.json"), "{\"name\":\"minimist\",\"version\":\"1.2.5\"}");
-        Files.createDirectories(root.resolve("venv/lib/python3.11/site-packages/Requests-2.25.0.dist-info"));
-        Files.writeString(root.resolve("venv/lib/python3.11/site-packages/Requests-2.25.0.dist-info/METADATA"),
+        Files.createDirectories(root.resolve(".venv/lib/python3.11/site-packages/Requests-2.25.0.dist-info"));
+        Files.createDirectories(root.resolve(".git/objects"));
+        Files.writeString(root.resolve(".git/objects/x.jar"), "not read");
+        Files.writeString(root.resolve(".venv/lib/python3.11/site-packages/Requests-2.25.0.dist-info/METADATA"),
                 "Metadata-Version: 2.1\nName: Requests\nVersion: 2.25.0\n\nName: not this\n");
         Files.writeString(root.resolve("app/pom.xml"), "<project/>");
         var files = ProjectFiles.find(root, ScanMode.INSTALLED);
-        assertEquals(1, files.jars.size());
+        assertEquals(1, files.jars.size(), "the product's jar, not one under .git");
+        assertEquals(1, files.pythonMetadata.size(), "a .venv is read: it is where an installation keeps its packages");
         assertEquals(2, files.installedPackageJsons.size(), "the installed packages, not the application's own package.json");
         assertTrue(files.poms.isEmpty() && files.packageJsons.isEmpty(), "no source manifest in an installed scan");
         var col = new DependencyCollector(root);

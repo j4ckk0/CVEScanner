@@ -38,6 +38,8 @@ import org.jtools.cvescanner.model.ScanMode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class ProjectFiles {
+    /** In an installed product, only these hidden folders are passed over: .venv, node_modules/.pnpm hold what runs. */
+    static final Set<String> VERSION_CONTROL = Set.of(".git", ".svn", ".hg");
     static final Set<String> SKIP_DIRS = Set.of("node_modules", "target", "build", "dist", "out", "bower_components", "vendor");
     public final List<Path> poms = new ArrayList<>(), gradle = new ArrayList<>(), catalogs = new ArrayList<>(),
             gradleProps = new ArrayList<>(), packageJsons = new ArrayList<>();
@@ -65,7 +67,8 @@ public final class ProjectFiles {
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                 if (dir.equals(root)) return FileVisitResult.CONTINUE;
                 String n = dir.getFileName().toString();
-                return (!installed && SKIP_DIRS.contains(n)) || n.startsWith(".") ? FileVisitResult.SKIP_SUBTREE : FileVisitResult.CONTINUE;
+                boolean skipped = installed ? VERSION_CONTROL.contains(n) : SKIP_DIRS.contains(n) || n.startsWith(".");
+                return skipped ? FileVisitResult.SKIP_SUBTREE : FileVisitResult.CONTINUE;
             }
 
             @Override
