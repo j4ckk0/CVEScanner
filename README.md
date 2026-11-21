@@ -156,6 +156,7 @@ scripts\setup.bat, scripts\run.bat    # same, on Windows
 | `scripts/package.sh` / `.bat` | builds the distribution into `releases/` (see "Packaging") |
 | `scripts/ci.sh` | a clean build with every test, run by `.githooks/pre-push` |
 | `scripts/release.sh` | by hand, the GitHub release of a pushed tag (the release workflow does it on its own, see PUBLISHING.md) |
+| `scripts/cvss-reference.py` | writes the CVSS scores `CvssReferenceTest` expects, with Red Hat's Python library `cvss` (used at development time only, never shipped) |
 
 Every script uses the externals of `external/` and nothing installed on the machine. The version lives in `pom.xml`,
 once, as `<revision>`. The pre-push hook is enabled once per clone with `git config core.hooksPath .githooks`.
@@ -208,7 +209,7 @@ Two Maven modules, each a jar and a Java module, built in this order by the pare
 | `cvescanner-core/…/json/`, `…/version/`, `…/i18n/` | `Json` (a small parser and writer); `Versions` (Maven's and npm's version order); the languages: `I18n`, `I18nLanguage`, `I18nTexts`, `Phrase` |
 | `cvescanner-app/…/` | `Launcher` (the entry point), `MainWindow`, `FindingDetails` (a finding's page, escaped), the table's `Column`, `ListTableModel` and renderers, `Settings`, `Looks`, `HelpMenu`, `I18nLabels` and `I18nLanguageBox`, `NoNetworkResolver` |
 | `cvescanner-app/src/dist/`, `…/src/assembly/` | the distributions' launchers, the `database/` folder, FlatLaf's licence, and what goes in each archive |
-| `*/src/test/` | core: `GoldenTest` (the samples' reports, case by case), `FrenchReportTest`, the rules' unit tests, `PomParserTest`, `CoreTextsTest`; app: `NoNetworkTest`, `NoNetworkResolverTest`, `HostileAdvisoryTest`, `AppTextsTest` |
+| `*/src/test/` | core: `GoldenTest` (the samples' reports, case by case), `FrenchReportTest`, `CvssReferenceTest` (9,000 vectors scored by another implementation), `HostileReportTest`, the rules' unit tests, `PomParserTest`, `CoreTextsTest`; app: `NoNetworkTest`, `NoNetworkResolverTest`, `HostileAdvisoryTest`, `AppTextsTest` |
 | `samples/` | sample projects and made-up databases, and `make_fixtures.py`, which writes them |
 | `.github/workflows/` | `build.yml`, the build and the tests on every push; `release.yml`, the release on a tag `vX.Y` |
 
