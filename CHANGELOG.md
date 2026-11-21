@@ -5,6 +5,11 @@ checksums.
 
 ## 1.2 — not released yet
 
+- **Installed products**: *Installed product* in the window, `--installed` on the command line, scans what an
+  installation ships rather than source projects: each jar's Maven coordinates (`pom.properties`), the jars inside fat
+  jars, WARs and EARs (`app.war!/WEB-INF/lib/x.jar`), the installed `node_modules`, the Python packages of a
+  `site-packages` (a new **PyPI** ecosystem, with OSV's PyPI export), and the version strings native libraries hold
+  (`libgdal.so.30` now gets a version).
 - **Apply fixes**: tick the packages to upgrade in *Packages to upgrade*, then *Apply fixes…*. Each upgrade is made
   by the project's own build tool, offline: `mvn versions:use-dep-version` / `versions:set-property`, the Gradle file
   edited then checked by Gradle, `npm install`, `yarn add` / `yarn up`, `pnpm add`. Nothing is installed: a missing

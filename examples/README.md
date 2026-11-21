@@ -1,8 +1,9 @@
 # Examples
 
-Four small projects that declare **real packages at versions with known, published vulnerabilities**, one per kind of
-build CVEScanner reads. Scan this folder to see the program at work: drop a database zip in `database/` (see the
-main README, "The databases"), start CVEScanner, choose this `examples` folder, press *Scan*. Or:
+Small projects that declare **real packages at versions with known, published vulnerabilities**, one per kind of
+build CVEScanner reads, and an installed product to scan as such. Scan this folder to see the program at work: drop
+a database zip in `database/` (see the main README, "The databases"), start CVEScanner, choose this `examples`
+folder, press *Scan*. Or:
 
 ```
 cvescanner.sh --no-gui -d examples            (Linux, from the unpacked archive)
@@ -18,6 +19,7 @@ integrity hashes npm and yarn add (CVEScanner reads only the versions).
 | `gradle-app/` | a Gradle build in Kotlin (`build.gradle.kts`): versions in the version catalog (`gradle/libs.versions.toml`, one by `version.ref`), in a `val`, written out |
 | `npm-app/` | `package.json` and its `package-lock.json` (v3): direct dependencies, a transitive one (`follow-redirects`, from `axios`), development ones, a transitive development one (`minimist`, from `mkdirp`) |
 | `yarn-app/` | `package.json` and its `yarn.lock` (Yarn 1): transitive dependencies (`lodash` from `async`; `is-glob`, `is-extglob` from `glob-parent`), a package under an `npm:` alias (`lodash-legacy`, which is `lodash` 4.17.11) |
+| `installed-app/` | an installed product, to scan in *Installed product* mode (`--installed`): a Spring-Boot-like fat jar (`opt/shop/lib/shop-1.4.jar`, its jars in `BOOT-INF/lib`), a WAR (`opt/tomcat/webapps/admin.war`), an installed `node_modules` (`qs` nested under `express`), a Python `site-packages`; the jars hold only the real artifacts' `pom.properties`, no code (see "Installed product" below) |
 | `cots-app/` | components off-the-shelf of a C/C++ application, given the ways CVEScanner reads: a `cots.csv` inventory, a CycloneDX `bom.json`, a `vcpkg.json`, a `conanfile.txt` (see "Components off-the-shelf" below) |
 
 ## What a scan finds
@@ -114,3 +116,20 @@ What Maven and Gradle would add themselves, transitive dependencies, is not read
 `logback-core` 1.2.3, which carries CVE-2021-42550 (fixed in 1.2.8), and is not reported because it is not declared.
 Run `mvn dependency:tree` to see them, or declare them. npm and yarn give their transitive dependencies in their
 lockfiles: those are reported.
+
+## Installed product
+
+`installed-app/` scanned in *Installed product* mode with OSV.dev's Maven, npm and PyPI exports of 2026-11-21:
+**412 findings, 411 distinct advisories, in all 22 package versions it ships**, for example:
+
+- **in the jars**: `log4j-core` 2.14.1 inside `shop-1.4.jar!/BOOT-INF/lib/` (CVE-2021-44228, Log4Shell), `struts2-core`
+  2.5.25 inside `admin.war!/WEB-INF/lib/` (CVE-2020-17530), `tomcat-embed-core` 9.0.40, `jackson-databind` 2.9.8,
+  `commons-fileupload` 1.3.2;
+- **in `node_modules`**: `qs` 6.7.0, installed under `express` (CVE-2022-24999), `node-forge` 0.10.0, `axios` 0.21.1,
+  `jsonwebtoken` 8.5.1;
+- **in `site-packages`**: `Django` 3.1.0, `Pillow` 8.1.0, `requests` 2.25.0 (CVE-2023-32681), `urllib3` 1.26.4,
+  `Jinja2` 2.11.2, `PyYAML` 5.3.1.
+
+A source scan of `examples` reads none of these: their jars, `node_modules` and `site-packages` are what an
+installation holds, not what a project declares.
+

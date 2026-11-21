@@ -10,7 +10,9 @@
 ## What it does
 
 - **Finds the known vulnerabilities** (CVEs and advisories) of your **Maven, Gradle and npm/Yarn** projects'
-  dependencies, and of the **native components you ship**: GDAL, FFmpeg, OpenSSL, zlib, curl, SQLite…
+  dependencies, of the **native components you ship** (GDAL, FFmpeg, OpenSSL, zlib, curl, SQLite…), and of an
+  **installed product** read from its binaries: the jars inside its fat jars, WARs and EARs, its `node_modules`, its
+  Python packages, its native libraries.
 - **Gives each finding its severity** (critical, high, medium, low), **its CVSS base score** (3.x or 4.0) and **its
   environmental score**: the score for where your software runs (internet-facing, internal network, air-gapped,
   developer workstation, or values of your own), which can lower or raise the severity.
@@ -37,6 +39,9 @@ to install, a Java runtime is inside: unpack it anywhere, drop a database zip in
      files, with their lockfile (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`) for the npm packages they pull in;
    - the native components named by a component inventory (`cots.csv`), an SBOM (CycloneDX, SPDX), a C/C++ build
      manifest (pkg-config, vcpkg, Conan), or the binaries themselves (a DLL's version resource, a file name).
+   - or, for an **installed product** (*Installed product*, `--installed`), what it ships: each jar's Maven
+     coordinates, the jars inside fat jars, WARs and EARs, each installed npm package's `package.json`, each Python
+     package's `METADATA`, the version strings native libraries hold (see [Installed products](#installed-products)).
 2. **It checks them against vulnerability databases you download** as zip files: the GitHub Advisory Database, the
    CVE List, OSV.dev's exports and NVD's CVE feeds. Nothing is fetched. Advisories match packages exactly; NVD matches
    components by vendor and product (CPE); the CVE List matches by package or by name.
@@ -54,6 +59,7 @@ to install, a Java runtime is inside: unpack it anywhere, drop a database zip in
 |---|---|
 | You scan projects | [**The databases**](#the-databases), then [**The window**](#the-window) or [**The command line**](#the-command-line) |
 | You ship native components | [**Components off-the-shelf**](#components-off-the-shelf): GDAL, FFmpeg, OpenSSL… from an inventory, an SBOM, a build manifest, the binaries |
+| You run a product | [**Installed products**](#installed-products): what an installation ships, read from its jars, `node_modules`, `site-packages`, native libraries |
 | You fix them | [**Applying fixes**](#applying-fixes): tick the packages to upgrade, the project's own build tool does it, offline |
 | You review the findings | [**Ignoring findings**](#ignoring-findings): those reviewed and accepted set aside in `cvescanner-ignore.csv`, why and until when |
 | You read the results | [**Understanding the results**](#understanding-the-results) and [**CVSS scores and environments**](#cvss-scores-and-environments) |
@@ -88,7 +94,7 @@ window, or name them with `--db`.
 |---|---|---|
 | GitHub Advisory Database (recommended) | <https://github.com/github/advisory-database/archive/refs/heads/main.zip> (`advisory-database-main.zip`, the same as *Code → Download ZIP*) | the exact Maven/npm package and its affected versions, with the CVE IDs |
 | CVE List, the CVE Program's official list (optional) | <https://github.com/CVEProject/cvelistV5/releases>: the newest release's asset `YYYY-MM-DD_all_CVEs_at_midnight.zip.zip` (about 500 MB, a zip in a zip); not the `_delta_` files | exact when the record names the package (**CVE record**); otherwise by product name, marked **CVE name match ⚠**, to check; some CVEs cannot be tied to a package at all (Log4Shell's record) |
-| OSV.dev exports (optional) | `https://osv-vulnerabilities.storage.googleapis.com/Maven/all.zip` and `…/npm/all.zip` | as the GitHub Advisory Database |
+| OSV.dev exports (optional) | `https://osv-vulnerabilities.storage.googleapis.com/Maven/all.zip`, `…/npm/all.zip` and, for Python packages, `…/PyPI/all.zip` | as the GitHub Advisory Database (which holds Python's too) |
 | NVD CVE feeds, for components off-the-shelf | `https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-YYYY.json.zip`, one per year from 2002 (about 25 MB each), and `nvdcve-2.0-modified.json.zip` | GDAL, FFmpeg, OpenSSL… by their CPE: vendor, product and version ranges (see [Components off-the-shelf](#components-off-the-shelf)) |
 
 When several are loaded, a CVE already covered by an advisory is reported once. To update, download fresh files and
@@ -165,6 +171,7 @@ cvescanner-cli.bat --no-gui -d C:\src\my-app --fail-on HIGH               (Windo
 | `--lang fr\|en` | the messages' and `report.md`'s language (default: the window's, else French) |
 | `--fail-on LEVEL` | exit code 2 when a finding is at or above `LOW`, `MEDIUM`, `HIGH` or `CRITICAL` |
 | `--ignore FILE`, `--no-ignore` | the ignore file to read (default: the folder's `cvescanner-ignore.csv`, if any); none |
+| `--installed` | scan an installed product from what it ships, rather than source projects (see [Installed products](#installed-products)) |
 
 Exit codes: `0`, `1` on an error, `2` past `--fail-on`. Without a display the program goes to the command line by itself.
 
@@ -229,6 +236,24 @@ changed. Packages whose version is one shared place (a property such as `spring.
 highest of their fixes. Each step's files are kept and **put back if it fails**; `node_modules`, updated by npm, yarn or
 pnpm, is not. A tool that ends well without changing any file has not applied the fix, and that is said. The files are
 changed in place: keep the project under version control.
+
+## Installed products
+
+A production installation has no pom or `package.json` to read, only what was built: choose **Installed product**
+beside the folder (or `--installed`) and CVEScanner reads, in every folder of it, `node_modules`, `build` and `dist`
+included:
+
+| What | How it is identified |
+|---|---|
+| jars, WARs, EARs | each `META-INF/maven/<group>/<artifact>/pom.properties`: the exact Maven coordinates (a shaded jar holds several); the jars inside a fat jar (`BOOT-INF/lib`), a WAR (`WEB-INF/lib`) or an EAR are read in turn, nothing extracted, and named as `app.war!/WEB-INF/lib/x.jar` |
+| npm packages | each `node_modules/<name>/package.json`, nested ones too: the exact version installed, transitive packages included |
+| Python packages | each `*.dist-info/METADATA` (or `*.egg-info/PKG-INFO`) of a `site-packages`, matched in OSV's **PyPI** ecosystem (PEP 440 versions, names compared as PEP 503 normalizes them) |
+| native libraries and programs | as for [components off-the-shelf](#components-off-the-shelf), and the version string a known library holds (`OpenSSL 1.1.1k`, `GDAL 3.4.1, released…`, `libcurl/7.79.1`, `deflate 1.2.11`…), so that a `libgdal.so.30` gets a version |
+
+SBOMs, component inventories and pkg-config files are read in both modes. A jar without Maven coordinates is listed in
+*Unchecked dependencies* with what its manifest or its name says; a native library without a known version string
+stays unchecked too. What an installed product ships is not offered to *Apply fixes*: its fix belongs to whoever
+builds it, and *Packages to upgrade* says to which version.
 
 ## Understanding the results
 
@@ -340,6 +365,7 @@ Two Maven modules, each a jar and a Java module, built in this order by the pare
 | `cvescanner-core/…/db/` | the databases: `VulnDb` (the zips streamed, nested ones followed, only what the projects use kept), `Osv` (OSV records, their ranges), `CveList` (CVE JSON 5 records, their package and name matches), `NvdFeed` (NVD's feeds, read a record at a time: CPE rules) |
 | `cvescanner-core/…/cots/` | components off-the-shelf: `InventoryReader` (cots.csv), `SbomReader` (CycloneDX, SPDX), `ManifestReader` (pkg-config, vcpkg, Conan), `BinaryReader` and `PeVersionInfo` (a DLL's version resource, read in bounded reads), `KnownProducts` (names to vendor:product) |
 | `cvescanner-core/…/engine/` | `Engine` (a scan: files, dependencies, databases, matches), `Matcher` (which database reports what, in which order) |
+| `cvescanner-core/…/installed/` | an installed product: `JarReader` (jars inside jars, their pom.properties), `InstalledNpmReader` (node_modules), `PythonReader` (site-packages) |
 | `cvescanner-core/…/fix/` | applying fixes: `FixPlanner` (the command per project, or why not: Java and Node checks, tools found without running them), `GradleEdit`, `ArtifactJava` and `NodeEngines` (the new version's needs, from the local caches), `ToolRunner` (the one class that starts a program: the build tool, offline, its files put back on failure) |
 | `cvescanner-core/…/cvss/` | `Cvss` (vectors, the 3.x formulas, the 4.0 macrovectors), `Severity`, `Environment`, `Reach`, `Requirement`, `Rating`, `Score` |
 | `cvescanner-core/…/model/` | what a scan finds: `Finding`, `Dependency` (its `Ecosystem`: Maven, npm, COTS), `Unresolved`, `PackageSummary`, `ScanResult`, `MatchBasis`; `Scoring` (a finding scored for an environment), `ScanListener` (a scan's progress) |
