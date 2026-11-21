@@ -21,6 +21,17 @@ package org.jtools.cvescanner;
  */
 
 
+import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
-record Column<T>(String key, Class<?> type, int width, Function<T, ?> value) {}
+/**
+ * A column of a table: known by its key, titled in the language in use; its values read from a row. An editable one
+ * (a checkbox) also says which rows it may be changed on, and what a change does.
+ */
+record Column<T>(String key, Class<?> type, int width, Function<T, ?> value, Predicate<T> editable, BiConsumer<T, Object> setter) {
+
+    Column(String key, Class<?> type, int width, Function<T, ?> value) {
+        this(key, type, width, value, _ -> false, null);
+    }
+}

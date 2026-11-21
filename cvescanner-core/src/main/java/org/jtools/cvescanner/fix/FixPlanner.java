@@ -60,8 +60,40 @@ public final class FixPlanner {
         this.machine = machine;
     }
 
+    /**
+     * The plans of these requests. Packages whose version is one shared place (a Maven property, a Gradle variable:
+     * the Spring modules' spring.version) are all raised to the highest of their fixes, each planned and checked again
+     * for it: applied one after another, they would otherwise leave the place at the last one's, below another's fix.
+     */
     public List<FixPlan> plan(List<FixRequest> requests) {
-        return requests.stream().map(this::plan).toList();
+        var plans = new ArrayList<FixPlan>(requests.stream().map(this::plan).toList());
+        var bySite = new LinkedHashMap<String, List<Integer>>();
+        for (int i = 0; i < plans.size(); i++)
+            for (String site : sharedSites(plans.get(i))) bySite.computeIfAbsent(site, _ -> new ArrayList<>()).add(i);
+        for (var group : bySite.values()) {
+            if (group.size() < 2) continue;
+            String highest = group.stream().map(i -> plans.get(i).request().to()).max(Ecosystem.MAVEN.versionOrder()).orElseThrow();
+            String names = String.join(", ", group.stream().map(i -> plans.get(i).request().pkg()).toList());
+            for (int i : group) {
+                var r = plans.get(i).request();
+                FixPlan p = r.to().equals(highest) ? plans.get(i)
+                        : plan(new FixRequest(r.ecosystem(), r.pkg(), r.from(), highest, r.declarations()));
+                plans.set(i, p.withNote(Phrase.of("fix.note.shared", names, highest)));
+            }
+        }
+        return List.copyOf(plans);
+    }
+
+    /** The places a plan changes that other packages' versions may come from: a Maven property, a Gradle variable. */
+    private static List<String> sharedSites(FixPlan plan) {
+        var sites = new ArrayList<String>();
+        for (Step step : plan.steps()) {
+            for (String arg : step.command())
+                if (arg.startsWith("-Dproperty=")) sites.add(step.touched().getFirst() + " " + arg);
+            var e = step.edit();
+            if (e != null && !e.before().contains(plan.request().pkg())) sites.add(e.file() + " " + e.before());
+        }
+        return sites;
     }
 
     FixPlan plan(FixRequest r) {
@@ -122,7 +154,7 @@ public final class FixPlanner {
                 return FixPlan.not(r, Phrase.of("fix.reason.javaTooNew", r.to(), needs.getAsInt(), target.getAsInt()));
             requirement = Phrase.of("fix.requirement.java", needs.getAsInt(), target.getAsInt());
         }
-        return new FixPlan(r, List.copyOf(steps.values()), null, requirement, majorJump(r));
+        return new FixPlan(r, List.copyOf(steps.values()), null, requirement, majorJump(r), List.of());
     }
 
     private MavenReader.Tree poms() throws IOException {
@@ -209,7 +241,7 @@ public final class FixPlanner {
             requirement = needs.get().isEmpty() ? Phrase.of("fix.requirement.nodeAny", projectNode)
                     : Phrase.of("fix.requirement.node", needs.get(), projectNode);
         }
-        return new FixPlan(r, List.copyOf(steps.values()), null, requirement, majorJump(r));
+        return new FixPlan(r, List.copyOf(steps.values()), null, requirement, majorJump(r), List.of());
     }
 
     /** Yarn 2 and later: a .yarnrc.yml beside, or a lockfile of their format. */

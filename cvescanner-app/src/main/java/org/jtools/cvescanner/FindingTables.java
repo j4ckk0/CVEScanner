@@ -23,18 +23,23 @@ package org.jtools.cvescanner;
 import java.awt.Component;
 import java.awt.Font;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowSorter;
 import javax.swing.SortOrder;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.ignore.IgnoredFinding;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.PackageSummary;
 import org.jtools.cvescanner.model.Unresolved;
@@ -63,15 +68,6 @@ final class FindingTables {
             new Column<Finding>("column.file", String.class, 220, Finding::file),
             new Column<Finding>("column.published", String.class, 85, Finding::publishedDate),
             new Column<Finding>("column.summary", String.class, 380, Finding::summary));
-    private static final List<Column<PackageSummary>> PACKAGE_COLUMNS = List.of(
-            new Column<PackageSummary>("column.worst", Severity.class, 110, PackageSummary::worst),
-            new Column<PackageSummary>("column.ecosystem", String.class, 75, p -> p.ecosystem().id()),
-            new Column<PackageSummary>("column.package", String.class, 300, PackageSummary::pkg),
-            new Column<PackageSummary>("column.current", String.class, 100, PackageSummary::displayVersion),
-            new Column<PackageSummary>("column.upgradeTo", String.class, 160, p -> p.upgradeTo()),
-            new Column<PackageSummary>("column.vulnerabilities", Integer.class, 95, PackageSummary::vulnerabilities),
-            new Column<PackageSummary>("column.advisories", String.class, 260, PackageSummary::advisories),
-            new Column<PackageSummary>("column.foundIn", String.class, 330, PackageSummary::files));
     private static final List<Column<IgnoredFinding>> IGNORED_COLUMNS = List.of(
             new Column<IgnoredFinding>("column.severity", Severity.class, 175, i -> i.finding().severity()),
             new Column<IgnoredFinding>("column.env", Double.class, 140, i -> i.finding().envScore()),
@@ -90,9 +86,31 @@ final class FindingTables {
             new Column<Unresolved>("column.reason", String.class, 330, u -> u.reason().text()),
             new Column<Unresolved>("column.file", String.class, 300, Unresolved::file));
 
+    /** A package version, as the Packages tab ticks it: its rows are rebuilt by the filters, its ticks stay. */
+    record PackageKey(Ecosystem ecosystem, String pkg, String version) {
+        static PackageKey of(PackageSummary p) {
+            return new PackageKey(p.ecosystem(), p.pkg(), p.version());
+        }
+    }
+
     private final I18nLabels labels;
+    /** The package versions ticked for Apply fixes. */
+    final Set<PackageKey> ticked = new LinkedHashSet<>();
+    /** Told whenever a tick changes. */
+    Runnable onTicked = () -> { };
+    private final List<Column<PackageSummary>> packageColumns = List.of(
+            new Column<PackageSummary>("column.apply", Boolean.class, 70, p -> fixable(p) ? ticked.contains(PackageKey.of(p)) : null,
+                    FindingTables::fixable, (p, v) -> tick(p, Boolean.TRUE.equals(v))),
+            new Column<PackageSummary>("column.worst", Severity.class, 110, PackageSummary::worst),
+            new Column<PackageSummary>("column.ecosystem", String.class, 75, p -> p.ecosystem().id()),
+            new Column<PackageSummary>("column.package", String.class, 300, PackageSummary::pkg),
+            new Column<PackageSummary>("column.current", String.class, 100, PackageSummary::displayVersion),
+            new Column<PackageSummary>("column.upgradeTo", String.class, 160, p -> p.upgradeTo()),
+            new Column<PackageSummary>("column.vulnerabilities", Integer.class, 95, PackageSummary::vulnerabilities),
+            new Column<PackageSummary>("column.advisories", String.class, 260, PackageSummary::advisories),
+            new Column<PackageSummary>("column.foundIn", String.class, 330, PackageSummary::files));
     final ListTableModel<Finding> findingsModel = new ListTableModel<>(FINDING_COLUMNS);
-    final ListTableModel<PackageSummary> packagesModel = new ListTableModel<>(PACKAGE_COLUMNS);
+    final ListTableModel<PackageSummary> packagesModel = new ListTableModel<>(packageColumns);
     final ListTableModel<Unresolved> unresolvedModel = new ListTableModel<>(UNRESOLVED_COLUMNS);
     final ListTableModel<IgnoredFinding> ignoredModel = new ListTableModel<>(IGNORED_COLUMNS);
     final JTable findingsTable = new ScrollingTable(findingsModel);
@@ -114,10 +132,12 @@ final class FindingTables {
         findingsSorter.setSortKeys(List.of(new RowSorter.SortKey(0, SortOrder.DESCENDING),
                 new RowSorter.SortKey(column(FINDING_COLUMNS, "column.env"), SortOrder.DESCENDING),
                 new RowSorter.SortKey(column(FINDING_COLUMNS, "column.base"), SortOrder.DESCENDING)));
-        setup(packagesTable, packagesSorter, PACKAGE_COLUMNS);
-        packagesSorter.setComparator(column(PACKAGE_COLUMNS, "column.current"), version);
-        packagesSorter.setSortKeys(List.of(new RowSorter.SortKey(0, SortOrder.DESCENDING),
-                new RowSorter.SortKey(column(PACKAGE_COLUMNS, "column.vulnerabilities"), SortOrder.DESCENDING)));
+        setup(packagesTable, packagesSorter, packageColumns);
+        packagesSorter.setComparator(column(packageColumns, "column.current"), version);
+        packagesSorter.setSortKeys(List.of(new RowSorter.SortKey(column(packageColumns, "column.worst"), SortOrder.DESCENDING),
+                new RowSorter.SortKey(column(packageColumns, "column.vulnerabilities"), SortOrder.DESCENDING)));
+        packagesTable.setDefaultRenderer(Boolean.class, new TickRenderer(packagesTable.getDefaultRenderer(Boolean.class)));
+        labels.tip(packagesTable.getTableHeader(), "column.apply.tip");
         setup(unresolvedTable, unresolvedSorter, UNRESOLVED_COLUMNS);
         setup(ignoredTable, ignoredSorter, IGNORED_COLUMNS);
         ignoredSorter.setComparator(column(IGNORED_COLUMNS, "column.version"), version);
@@ -176,6 +196,40 @@ final class FindingTables {
             table.getTableHeader().repaint();
         });
         sorter.setSortsOnUpdates(true);
+    }
+
+    /** A package version the Apply fixes button can act on: a Maven or npm package with a version that fixes it. */
+    static boolean fixable(PackageSummary p) {
+        return p.ecosystem() != Ecosystem.COTS && !p.fixedIn().isEmpty();
+    }
+
+    private void tick(PackageSummary p, boolean on) {
+        if (on) ticked.add(PackageKey.of(p));
+        else ticked.remove(PackageKey.of(p));
+        onTicked.run();
+    }
+
+    /** Whether this column of the packages' table is the ticks' one, wherever it was dragged. */
+    boolean isTickColumn(int viewColumn) {
+        return viewColumn >= 0 && packagesTable.convertColumnIndexToModel(viewColumn) == column(packageColumns, "column.apply");
+    }
+
+    /** A tick where it can be set, nothing where it cannot (a COTS component, a package without a fix). */
+    private static final class TickRenderer implements TableCellRenderer {
+        private final TableCellRenderer box;
+        private final JLabel none = new JLabel();
+
+        TickRenderer(TableCellRenderer box) {
+            this.box = box;
+            none.setOpaque(true);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable t, Object v, boolean sel, boolean focus, int row, int col) {
+            if (v != null) return box.getTableCellRendererComponent(t, v, sel, focus, row, col);
+            none.setBackground(sel ? t.getSelectionBackground() : t.getBackground());
+            return none;
+        }
     }
 
     Finding selectedFinding() {

@@ -118,6 +118,29 @@ class FixPlannerTest {
     }
 
     @Test
+    void packagesSharingAPropertyAreAllRaisedToTheHighestFix() throws IOException {
+        write("pom.xml", """
+                <project><modelVersion>4.0.0</modelVersion><groupId>g</groupId><artifactId>app</artifactId><version>1</version>
+                  <properties><spring.version>5.3.17</spring.version></properties>
+                  <dependencies>
+                    <dependency><groupId>org.springframework</groupId><artifactId>spring-webmvc</artifactId><version>${spring.version}</version></dependency>
+                    <dependency><groupId>org.springframework</groupId><artifactId>spring-beans</artifactId><version>${spring.version}</version></dependency>
+                  </dependencies>
+                </project>""");
+        fake.program("mvn", "exit 0");
+        fake.versionsPlugin();
+        var declared = List.of(new FixRequest.Declaration(root.resolve("pom.xml"), "compile"));
+        var plans = new FixPlanner(root, fake.machine()).plan(List.of(
+                new FixRequest(Ecosystem.MAVEN, "org.springframework:spring-webmvc", "5.3.17", "5.3.42", declared),
+                new FixRequest(Ecosystem.MAVEN, "org.springframework:spring-beans", "5.3.17", "5.3.20", declared)));
+        for (var p : plans) {
+            assertEquals("5.3.42", p.request().to(), p.request().pkg());
+            assertTrue(p.steps().getFirst().command().contains("-DnewVersion=5.3.42"));
+            assertEquals(Phrase.of("fix.note.shared", "org.springframework:spring-webmvc, org.springframework:spring-beans", "5.3.42"), p.notes().getFirst());
+        }
+    }
+
+    @Test
     void noToolNoPluginNoFix() throws IOException {
         mavenParentAndChild(null);
         assertEquals("fix.reason.notInstalled", reason(plan(Ecosystem.MAVEN, "org.apache.logging.log4j:log4j-core", "2.14.1", "2.17.1",

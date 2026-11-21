@@ -48,7 +48,7 @@ class ToolRunnerTest {
     Path dir;
 
     private FixPlan plan(Step... steps) {
-        return new FixPlan(new FixRequest(Ecosystem.NPM, "lodash", "4.17.15", "4.17.21", List.of()), List.of(steps), null, null, false);
+        return new FixPlan(new FixRequest(Ecosystem.NPM, "lodash", "4.17.15", "4.17.21", List.of()), List.of(steps), null, null, false, List.of());
     }
 
     private Path tool(String name, String script) throws IOException {

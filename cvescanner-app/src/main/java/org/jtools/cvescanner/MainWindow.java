@@ -152,6 +152,7 @@ final class MainWindow extends JFrame {
 
     private ScanResult result;
     private final EnvironmentBar environmentBar;
+    private final FixActions fixActions;
     private final IgnoreActions ignoreActions;
     /** The scan's findings scored for the environment, those the ignore file sets aside apart. */
     private Ignores.Split split = Ignores.Split.none(List.of());
@@ -176,6 +177,14 @@ final class MainWindow extends JFrame {
             }
             public void say(Supplier<String> message) { MainWindow.this.say(message); }
         }, opts.ignoreChoice(), () -> Path.of(dirField.getText().strip()));
+        fixActions = new FixActions(this, labels, tables, new FixActions.Host() {
+            public ScanResult result() { return result; }
+            public List<Finding> reported() { return split.active(); }
+            public void say(Supplier<String> message) { MainWindow.this.say(message); }
+            public void rescan() { startScan(); }
+            public void busy(boolean on) { setBusy(on); }
+            public boolean scanning() { return busy; }
+        });
         environmentBar = new EnvironmentBar(this, labels, settings, opts, () -> {
             updateSeverityHeader();
             rescore();
@@ -393,6 +402,8 @@ final class MainWindow extends JFrame {
         rows.add(chooseDb, c);
         c.gridx = 3;
         rows.add(clearDbButton, c);
+        c.gridx = 4;
+        rows.add(fixActions.button(), c);
 
         c.gridy = 2;
         ignoreActions.addRow(rows, c);
@@ -528,6 +539,7 @@ final class MainWindow extends JFrame {
             @Override
             public void mouseClicked(MouseEvent e) {
                 int row = tables.packagesTable.getSelectedRow();
+                if (tables.isTickColumn(tables.packagesTable.columnAtPoint(e.getPoint()))) return;   // a tick, not a look
                 if (e.getClickCount() == 2 && row >= 0) {
                     searchField.setText(tables.packagesModel.row(tables.packagesTable.convertRowIndexToModel(row)).pkg());
                     tabs.setSelectedIndex(0);
@@ -761,6 +773,7 @@ final class MainWindow extends JFrame {
         progressBar.setVisible(busy);
         updateProgress(-1);
         setCursor(busy ? Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR) : Cursor.getDefaultCursor());
+        fixActions.update();
     }
 
     private void updateProgress(double fraction) {
@@ -776,6 +789,7 @@ final class MainWindow extends JFrame {
         tables.unresolvedModel.setRows(r.unresolved());
         refreshFindings();
         exportButton.setEnabled(true);
+        fixActions.update();
         int files = r.fileCounts().values().stream().mapToInt(Integer::intValue).sum();
         say(() -> {
             String scanned = I18n.text("scan.done", files, r.dependencies().size(), r.findings().size());

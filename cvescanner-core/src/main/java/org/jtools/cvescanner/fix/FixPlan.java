@@ -30,11 +30,20 @@ import org.jtools.cvescanner.i18n.Phrase;
  * @param requirement   what was checked of the new version (the Java or Node it needs), or why nothing was; null when
  *                      nothing applies
  * @param majorJump     the major version changes: applied only once the user confirms
+ * @param notes         what else to know: a version shared with other packages, raised for them
  */
-public record FixPlan(FixRequest request, List<Step> steps, Phrase notApplicable, Phrase requirement, boolean majorJump) {
+public record FixPlan(FixRequest request, List<Step> steps, Phrase notApplicable, Phrase requirement, boolean majorJump,
+                      List<Phrase> notes) {
 
     public FixPlan {
         steps = List.copyOf(steps);
+        notes = List.copyOf(notes);
+    }
+
+    FixPlan withNote(Phrase note) {
+        var all = new java.util.ArrayList<>(notes);
+        all.add(note);
+        return new FixPlan(request, steps, notApplicable, requirement, majorJump, all);
     }
 
     public boolean applicable() {
@@ -42,6 +51,6 @@ public record FixPlan(FixRequest request, List<Step> steps, Phrase notApplicable
     }
 
     static FixPlan not(FixRequest request, Phrase why) {
-        return new FixPlan(request, List.of(), why, null, false);
+        return new FixPlan(request, List.of(), why, null, false, List.of());
     }
 }

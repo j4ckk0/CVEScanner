@@ -47,4 +47,15 @@ final class ListTableModel<T> extends AbstractTableModel {
     @Override public String getColumnName(int c) { return I18n.text(columns.get(c).key()); }
     @Override public Class<?> getColumnClass(int c) { return columns.get(c).type(); }
     @Override public Object getValueAt(int r, int c) { return columns.get(c).value().apply(rows.get(r)); }
+
+    @Override public boolean isCellEditable(int r, int c) {
+        var column = columns.get(c);
+        return column.setter() != null && column.editable().test(rows.get(r));
+    }
+
+    @Override public void setValueAt(Object value, int r, int c) {
+        if (!isCellEditable(r, c)) return;
+        columns.get(c).setter().accept(rows.get(r), value);
+        fireTableCellUpdated(r, c);
+    }
 }
