@@ -1,0 +1,58 @@
+# Apply fixes with the real build tools, on Linux and on Windows: scripts/fix-tools-check.sh upgrades the projects of
+# samples/fix-tools with npm, yarn 1, yarn 4, pnpm and Gradle, offline. The tools are the runner's own or installed
+# here, and fill their caches online first: CI's downloads, never CVEScanner's. Run when the fixes change, or by hand.
+name: fix-tools
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cvescanner-core/src/main/java/org/jtools/cvescanner/fix/**'
+      - 'cvescanner-core/src/main/java/org/jtools/cvescanner/cli/CliFixes.java'
+      - 'samples/fix-tools/**'
+      - 'scripts/fix-tools-check.sh'
+      - '.github/workflows/fix-tools.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GRADLE_VERSION: '9.9.2'
+
+jobs:
+  fix-tools:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Build the program
+        run: mvn -B --no-transfer-progress package -DskipTests
+
+      - name: yarn and pnpm, through corepack
+        run: |
+          npm install -g corepack
+          corepack enable
+          node --version; npm --version
+
+      - name: Gradle
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/gradle.zip" "https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip"
+          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gradle-$GRADLE_VERSION/bin" >> "$GITHUB_PATH"
+
+      - name: Apply fixes with the real tools
+        run: scripts/fix-tools-check.sh

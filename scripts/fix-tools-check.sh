@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+#
+# Apply fixes with the real build tools: npm, yarn 1, yarn 4, pnpm and Gradle each upgrade a vulnerable version of
+# samples/fix-tools, offline, as the window's Apply fixes and --apply-fixes --yes run them.
+#
+#   scripts/fix-tools-check.sh
+#
+# Needs java, node with npm, yarn and pnpm (through corepack: yarn 1 by default, yarn 4 by the project's
+# packageManager), and gradle on the PATH, and the program built (cvescanner-app/target/cvescanner.jar). Runs on Linux,
+# and on Windows in Git Bash (the release's CI does both, .github/workflows/fix-tools.yml).
+#
+# First the tools fill their own caches, online: the versions the projects lock and the versions that fix them. These
+# downloads are the tools' and this script's, never CVEScanner's: the scan and the fixes then run with the tools offline.
+# Then each project is checked: its manifest and lockfile name the fixed version, written as the project wrote it
+# (exact, ^ or ~; pnpm and yarn 4 pin it, since offline they resolve no range), and the folder scanned again holds no
+# finding. Last, without the tools on the PATH, nothing is applied and nothing changes.
+#
+set -euo pipefail
+cd "$(dirname "$(readlink -f "$0")")/.."
+root=$PWD
+jar=$root/cvescanner-app/target/cvescanner.jar
+db=$root/samples/db/advisory-database-main.zip
+[ -f "$jar" ] || { echo "$jar missing: build first (scripts/build.sh)" >&2; exit 1; }
+for tool in java node npm yarn pnpm gradle; do command -v "$tool" >/dev/null || { echo "$tool not found on the PATH" >&2; exit 1; }; done
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+
+# A path as Java reads it: Git Bash's /c/... is C:/... on Windows.
+native() { if command -v cygpath >/dev/null; then cygpath -m "$1"; else echo "$1"; fi; }
+
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+failures=0
+check() {   # check DESCRIPTION FILE TEXT [absent]: the file holds the text, or does not with "absent"
+  if grep -qF -- "$3" "$2"; then found=yes; else found=no; fi
+  if { [ "${4:-}" = absent ] && [ $found = no ]; } || { [ "${4:-}" != absent ] && [ $found = yes ]; }; then
+    echo "  ok      $1"
+  else
+    echo "  FAILED  $1 ($2 $([ "${4:-}" = absent ] && echo holds || echo lacks) $3)"; failures=$((failures + 1))
+  fi
+}
+
+echo "==> Filling the tools' caches (online)"
+mkdir -p "$work/prime"
+cp -a samples/fix-tools/. "$work/prime/"
+(cd "$work/prime/npm" && npm ci --ignore-scripts --no-audit --no-fund >/dev/null && npm cache add lodash@4.17.21 >/dev/null)
+(cd "$work/prime/yarn1" && yarn install --frozen-lockfile --ignore-scripts --silent >/dev/null)
+(cd "$work/prime/yarn4" && yarn install --immutable >/dev/null)
+(cd "$work/prime/pnpm" && pnpm install --frozen-lockfile >/dev/null)
+(cd "$work/prime/gradle" && gradle -q dependencies >/dev/null)
+for tool in yarn1 yarn4 pnpm; do   # the fixed version, through a project of its own
+  mkdir -p "$work/prime/fixed-$tool"
+  manager=$([ $tool = yarn4 ] && echo ', "packageManager": "yarn@4.9.2"' || true)
+  echo "{ \"name\": \"fixed\", \"version\": \"1.0.0\", \"private\": true$manager, \"dependencies\": { \"lodash\": \"4.17.21\" } }" \
+    > "$work/prime/fixed-$tool/package.json"
+  [ $tool = yarn4 ] && printf 'nodeLinker: node-modules\n' > "$work/prime/fixed-$tool/.yarnrc.yml"
+  (cd "$work/prime/fixed-$tool" && case $tool in pnpm) pnpm install >/dev/null ;; *) yarn install >/dev/null ;; esac)
+done
+mkdir -p "$work/prime/fixed-gradle"
+cp samples/fix-tools/gradle/settings.gradle "$work/prime/fixed-gradle/"
+sed 's/commons-text:1.9/commons-text:1.10.0/' samples/fix-tools/gradle/build.gradle > "$work/prime/fixed-gradle/build.gradle"
+echo "tasks.register('fetch') { doLast { configurations.runtimeClasspath.files } }" >> "$work/prime/fixed-gradle/build.gradle"
+(cd "$work/prime/fixed-gradle" && gradle -q fetch >/dev/null)
+
+echo "==> Applying the fixes (the tools offline)"
+mkdir -p "$work/run"
+cp -a samples/fix-tools/. "$work/run/"
+set +e
+java -jar "$(native "$jar")" --no-gui --lang en -d "$(native "$work/run")" --db "$(native "$db")" -o "$(native "$work/out")" \
+  --apply-fixes --yes > "$work/fixes.log" 2>&1
+code=$?
+set -e
+sed -n '/^Fixes:/,/^====/p' "$work/fixes.log"
+[ $code -eq 0 ] || { echo "  FAILED  exit code $code, not 0"; cat "$work/fixes.log"; failures=$((failures + 1)); }
+r=$work/run
+check "npm: exact, as written"         "$r/npm/package.json"      '"lodash": "4.17.21"'
+check "npm: locked"                    "$r/npm/package-lock.json" 'lodash-4.17.21.tgz'
+check "npm: the old version gone"      "$r/npm/package-lock.json" '4.17.20' absent
+check "yarn 1: ^, as written"          "$r/yarn1/package.json"    '"lodash": "^4.17.21"'
+check "yarn 1: locked"                 "$r/yarn1/yarn.lock"       'lodash-4.17.21.tgz'
+check "yarn 1: the old version gone"   "$r/yarn1/yarn.lock"       '4.17.20' absent
+check "yarn 4: exact, as written"      "$r/yarn4/package.json"    '"lodash": "4.17.21"'
+check "yarn 4: locked"                 "$r/yarn4/yarn.lock"       'lodash@npm:4.17.21'
+check "yarn 4: the old version gone"   "$r/yarn4/yarn.lock"       '4.17.20' absent
+check "pnpm: ~ pinned, said so"        "$r/pnpm/package.json"     '"lodash": "4.17.21"'
+check "pnpm: locked"                   "$r/pnpm/pnpm-lock.yaml"   'lodash@4.17.21'
+check "pnpm: the old version gone"     "$r/pnpm/pnpm-lock.yaml"   '4.17.20' absent
+check "pnpm: the pin said"             "$work/fixes.log"          'pnpm cannot resolve a range offline'
+check "Gradle: the build file"         "$r/gradle/build.gradle"   'commons-text:1.10.0'
+check "scanned again: no finding left" "$work/out/report.md"      'lodash' absent
+
+echo "==> Without the tools on the PATH"
+mkdir -p "$work/bare" "$work/nobin"
+cp -a samples/fix-tools/. "$work/bare/"
+java_bin=$(dirname "$(command -v java)")
+set +e
+PATH="$work/nobin" "$java_bin/java" -jar "$(native "$jar")" --no-gui --lang en -d "$(native "$work/bare")" \
+  --db "$(native "$db")" -o "$(native "$work/out-bare")" --apply-fixes --yes > "$work/bare.log" 2>&1
+code=$?
+set -e
+[ $code -eq 0 ] || { echo "  FAILED  exit code $code, not 0"; cat "$work/bare.log"; failures=$((failures + 1)); }
+check "gradle missing: said" "$work/bare.log" "gradle is not installed"
+check "lodash: its first tool missing, said" "$work/bare.log" "npm is not installed"
+if diff -r samples/fix-tools "$work/bare" >/dev/null; then echo "  ok      nothing changed"
+else echo "  FAILED  files changed without their tools"; failures=$((failures + 1)); fi
+
+echo
+[ $failures -eq 0 ] && echo "All checks passed." || { echo "$failures check(s) failed."; exit 1; }

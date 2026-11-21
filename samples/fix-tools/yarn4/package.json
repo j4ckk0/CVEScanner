@@ -1,0 +1,9 @@
+{
+  "name": "fix-tools-yarn4",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "yarn@4.9.2",
+  "dependencies": {
+    "lodash": "4.17.20"
+  }
+}

@@ -224,15 +224,62 @@ class FixPlannerTest {
         fake.npmTarball("lodash", "4.17.21");
         var npm = plan(Ecosystem.NPM, "lodash", "4.17.15", "4.17.21", "a/package-lock.json", "direct (dev)").steps().getFirst();
         assertEquals(List.of("install", "lodash@4.17.21", "--offline", "--ignore-scripts", "--save-dev"), npm.command().subList(1, 6));
-        assertEquals(Map.of("npm_config_offline", "true"), npm.environment());
-        assertEquals(List.of("add", "lodash@4.17.21", "--offline", "--ignore-scripts"),
-                plan(Ecosystem.NPM, "lodash", "4.17.15", "4.17.21", "b/yarn.lock", "direct").steps().getFirst().command().subList(1, 5));
-        var berry = plan(Ecosystem.NPM, "lodash", "4.17.15", "4.17.21", "c/yarn.lock", "direct").steps().getFirst();
+        assertEquals(Map.of("npm_config_offline", "true", "npm_config_save_prefix", "^"), npm.environment(), "written ^4.17.21, as it was");
+        assertEquals(List.of("add", "lodash@^4.17.21", "--offline", "--ignore-scripts"),
+                plan(Ecosystem.NPM, "lodash", "4.17.15", "4.17.21", "b/yarn.lock", "direct").steps().getFirst().command().stream().skip(1).toList());
+        var berryPlan = plan(Ecosystem.NPM, "lodash", "4.17.15", "4.17.21", "c/yarn.lock", "direct");
+        var berry = berryPlan.steps().getFirst();
         assertEquals(List.of("up", "lodash@4.17.21"), berry.command().subList(1, 3));
         assertEquals("0", berry.environment().get("YARN_ENABLE_SCRIPTS"));
-        assertEquals(List.of("add", "lodash@4.17.21", "--offline", "--ignore-scripts", "-D"),
-                plan(Ecosystem.NPM, "lodash", "4.17.15", "4.17.21", "d/pnpm-lock.yaml", "direct").steps().getFirst().command().subList(1, 6));
+        assertEquals(List.of("fix.note.pinned"), berryPlan.notes().stream().map(Phrase::key).toList(), "no range resolved offline");
+        var pnpm = plan(Ecosystem.NPM, "lodash", "4.17.15", "4.17.21", "d/pnpm-lock.yaml", "direct");
+        assertEquals(List.of("add", "lodash@4.17.21", "--offline", "--ignore-scripts", "-D"), pnpm.steps().getFirst().command().subList(1, 6));
+        assertEquals(List.of("fix.note.pinned"), pnpm.notes().stream().map(Phrase::key).toList());
         assertEquals("fix.reason.transitive", reason(plan(Ecosystem.NPM, "minimist", "1.2.5", "1.2.6", "a/package-lock.json", "transitive (dev)")));
+    }
+
+    @Test
+    void anExactVersionStaysExactAndATildeATilde() throws Exception {
+        write("a/package.json", "{\"dependencies\":{\"lodash\":\"4.17.20\"}}");
+        write("a/package-lock.json", "{}");
+        write("b/package.json", "{\"dependencies\":{\"lodash\":\"~4.17.20\"}}");
+        write("b/package-lock.json", "{}");
+        write("c/package.json", "{\"dependencies\":{\"lodash\":\"4.17.20\"}}");
+        write("c/yarn.lock", "# yarn lockfile v1\n");
+        write("d/package.json", "{\"devDependencies\":{\"lodash\":\"~4.17.20\"}}");
+        write("d/yarn.lock", "# yarn lockfile v1\n");
+        write("e/package.json", "{\"dependencies\":{\"lodash\":\"4.17.20\"}}");
+        write("e/pnpm-lock.yaml", "lockfileVersion: '9.0'\n");
+        for (String tool : List.of("npm", "yarn", "pnpm")) fake.program(tool, "exit 0");
+        fake.npmTarball("lodash", "4.17.21");
+        var exact = plan(Ecosystem.NPM, "lodash", "4.17.20", "4.17.21", "a/package-lock.json", "direct").steps().getFirst();
+        assertEquals("--save-exact", exact.command().getLast(), "npm would write ^4.17.21 otherwise");
+        assertEquals(Map.of("npm_config_offline", "true"), exact.environment());
+        var tilde = plan(Ecosystem.NPM, "lodash", "4.17.20", "4.17.21", "b/package-lock.json", "direct").steps().getFirst();
+        assertEquals("~", tilde.environment().get("npm_config_save_prefix"));
+        assertEquals(List.of("add", "lodash@4.17.21", "--offline", "--ignore-scripts", "--exact"),
+                plan(Ecosystem.NPM, "lodash", "4.17.20", "4.17.21", "c/yarn.lock", "direct").steps().getFirst().command().stream().skip(1).toList());
+        assertEquals(List.of("add", "lodash@4.17.21", "--offline", "--ignore-scripts", "--tilde", "--dev"),
+                plan(Ecosystem.NPM, "lodash", "4.17.20", "4.17.21", "d/yarn.lock", "direct (dev)").steps().getFirst().command().stream().skip(1).toList());
+        assertTrue(plan(Ecosystem.NPM, "lodash", "4.17.20", "4.17.21", "e/pnpm-lock.yaml", "direct").notes().isEmpty(), "exact already");
+    }
+
+    @Test
+    void aCaretGoingThroughCmdIsQuotedSoThatCmdKeepsIt() {
+        assertEquals(List.of("cmd.exe", "/c", "C:\\node\\yarn.cmd", "add", "\"lodash@^4.17.21\"", "--offline"),
+                ToolRunner.command(List.of("C:\\node\\yarn.cmd", "add", "lodash@^4.17.21", "--offline")));
+        assertEquals(List.of("/usr/bin/yarn", "add", "lodash@^4.17.21"), ToolRunner.command(List.of("/usr/bin/yarn", "add", "lodash@^4.17.21")));
+    }
+
+    @Test
+    void theCachesAreWhereTheToolsEnvironmentPutsThem() {
+        Path home = Path.of("/h"), gradle = Path.of("/g"), npm = Path.of("/n");
+        var machine = new Machine(List.of(), false, List.of(""), home, null, gradle, npm);
+        assertEquals(gradle.resolve("caches/modules-2/files-2.1"), machine.gradleCache());
+        assertEquals(npm.resolve("_cacache"), machine.npmCache());
+        var defaults = new Machine(List.of(), false, List.of(""), home, null);
+        assertEquals(home.resolve(".gradle/caches/modules-2/files-2.1"), defaults.gradleCache());
+        assertEquals(home.resolve(".npm/_cacache"), defaults.npmCache());
     }
 
     @Test

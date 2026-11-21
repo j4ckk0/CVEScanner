@@ -34,11 +34,17 @@ import org.jtools.cvescanner.project.ProjectFiles;
  * The machine the fixes would run on, as far as they need it: where its programs are (PATH) and its caches (the
  * local Maven repository, Gradle's and npm's caches). A value, so that a test gives its own.
  */
-public record Machine(List<Path> path, boolean windows, List<String> pathExt, Path home, Path localAppData) {
+public record Machine(List<Path> path, boolean windows, List<String> pathExt, Path home, Path localAppData,
+                      Path gradleUserHome, Path npmCacheDir) {
 
     public Machine {
         path = List.copyOf(path);
         pathExt = List.copyOf(pathExt);
+    }
+
+    /** A machine whose caches are where their tools put them by default. */
+    public Machine(List<Path> path, boolean windows, List<String> pathExt, Path home, Path localAppData) {
+        this(path, windows, pathExt, home, localAppData, null, null);
     }
 
     /** This machine, as its environment says. */
@@ -49,8 +55,13 @@ public record Machine(List<Path> path, boolean windows, List<String> pathExt, Pa
             if (!d.isBlank()) dirs.add(Path.of(d.strip()));
         List<String> ext = windows ? List.of(System.getenv().getOrDefault("PATHEXT", ".COM;.EXE;.BAT;.CMD").toLowerCase(Locale.ROOT).split(";"))
                 : List.of("");
-        String local = System.getenv("LOCALAPPDATA");
-        return new Machine(dirs, windows, ext, Path.of(System.getProperty("user.home")), local == null ? null : Path.of(local));
+        return new Machine(dirs, windows, ext, Path.of(System.getProperty("user.home")), env("LOCALAPPDATA"), env("GRADLE_USER_HOME"),
+                env("npm_config_cache"));
+    }
+
+    private static Path env(String name) {
+        String value = System.getenv(name);
+        return value == null || value.isBlank() ? null : Path.of(value.strip());
     }
 
     /**
@@ -87,12 +98,14 @@ public record Machine(List<Path> path, boolean windows, List<String> pathExt, Pa
         return home.resolve(".m2").resolve("repository");
     }
 
+    /** Gradle's downloads: under GRADLE_USER_HOME when it is set, else ~/.gradle. */
     public Path gradleCache() {
-        return home.resolve(".gradle").resolve("caches").resolve("modules-2").resolve("files-2.1");
+        return (gradleUserHome != null ? gradleUserHome : home.resolve(".gradle")).resolve("caches").resolve("modules-2").resolve("files-2.1");
     }
 
-    /** npm's content cache: ~/.npm/_cacache, or %LOCALAPPDATA%\npm-cache\_cacache on Windows. */
+    /** npm's content cache: under npm_config_cache when it is set, else ~/.npm/_cacache, %LOCALAPPDATA%\npm-cache\_cacache on Windows. */
     public Path npmCache() {
+        if (npmCacheDir != null) return npmCacheDir.resolve("_cacache");
         return windows && localAppData != null ? localAppData.resolve("npm-cache").resolve("_cacache")
                 : home.resolve(".npm").resolve("_cacache");
     }

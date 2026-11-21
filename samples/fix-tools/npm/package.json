@@ -1,0 +1,7 @@
+{
+  "name": "fix-tools-npm",
+  "version": "1.0.0",
+  "private": true,
+  "engines": { "node": ">=18" },
+  "dependencies": { "lodash": "4.17.20" }
+}

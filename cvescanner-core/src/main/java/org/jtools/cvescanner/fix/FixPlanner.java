@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -199,6 +200,7 @@ public final class FixPlanner {
     // ---------------------------------------------------------------------------------------- npm, yarn, pnpm
     private FixPlan npm(FixRequest r) throws IOException {
         var steps = new LinkedHashMap<Path, Step>();
+        var pinned = new LinkedHashSet<Phrase>();
         String projectNode = null;
         for (var d : r.declarations()) {
             if (d.scope().startsWith("transitive")) return FixPlan.not(r, Phrase.of("fix.reason.transitive"));
@@ -210,16 +212,21 @@ public final class FixPlanner {
             boolean dev = Json.obj(json.get("devDependencies")).containsKey(r.pkg()) && !Json.obj(json.get("dependencies")).containsKey(r.pkg());
             String node = Json.str(Json.obj(json.get("engines")), "node");
             if (node != null) projectNode = node;
+            String range = rangeOperator(json, r.pkg());
             String spec = r.pkg() + "@" + r.to();
             Step step;
             if (Files.isRegularFile(dir.resolve("yarn.lock"))) {
                 Optional<Path> yarn = machine.program("yarn");
                 if (yarn.isEmpty()) return FixPlan.not(r, Phrase.of("fix.reason.notInstalled", "yarn"));
                 var touched = List.of(packageJson, dir.resolve("yarn.lock"));
-                if (yarnBerry(dir))
+                if (yarnBerry(dir)) {
                     step = new Step(null, List.of(yarn.get().toString(), "up", spec), dir, YARN_BERRY_OFFLINE, touched);
-                else {
-                    var command = new ArrayList<>(List.of(yarn.get().toString(), "add", spec, "--offline", "--ignore-scripts"));
+                    if (!range.isEmpty()) pinned.add(Phrase.of("fix.note.pinned", "yarn", r.to(), range));
+                } else {
+                    // yarn 1 writes "^" only as given, "~" and an exact version by its options
+                    var command = new ArrayList<>(List.of(yarn.get().toString(), "add", range.equals("^") ? r.pkg() + "@^" + r.to() : spec,
+                            "--offline", "--ignore-scripts"));
+                    if (!range.equals("^")) command.add(range.isEmpty() ? "--exact" : "--tilde");
                     if (dev) command.add("--dev");
                     step = new Step(null, command, dir, Map.of(), touched);
                 }
@@ -229,12 +236,17 @@ public final class FixPlanner {
                 var command = new ArrayList<>(List.of(pnpm.get().toString(), "add", spec, "--offline", "--ignore-scripts"));
                 if (dev) command.add("-D");
                 step = new Step(null, command, dir, Map.of(), List.of(packageJson, dir.resolve("pnpm-lock.yaml")));
+                if (!range.isEmpty()) pinned.add(Phrase.of("fix.note.pinned", "pnpm", r.to(), range));
             } else {
                 Optional<Path> npm = machine.program("npm");
                 if (npm.isEmpty()) return FixPlan.not(r, Phrase.of("fix.reason.notInstalled", "npm"));
                 if (!NodeEngines.tarballCached(machine, r.pkg(), r.to())) return FixPlan.not(r, Phrase.of("fix.reason.notCachedNpm", r.to()));
-                var command = List.of(npm.get().toString(), "install", spec, "--offline", "--ignore-scripts", dev ? "--save-dev" : "--save");
-                step = new Step(null, command, dir, NPM_OFFLINE,
+                var command = new ArrayList<>(List.of(npm.get().toString(), "install", spec, "--offline", "--ignore-scripts",
+                        dev ? "--save-dev" : "--save"));
+                if (range.isEmpty()) command.add("--save-exact");
+                var environment = new java.util.HashMap<>(NPM_OFFLINE);
+                if (!range.isEmpty()) environment.put("npm_config_save_prefix", range);
+                step = new Step(null, command, dir, environment,
                         List.of(packageJson, dir.resolve("package-lock.json"), dir.resolve("npm-shrinkwrap.json")));
             }
             steps.putIfAbsent(dir, step);
@@ -250,7 +262,22 @@ public final class FixPlanner {
             requirement = needs.get().isEmpty() ? Phrase.of("fix.requirement.nodeAny", projectNode)
                     : Phrase.of("fix.requirement.node", needs.get(), projectNode);
         }
-        return new FixPlan(r, List.copyOf(steps.values()), null, requirement, majorJump(r), List.of());
+        return new FixPlan(r, List.copyOf(steps.values()), null, requirement, majorJump(r), List.copyOf(pinned));
+    }
+
+    /**
+     * How package.json writes the package's version, so that the fix writes the new one alike: "^" or "~" before it, or
+     * "" for an exact version. Anything else (a range, a tag, a URL) gets an exact version, the one checked.
+     */
+    static String rangeOperator(Map<String, Object> packageJson, String pkg) {
+        for (String section : List.of("dependencies", "devDependencies", "optionalDependencies")) {
+            String declared = Json.str(Json.obj(packageJson.get(section)), pkg);
+            if (declared == null) continue;
+            declared = declared.strip();
+            if (declared.startsWith("^") || declared.startsWith("~")) return declared.substring(0, 1);
+            return "";
+        }
+        return "";
     }
 
     /** Yarn 2 and later: a .yarnrc.yml beside, or a lockfile of their format. */
