@@ -234,6 +234,7 @@ class FixPlannerTest {
         var berry = berryPlan.steps().getFirst();
         assertEquals(List.of("up", "lodash@4.17.21"), berry.command().subList(1, 3));
         assertEquals("0", berry.environment().get("YARN_ENABLE_SCRIPTS"));
+        assertEquals("false", berry.environment().get("YARN_ENABLE_IMMUTABLE_INSTALLS"), "a CI machine's yarn would refuse the new lockfile");
         assertEquals(List.of("fix.note.pinned"), berryPlan.notes().stream().map(Phrase::key).toList(), "no range resolved offline");
         var pnpm = plan(Ecosystem.NPM, "lodash", "4.17.15", "4.17.21", "d/pnpm-lock.yaml", "direct");
         assertEquals(List.of("add", "lodash@4.17.21", "--offline", "--ignore-scripts", "-D"), pnpm.steps().getFirst().command().subList(1, 6));

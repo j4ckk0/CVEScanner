@@ -23,6 +23,8 @@ db=$root/samples/db/advisory-database-main.zip
 [ -f "$jar" ] || { echo "$jar missing: build first (scripts/build.sh)" >&2; exit 1; }
 for tool in java node npm yarn pnpm gradle; do command -v "$tool" >/dev/null || { echo "$tool not found on the PATH" >&2; exit 1; }; done
 export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+# a step that fails is said, in GitHub Actions as an annotation too: its output is not shown otherwise
+trap 'code=$?; echo "  FAILED  line $LINENO: $BASH_COMMAND (exit $code)"; [ -n "${GITHUB_ACTIONS:-}" ] && echo "::error::fix-tools: line $LINENO: $BASH_COMMAND"' ERR
 
 # A path as Java reads it: Git Bash's /c/... is C:/... on Windows.
 native() { if command -v cygpath >/dev/null; then cygpath -m "$1"; else echo "$1"; fi; }
@@ -55,7 +57,11 @@ for tool in yarn1 yarn4 pnpm; do   # the fixed version, through a project of its
   echo "{ \"name\": \"fixed\", \"version\": \"1.0.0\", \"private\": true$manager, \"dependencies\": { \"lodash\": \"4.17.21\" } }" \
     > "$work/prime/fixed-$tool/package.json"
   [ $tool = yarn4 ] && printf 'nodeLinker: node-modules\n' > "$work/prime/fixed-$tool/.yarnrc.yml"
-  (cd "$work/prime/fixed-$tool" && case $tool in pnpm) pnpm install >/dev/null ;; *) yarn install >/dev/null ;; esac)
+  # a CI runner makes yarn 4 and pnpm refuse to write a lockfile: this project has none yet
+  (cd "$work/prime/fixed-$tool" && case $tool in
+     pnpm) pnpm install --no-frozen-lockfile >/dev/null ;;
+     *) YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install >/dev/null ;;
+   esac)
 done
 mkdir -p "$work/prime/fixed-gradle"
 cp samples/fix-tools/gradle/settings.gradle "$work/prime/fixed-gradle/"

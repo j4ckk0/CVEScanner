@@ -49,7 +49,9 @@ import org.jtools.cvescanner.project.ProjectFiles;
 public final class FixPlanner {
 
     private static final Map<String, String> NPM_OFFLINE = Map.of("npm_config_offline", "true");
-    private static final Map<String, String> YARN_BERRY_OFFLINE = Map.of("YARN_ENABLE_NETWORK", "0", "YARN_ENABLE_SCRIPTS", "0");
+    /** yarn 2+ offline, its scripts not run, and allowed to write its lockfile even on a CI machine, where it would refuse. */
+    private static final Map<String, String> YARN_BERRY_OFFLINE = Map.of("YARN_ENABLE_NETWORK", "0", "YARN_ENABLE_SCRIPTS", "0",
+            "YARN_ENABLE_IMMUTABLE_INSTALLS", "false");
     private static final Pattern LEADING_NUMBER = Pattern.compile("^\\D*(\\d+)");
     /** What may go on a tool's command line: a name or a version from a project or a database, never an option. */
     private static final Pattern SAFE_VERSION = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._+~-]*");

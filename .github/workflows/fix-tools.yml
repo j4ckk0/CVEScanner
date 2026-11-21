@@ -44,7 +44,8 @@ jobs:
 
       - name: yarn and pnpm, through corepack
         run: |
-          npm install -g corepack
+          # --force: the runner's own yarn holds the names corepack's shims take
+          npm install -g --force corepack
           corepack enable
           node --version; npm --version
 
