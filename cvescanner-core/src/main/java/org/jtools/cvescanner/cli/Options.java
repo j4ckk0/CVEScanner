@@ -80,6 +80,8 @@ public final class Options {
     /** The entry's --package, --version, --reason, --until; null when not given. */
     public String ignorePackage, ignoreVersion, ignoreReason;
     public LocalDate ignoreUntil;
+    /** --vex FILE: VEX documents read besides the *.vex.json of the folder scanned. */
+    public final List<Path> vexFiles = new ArrayList<>();
     /** --db-max-age: a database whose newest record is older than this many days is said to be; 0 for never. */
     public int dbMaxAgeDays = ScanOptions.DEFAULT_DB_MAX_AGE_DAYS;
     /** The day the scan counts from: today, a fixed one in the tests. */
@@ -110,6 +112,7 @@ public final class Options {
                 }
                 case "--ignore" -> o.ignoreFile = Path.of(value(args, ++i, a));
                 case "--no-ignore" -> o.noIgnore = true;
+                case "--vex" -> o.vexFiles.add(Path.of(value(args, ++i, a)));
                 case "--installed" -> o.installed = true;
                 case "--min-severity" -> {
                     o.minSeverity = Severity.fromRating(value(args, ++i, a));
@@ -208,7 +211,7 @@ public final class Options {
 
     /** How Engine.scan runs: the ignore file, the mode, the databases' age limit, today. */
     public ScanOptions scanOptions() {
-        return new ScanOptions(ignoreChoice(), mode(), dbMaxAgeDays, today);
+        return new ScanOptions(ignoreChoice(), mode(), dbMaxAgeDays, today, vexFiles);
     }
 
     public ScanMode mode() {

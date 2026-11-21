@@ -23,10 +23,12 @@ package org.jtools.cvescanner;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.jtools.cvescanner.cvss.Cvss;
+import java.util.List;
 import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.ignore.IgnoreRule;
+import org.jtools.cvescanner.ignore.VexStatement;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
 
@@ -49,15 +51,16 @@ final class FindingDetails {
     }
 
     static String page(Finding f, Environment environment) {
-        return page(f, environment, null, "");
+        return page(f, environment, null, "", List.of());
     }
 
     /**
      * The page of a finding the ignore file sets aside: why, until when, which entry of which file, before the rest.
      *
      * @param rule the entry setting it aside; null for a finding reported
+     * @param vex  what VEX documents state of it (in triage, exploitable…), shown whatever they state
      */
-    static String page(Finding f, Environment environment, IgnoreRule rule, String file) {
+    static String page(Finding f, Environment environment, IgnoreRule rule, String file, List<VexStatement> vex) {
         var sb = new StringBuilder("<html><body style='font-family:sans-serif;padding:12px 18px'>");
         sb.append("<div style='font-size:15pt'><b>").append(SwingText.html(f.id())).append("</b> &nbsp;<font color='")
                 .append(SwingText.hex(SeverityColors.of(f.severity()))).append("'><b>").append(f.severity().label());
@@ -68,8 +71,13 @@ final class FindingDetails {
             sb.append("<p><font color='gray'><b>").append(I18n.text("details.ignored")).append("</b> — ")
                     .append(rule.reason().isEmpty() ? "" : SwingText.html(rule.reason()) + " · ")
                     .append(rule.until() == null ? I18n.text("details.ignored.forEver") : I18n.text("details.ignored.until", rule.until().toString()))
-                    .append(" · ").append(I18n.text("details.ignored.entry", rule.line(), SwingText.html(file))).append("</font></p>");
+                    .append(" · ").append(rule.fromVex() ? I18n.text("details.ignored.vex", SwingText.html(rule.source()))
+                            : I18n.text("details.ignored.entry", rule.line(), SwingText.html(file))).append("</font></p>");
         }
+        for (var v : vex)
+            if (rule == null || !rule.fromVex() || !v.source().equals(rule.source()))
+                sb.append("<p><font color='gray'><b>").append(I18n.text("details.vex", SwingText.html(v.source()))).append("</b> — ")
+                        .append(SwingText.html(v.said())).append("</font></p>");
         sb.append("<p><b>").append(SwingText.html(f.summary())).append("</b></p><table cellpadding='4'>");
         row(sb, "details.package", "<b>" + SwingText.html(f.pkg()) + "</b> (" + SwingText.html(f.ecosystem().id()) + ")");
         row(sb, "details.version", SwingText.html(f.version()) + (f.approximate()

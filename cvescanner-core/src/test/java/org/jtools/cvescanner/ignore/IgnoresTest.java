@@ -167,4 +167,17 @@ class IgnoresTest {
         var past = assertThrows(IllegalArgumentException.class, () -> IgnoreRule.until("2026-11-20", TODAY));
         assertTrue(past.getMessage().contains("past"), past.getMessage());
     }
+
+    @Test
+    void aPythonPackageIsNamedAsPep503NormalizesItAComponentByItsProductToo() {
+        var python = new Finding(Severity.HIGH, new Score(null, null, null, Severity.HIGH, null, null), Ecosystem.PYPI, "Zope.Interface", "5.0",
+                false, "installed", "x", "PYSEC-1", List.of(), List.of(), "", "s", "d", "", "u", MatchBasis.ADVISORY,
+                Phrase.of("match.note.advisory"), new Rating(Severity.HIGH, null, null, null));
+        assertTrue(rule("PYSEC-1", "zope-interface", "", null, 1).matches(python));
+        var gdal = new Finding(Severity.HIGH, new Score(null, null, null, Severity.HIGH, null, null), Ecosystem.COTS, "osgeo:gdal", "3.4.1",
+                false, "inventory", "x", "CVE-1", List.of("CVE-1"), List.of(), "", "s", "d", "", "u", MatchBasis.CPE,
+                Phrase.of("match.note.advisory"), new Rating(Severity.HIGH, null, null, null));
+        assertTrue(rule("CVE-1", "GDAL", "3.4.1", null, 1).matches(gdal), "a VEX document names it pkg:generic/gdal");
+        assertFalse(rule("CVE-1", "ffmpeg", "", null, 1).matches(gdal));
+    }
 }

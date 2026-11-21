@@ -24,16 +24,28 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Objects;
 import org.jtools.cvescanner.i18n.I18n;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.Finding;
 
 /**
  * One line of an ignore file: the findings of this vulnerability, for this package and this version, are set aside, for
  * this reason, up to this day. An empty package or version is any; no date is for ever. The id is an advisory's, a CVE,
- * or an alias: a CVE sets aside the GitHub or OSV advisory that names it as well as the CVE record.
+ * or an alias: a CVE sets aside the GitHub or OSV advisory that names it as well as the CVE record. A VEX statement
+ * that the vulnerability does not apply sets findings aside the same way (VexStatement.asRule).
  *
- * @param line the line of the file it was read from, 0 for an entry not read from a file
+ * @param line   the line of the file it was read from, 0 for an entry not read from a file
+ * @param source the VEX document it comes from, as shown; null for an entry of the ignore file
  */
-public record IgnoreRule(String id, String pkg, String version, LocalDate until, String reason, int line) {
+public record IgnoreRule(String id, String pkg, String version, LocalDate until, String reason, int line, String source) {
+
+    public IgnoreRule(String id, String pkg, String version, LocalDate until, String reason, int line) {
+        this(id, pkg, version, until, reason, line, null);
+    }
+
+    /** Set aside by a VEX document, not by the ignore file: edited there, not by Stop ignoring. */
+    public boolean fromVex() {
+        return source != null;
+    }
 
     /** What an entry made from a finding covers: its version of its package, every version of it, every package. */
     public enum Scope { VERSION, PACKAGE, EVERYWHERE }
@@ -49,7 +61,17 @@ public record IgnoreRule(String id, String pkg, String version, LocalDate until,
     public boolean matches(Finding f) {
         boolean named = id.equalsIgnoreCase(f.id()) || f.cves().stream().anyMatch(id::equalsIgnoreCase)
                 || f.aliases().stream().anyMatch(id::equalsIgnoreCase);
-        return named && (pkg.isEmpty() || pkg.equalsIgnoreCase(f.pkg())) && (version.isEmpty() || version.equals(f.version()));
+        return named && (pkg.isEmpty() || samePackage(f)) && (version.isEmpty() || version.equals(f.version()));
+    }
+
+    /**
+     * The finding's package, whatever the case; a Python one as PEP 503 normalizes names (Zope.Interface is
+     * zope-interface); a component off-the-shelf by its vendor:product or its product alone (gdal for osgeo:gdal).
+     */
+    private boolean samePackage(Finding f) {
+        if (pkg.equalsIgnoreCase(f.pkg())) return true;
+        if (f.ecosystem() == Ecosystem.PYPI) return Ecosystem.pep503(pkg).equals(Ecosystem.pep503(f.pkg()));
+        return f.ecosystem() == Ecosystem.COTS && pkg.equalsIgnoreCase(Ecosystem.product(f.pkg()));
     }
 
     /** Past its last day: it sets nothing aside any more. */

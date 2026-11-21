@@ -78,6 +78,8 @@ final class FindingTables {
             new Column<IgnoredFinding>("column.advisory", String.class, 150, i -> i.finding().id()),
             new Column<IgnoredFinding>("column.until", String.class, 110, i -> i.rule().until() == null ? "—" : i.rule().until().toString()),
             new Column<IgnoredFinding>("column.reason", String.class, 330, i -> i.rule().reason()),
+            new Column<IgnoredFinding>("column.ignoredBy", String.class, 160, i -> i.rule().fromVex() ? "VEX " + i.rule().source()
+                    : I18n.text("column.ignoredBy.line", i.rule().line())),
             new Column<IgnoredFinding>("column.file", String.class, 220, i -> i.finding().file()));
     private static final List<Column<Unresolved>> UNRESOLVED_COLUMNS = List.of(
             new Column<Unresolved>("column.ecosystem", String.class, 75, u -> u.ecosystem().id()),

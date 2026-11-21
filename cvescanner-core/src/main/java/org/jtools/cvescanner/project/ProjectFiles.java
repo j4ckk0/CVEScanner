@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
+import org.jtools.cvescanner.ignore.VexFile;
 import org.jtools.cvescanner.model.ScanMode;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -48,6 +49,8 @@ public final class ProjectFiles {
             pkgConfigs = new ArrayList<>(), vcpkgManifests = new ArrayList<>(), conanFiles = new ArrayList<>();
     /** What an installed product ships: jars (WAR, EAR), the package.json of installed npm packages, Python's metadata. */
     public final List<Path> jars = new ArrayList<>(), installedPackageJsons = new ArrayList<>(), pythonMetadata = new ArrayList<>();
+    /** VEX documents (*.vex.json): what their vulnerabilities' analyses state, read in both modes; never an SBOM to scan. */
+    public final List<Path> vexFiles = new ArrayList<>();
 
     private static final Pattern BINARY = Pattern.compile(".*\\.(dll|exe|dylib|so(\\.\\d+)*)", Pattern.CASE_INSENSITIVE);
 
@@ -74,6 +77,10 @@ public final class ProjectFiles {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                 String n = file.getFileName().toString();
+                if (VexFile.isVex(n)) {
+                    f.vexFiles.add(file);
+                    return FileVisitResult.CONTINUE;
+                }
                 if (installed) {
                     installedFile(f, file, n);
                     return FileVisitResult.CONTINUE;
@@ -103,7 +110,7 @@ public final class ProjectFiles {
             public FileVisitResult visitFileFailed(Path file, IOException e) { return FileVisitResult.CONTINUE; }
         });
         for (var list : List.of(f.poms, f.gradle, f.catalogs, f.gradleProps, f.packageJsons, f.cotsInventories, f.sboms,
-                f.binaries, f.pkgConfigs, f.vcpkgManifests, f.conanFiles, f.jars, f.installedPackageJsons, f.pythonMetadata))
+                f.binaries, f.pkgConfigs, f.vcpkgManifests, f.conanFiles, f.jars, f.installedPackageJsons, f.pythonMetadata, f.vexFiles))
             Collections.sort(list);
         return f;
     }

@@ -22,6 +22,7 @@ package org.jtools.cvescanner.engine;
 
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.List;
 import org.jtools.cvescanner.model.ScanMode;
 
 /**
@@ -31,11 +32,20 @@ import org.jtools.cvescanner.model.ScanMode;
  * @param mode         the projects' manifests (SOURCES), or what an installed product ships (INSTALLED)
  * @param dbMaxAgeDays a database whose newest record is older than this many days is said to be; 0 for never
  * @param today        the day the ages and the ignore file's last days are counted from
+ * @param vexFiles     VEX documents named (--vex), read besides the *.vex.json of the folder scanned
  */
-public record ScanOptions(Path ignoreFile, ScanMode mode, int dbMaxAgeDays, LocalDate today) {
+public record ScanOptions(Path ignoreFile, ScanMode mode, int dbMaxAgeDays, LocalDate today, List<Path> vexFiles) {
 
     /** A database older than a month is said to be. */
     public static final int DEFAULT_DB_MAX_AGE_DAYS = 30;
+
+    public ScanOptions {
+        vexFiles = List.copyOf(vexFiles);
+    }
+
+    public ScanOptions(Path ignoreFile, ScanMode mode, int dbMaxAgeDays, LocalDate today) {
+        this(ignoreFile, mode, dbMaxAgeDays, today, List.of());
+    }
 
     public static ScanOptions of(Path ignoreFile, ScanMode mode) {
         return new ScanOptions(ignoreFile, mode, DEFAULT_DB_MAX_AGE_DAYS, LocalDate.now());

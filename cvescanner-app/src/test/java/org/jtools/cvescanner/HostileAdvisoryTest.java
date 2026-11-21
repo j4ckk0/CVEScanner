@@ -44,6 +44,7 @@ import org.jtools.cvescanner.cvss.Score;
 import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.ignore.IgnoreRule;
+import org.jtools.cvescanner.ignore.VexStatement;
 import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
@@ -111,13 +112,15 @@ class HostileAdvisoryTest {
     @Test
     void theIgnoredBlockHoldsNoTagOfTheIgnoreFile() throws IOException {
         var rule = new IgnoreRule("CVE-1", "", "", LocalDate.of(2030, 1, 1), "reason" + TAGS + BREAKOUT, 3);
-        String page = FindingDetails.page(hostile(), Environment.NONE, rule, "dir" + TAGS + "/cvescanner-ignore.csv");
+        var vex = new VexStatement("CVE-1", "", "", "in_triage", "just" + TAGS, "detail" + TAGS + BREAKOUT, "doc" + TAGS + ".vex.json");
+        String page = FindingDetails.page(hostile(), Environment.NONE, rule, "dir" + TAGS + "/cvescanner-ignore.csv", List.of(vex));
         Set<String> foreign = new TreeSet<>();
         for (Tag tag : tags(page)) {
             if (!PAGE_TAGS.contains(tag.name())) foreign.add(tag.name());
         }
         assertEquals(Set.of(), foreign, page);
         assertTrue(page.contains("reason&lt;img"), page);
+        assertTrue(page.contains("detail&lt;img"), "a VEX document's text, as text: " + page);
     }
 
     @Test

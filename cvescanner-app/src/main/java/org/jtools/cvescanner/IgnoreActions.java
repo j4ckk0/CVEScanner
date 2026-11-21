@@ -133,7 +133,7 @@ final class IgnoreActions {
         if (result == null) return;
         var warnings = new ArrayList<Phrase>();
         try {
-            ignores = Ignores.load(result.root(), file, warnings::add);
+            ignores = Ignores.load(result.root(), file, warnings::add).withVex(ignores.vex());   // the VEX documents' stay
         } catch (IOException e) {
             failed(e);
             return;
@@ -175,6 +175,11 @@ final class IgnoreActions {
 
     /** Takes the entry setting this finding aside out of the file, after asking when it sets others aside too. */
     void stopIgnoring(IgnoredFinding i) {
+        if (i.rule().fromVex()) {   // a VEX document is the product team's statement: changed there, not here
+            JOptionPane.showMessageDialog(owner, SwingText.plain(I18n.text("ignore.stop.vex", i.rule().source())), I18n.text("ignore.stop.title"),
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
         long others = host.split().ignored().stream().filter(x -> x.rule().equals(i.rule())).count() - 1;
         if (others > 0 && JOptionPane.showConfirmDialog(owner, SwingText.plain(I18n.text("ignore.stop.others", others, i.rule().line())),
                 I18n.text("ignore.stop.title"), JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE) != JOptionPane.OK_OPTION)

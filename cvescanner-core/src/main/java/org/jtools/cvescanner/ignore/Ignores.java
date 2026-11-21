@@ -34,13 +34,14 @@ import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.model.Finding;
 
 /**
- * The ignore file of a scan and its entries.
+ * The ignore file of a scan and its entries, and the statements of its VEX documents.
  *
  * @param file  where the entries are read from and written to; null when the scan ignores nothing (--no-ignore)
  * @param shown the file as the reports and warnings name it: from the folder scanned when it is in it
  * @param read  whether the file was there and read: the reports speak of it only then
+ * @param vex   what the VEX documents state; those saying a vulnerability does not apply set its findings aside
  */
-public record Ignores(Path file, String shown, List<IgnoreRule> rules, boolean read) {
+public record Ignores(Path file, String shown, List<IgnoreRule> rules, boolean read, List<VexStatement> vex) {
 
     /** No ignore file: everything is reported. */
     public static final Ignores NONE = new Ignores(null, "", List.of(), false);
@@ -50,6 +51,33 @@ public record Ignores(Path file, String shown, List<IgnoreRule> rules, boolean r
 
     public Ignores {
         rules = List.copyOf(rules);
+        vex = List.copyOf(vex);
+    }
+
+    public Ignores(Path file, String shown, List<IgnoreRule> rules, boolean read) {
+        this(file, shown, rules, read, List.of());
+    }
+
+    /** The same, with these VEX statements too. */
+    public Ignores withVex(List<VexStatement> statements) {
+        var all = new ArrayList<>(vex);
+        all.addAll(statements);
+        return new Ignores(file, shown, rules, read, all);
+    }
+
+    /** Whether the reports speak of what is set aside: an ignore file was read, or VEX documents were. */
+    public boolean said() {
+        return read || !vex.isEmpty();
+    }
+
+    /** The VEX documents read, as shown. */
+    public List<String> vexSources() {
+        return vex.stream().map(VexStatement::source).distinct().toList();
+    }
+
+    /** What the VEX documents state of this finding, whether it sets it aside or not (in_triage, exploitable…). */
+    public List<VexStatement> statementsFor(Finding f) {
+        return vex.stream().filter(v -> v.matches(f)).toList();
     }
 
     /**
@@ -72,8 +100,8 @@ public record Ignores(Path file, String shown, List<IgnoreRule> rules, boolean r
     /** The same file read again, after the window wrote it. */
     public Ignores reload(Consumer<Phrase> warn) throws IOException {
         if (file == null) return this;
-        if (!Files.isRegularFile(file)) return new Ignores(file, shown, List.of(), false);
-        return new Ignores(file, shown, IgnoreFile.read(file, shown, warn), true);
+        if (!Files.isRegularFile(file)) return new Ignores(file, shown, List.of(), false, vex);
+        return new Ignores(file, shown, IgnoreFile.read(file, shown, warn), true, vex);
     }
 
     private static String shown(Path root, Path file) {
@@ -82,8 +110,9 @@ public record Ignores(Path file, String shown, List<IgnoreRule> rules, boolean r
     }
 
     /**
-     * The findings it sets aside and those it leaves, after the first entry naming each that has not expired; the
-     * entries that have expired, and those in force that set none of these findings aside.
+     * The findings it sets aside and those it leaves, after the first entry naming each that has not expired, the
+     * ignore file's before the VEX statements; the entries that have expired, and those of the ignore file in force
+     * that set none of these findings aside (a VEX document speaks of more than one scan finds).
      *
      * @param today the day it is: an entry applies up to its date, that day included
      */
@@ -91,7 +120,8 @@ public record Ignores(Path file, String shown, List<IgnoreRule> rules, boolean r
         var active = new ArrayList<Finding>();
         var ignored = new ArrayList<IgnoredFinding>();
         var used = new HashSet<IgnoreRule>();
-        var live = rules.stream().filter(r -> !r.expired(today)).toList();
+        var live = new ArrayList<>(rules.stream().filter(r -> !r.expired(today)).toList());
+        vex.stream().filter(VexStatement::setsAside).map(VexStatement::asRule).forEach(live::add);
         for (var f : findings) {
             var rule = live.stream().filter(r -> r.matches(f)).findFirst();
             if (rule.isPresent()) {
@@ -102,7 +132,7 @@ public record Ignores(Path file, String shown, List<IgnoreRule> rules, boolean r
             }
         }
         return new Split(this, active, ignored, rules.stream().filter(r -> r.expired(today)).toList(),
-                live.stream().filter(r -> !used.contains(r)).toList());
+                live.stream().filter(r -> !r.fromVex() && !used.contains(r)).toList());
     }
 
     /**

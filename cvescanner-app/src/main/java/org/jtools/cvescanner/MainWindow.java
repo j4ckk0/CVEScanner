@@ -164,6 +164,7 @@ final class MainWindow extends JFrame {
     private final EnvironmentBar environmentBar;
     private final FixActions fixActions;
     private final IgnoreActions ignoreActions;
+    private final VexDocuments vexDocuments;
     /** The scan's findings scored for the environment, those the ignore file sets aside apart. */
     private Ignores.Split split = Ignores.Split.none(List.of());
     private boolean busy;   // progress messages arriving after a scan has finished are ignored
@@ -187,6 +188,7 @@ final class MainWindow extends JFrame {
             }
             public void say(Supplier<String> message) { MainWindow.this.say(message); }
         }, opts.ignoreChoice(), () -> Path.of(dirField.getText().strip()));
+        vexDocuments = new VexDocuments(this, labels, settings, opts.vexFiles, () -> Path.of(dirField.getText().strip()));
         fixActions = new FixActions(this, labels, tables, new FixActions.Host() {
             public ScanResult result() { return result; }
             public List<Finding> reported() { return split.active(); }
@@ -446,6 +448,8 @@ final class MainWindow extends JFrame {
         boolean installed = opts.installed || settings.get(Settings.SCAN_MODE, "SOURCES").equals(ScanMode.INSTALLED.name());
         scanModeCombo.setSelectedIndex(installed ? 1 : 0);
         scanModeCombo.addActionListener(_ -> settings.set(Settings.SCAN_MODE, scanMode().name()));
+        c.gridy++;
+        vexDocuments.addRow(rows, c);
         return rows;
     }
 
@@ -784,7 +788,7 @@ final class MainWindow extends JFrame {
         }
         setBusy(true);
         var databases = List.copyOf(dbFiles);
-        var options = new ScanOptions(ignoreActions.choice(), scanMode(), dbMaxAge(), LocalDate.now());
+        var options = new ScanOptions(ignoreActions.choice(), scanMode(), dbMaxAge(), LocalDate.now(), vexDocuments.files());
         new SwingWorker<ScanResult, Void>() {
             @Override
             protected ScanResult doInBackground() throws Exception {
@@ -870,12 +874,14 @@ final class MainWindow extends JFrame {
         }
         var i = tables.selectedIgnored();
         detailPane.setText(i == null ? FindingDetails.placeholder(result != null)
-                : FindingDetails.page(i.finding(), environmentBar.environment(), i.rule(), ignoreActions.ignores().shown()));
+                : FindingDetails.page(i.finding(), environmentBar.environment(), i.rule(), ignoreActions.ignores().shown(),
+                        ignoreActions.ignores().statementsFor(i.finding())));
         detailPane.setCaretPosition(0);
     }
 
     private void showDetails(Finding f) {
-        detailPane.setText(f == null ? FindingDetails.placeholder(result != null) : FindingDetails.page(f, environmentBar.environment()));
+        detailPane.setText(f == null ? FindingDetails.placeholder(result != null) : FindingDetails.page(f, environmentBar.environment(), null, "",
+                ignoreActions.ignores().statementsFor(f)));
         detailPane.setCaretPosition(0);
     }
 

@@ -86,7 +86,7 @@
 
 ## Ignored findings (4)
 
-Findings reviewed and set aside by the ignore file: they are not in the counts above, nor in findings.csv, nor taken into account by --fail-on.
+Findings reviewed and set aside by the ignore file or a VEX document: they are not in the counts above, nor in findings.csv, nor taken into account by --fail-on.
 
 | Severity | Package | Version | Advisory | CVE | Until | Reason | File | Entry |
 |---|---|---|---|---|---|---|---|---|

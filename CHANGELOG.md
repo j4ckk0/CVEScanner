@@ -13,6 +13,9 @@ checksums.
 - **Jars without Maven coordinates**, in an installed product, are checked by their name: every group's advisories for
   their artifactId, those of the group their OSGi name belongs to as their own, the others as *Jar name match ⚠*,
   which *Hide name matches* and `--hide-name-matches` leave out.
+- **VEX documents**: a CycloneDX VEX document's `not_affected` and `false_positive` statements set their findings
+  aside, said in the Ignored tab and the reports with the document; `in_triage` and `exploitable` are shown with the
+  finding. Read from the folder's `*.vex.json`, `--vex FILE`, and the window's *VEX documents* row.
 - **The ignore file from the command line**: `--ignore-add ID --reason … [--package] [--version] [--until]`,
   `--ignore-remove ID`, `--ignore-list`, without a scan.
 - **Apply fixes, checked with the real npm, yarn 1, yarn 4, pnpm and Gradle** (`scripts/fix-tools-check.sh`, run on

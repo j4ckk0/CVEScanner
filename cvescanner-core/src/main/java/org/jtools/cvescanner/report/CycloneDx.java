@@ -158,7 +158,8 @@ final class CycloneDx {
         if (published.matches()) v.put("published", published.group(2) == null ? f.published() + "Z" : f.published());
         if (ignored != null) {
             var analysis = new LinkedHashMap<String, Object>();
-            analysis.put("state", "not_affected");
+            // a VEX document's false_positive stays one; an ignore file's entry, and the rest, say it does not apply
+            analysis.put("state", ignored.rule().fromVex() && ignored.rule().reason().startsWith("false_positive") ? "false_positive" : "not_affected");
             analysis.put("detail", ignored.rule().reason() + (ignored.rule().until() == null ? ""
                     : " (set aside until " + ignored.rule().until() + ")"));
             v.put("analysis", analysis);

@@ -22,11 +22,13 @@ package org.jtools.cvescanner.engine;
 
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import org.jtools.cvescanner.cots.BinaryReader;
 import org.jtools.cvescanner.cots.InventoryReader;
@@ -36,6 +38,8 @@ import org.jtools.cvescanner.db.VulnDb;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.ignore.Ignores;
+import org.jtools.cvescanner.ignore.VexFile;
+import org.jtools.cvescanner.ignore.VexStatement;
 import org.jtools.cvescanner.installed.InstalledNpmReader;
 import org.jtools.cvescanner.installed.JarReader;
 import org.jtools.cvescanner.installed.PythonReader;
@@ -51,6 +55,23 @@ import org.jtools.cvescanner.project.ProjectFiles;
 
 public final class Engine {
     private Engine() {}
+
+    /** The statements of the folder's VEX documents and of those named, each document read once. */
+    private static Ignores withVex(Ignores ignores, Path root, List<Path> found, List<Path> named, ScanListener l) {
+        var documents = new LinkedHashSet<Path>();
+        for (Path p : found) documents.add(p.toAbsolutePath().normalize());
+        for (Path p : named) documents.add(p.toAbsolutePath().normalize());
+        var statements = new ArrayList<VexStatement>();
+        for (Path doc : documents) {
+            String shown = (doc.startsWith(root) ? root.relativize(doc) : doc).toString().replace('\\', '/');
+            try {
+                statements.addAll(VexFile.read(doc, shown, l::warn));
+            } catch (IOException e) {
+                l.warn(Phrase.of("vex.warning.unreadable", shown, e.getMessage()));
+            }
+        }
+        return statements.isEmpty() ? ignores : ignores.withVex(statements);
+    }
 
     /** A scan reading the folder's own ignore file, if it has one. */
     public static ScanResult scan(Path dir, List<Path> dbFiles, ScanListener listener) throws IOException {
@@ -80,10 +101,13 @@ public final class Engine {
             public void warn(Phrase m) { warnings.add(m); listener.warn(m); }
         };
 
-        var ignores = Ignores.load(root, ignoreFile, l::warn);   // first: a file named that is not there stops the scan now
+        var ignores = Ignores.load(root, ignoreFile, l::warn);
+        for (Path named : options.vexFiles())   // as the ignore file: a document named that is not there stops the scan
+            if (!Files.isRegularFile(named)) throw new IOException(I18n.text("error.vexMissing", named));   // first: a file named that is not there stops the scan now
         l.status(I18n.text("status.lookingFor", root));
         l.progress(-1);
         var files = ProjectFiles.find(root, mode);
+        ignores = withVex(ignores, root, files.vexFiles, options.vexFiles(), l);
         var col = new DependencyCollector(root);
         MavenReader.scan(files.poms, col, l::warn);
         GradleReader.scan(files.gradle, files.gradleProps, col);

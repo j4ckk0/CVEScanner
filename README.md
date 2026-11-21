@@ -20,7 +20,7 @@
 - **Applies the upgrades you tick**, each with the project's own build tool (Maven, Gradle, npm, yarn, pnpm), offline,
   and only those the project can take: none needing a newer Java or Node than the project targets.
 - **Sets aside the findings you have reviewed**, with a reason and, if you want, an end date, in a file you keep with
-  the project.
+  the project, and those a **VEX document** (CycloneDX) states do not apply.
 - **Shows the findings in a table** you can filter, search and sort, and **writes them as reports**: `report.md` to
   read, `findings.csv` and `findings.json` for other tools, and `bom.cdx.json`, a **CycloneDX SBOM** of every
   dependency and its vulnerabilities. On the command line, a CI build can fail past a severity.
@@ -179,6 +179,7 @@ cvescanner-cli.bat --no-gui -d C:\src\my-app --fail-on HIGH               (Windo
 | `--fail-on LEVEL` | exit code 2 when a finding is at or above `LOW`, `MEDIUM`, `HIGH` or `CRITICAL` |
 | `--ignore FILE`, `--no-ignore` | the ignore file to read (default: the folder's `cvescanner-ignore.csv`, if any); none |
 | `--ignore-add ID --reason "TEXT"` [`--package P`] [`--version V`] [`--until YYYY-MM-DD`], `--ignore-remove ID` [`--package P`] [`--version V`], `--ignore-list` | the ignore file edited or listed, as the window's *Ignore this finding…* and *Stop ignoring* do, without a scan (see [Ignoring findings](#ignoring-findings)) |
+| `--vex FILE` | a CycloneDX VEX document to read (repeatable), besides the folder's `*.vex.json` (see [Ignoring findings](#ignoring-findings)) |
 | `--db-max-age DAYS` | warn of a database whose newest record is older (default 30; 0: never) |
 | `--installed` | scan an installed product from what it ships, rather than source projects (see [Installed products](#installed-products)) |
 | `--min-severity LEVEL`, `--ecosystem LIST`, `--hide-approximate`, `--hide-name-matches`, `--search "WORDS"` | the window's filters: the reports, the counts and `--fail-on` keep only what they keep, and `report.md` says them |
@@ -226,6 +227,16 @@ audit). The file can be edited there too, no scan run: `--ignore-add CVE-2021-44
 org.apache.logging.log4j:log4j-core --reason "Not exposed" --until 2027-06-30` adds an entry, `--ignore-remove
 CVE-2021-44228` takes out every entry naming it (`--package` and `--version` narrow it), `--ignore-list` lists them. The scan warns of a line it cannot read, of an entry past its date, and of one that sets none of the
 findings aside (it names none, or a line above sets them aside first) — an entry to clean up.
+
+**VEX documents.** A product team's statements on its vulnerabilities, a CycloneDX VEX document (`*.vex.json` or
+`*.vex.cdx.json`), are read too: those in the folder scanned, those named with `--vex FILE`, and those chosen in the
+window's *VEX documents* row. A statement that a vulnerability does not apply to a package version — analysis state
+`not_affected` or `false_positive` — sets its findings aside like an entry of the ignore file, in the **Ignored** tab
+and the reports' section, with its state, justification and detail and the document it comes from. Its packages are
+named by package URL (`pkg:maven/…`, `pkg:npm/…`, `pkg:pypi/…`, `pkg:generic/…`) or by a component's `bom-ref`. A
+`resolved` statement sets nothing aside (the scan still finds the version said to be fixed); `in_triage` and
+`exploitable` ones are shown with the finding. *Stop ignoring* does not apply to them: the document is the product
+team's, to change there. The SBOM CVEScanner writes, `bom.cdx.json`, is read back as one when renamed `*.vex.json`.
 
 ## Applying fixes
 

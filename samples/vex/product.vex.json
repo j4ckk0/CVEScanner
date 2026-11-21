@@ -1,0 +1,26 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "components": [
+    { "type": "library", "bom-ref": "text-1.9", "name": "commons-text", "version": "1.9",
+      "purl": "pkg:maven/org.apache.commons/commons-text@1.9" }
+  ],
+  "vulnerabilities": [
+    { "id": "GHSA-35jh-r3h4-6jhm",
+      "analysis": { "state": "not_affected", "justification": "code_not_reachable", "detail": "template() is never called" },
+      "affects": [ { "ref": "pkg:npm/lodash@4.17.15" } ] },
+    { "id": "CVE-2022-42889",
+      "analysis": { "state": "false_positive", "detail": "StringSubstitutor is not used" },
+      "affects": [ { "ref": "text-1.9" } ] },
+    { "id": "CVE-2021-44228",
+      "analysis": { "state": "in_triage", "detail": "being checked by SEC-12" },
+      "affects": [ { "ref": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1" } ] },
+    { "id": "CVE-2023-2976",
+      "analysis": { "state": "resolved", "detail": "upgraded in 2.3" },
+      "affects": [ { "ref": "pkg:maven/com.google.guava/guava@31.1-jre" } ] },
+    { "id": "CVE-2099-0001",
+      "analysis": { "state": "not_affected" },
+      "affects": [ { "ref": "nowhere" } ] }
+  ]
+}

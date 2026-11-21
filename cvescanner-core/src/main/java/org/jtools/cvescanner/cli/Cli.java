@@ -86,8 +86,12 @@ public final class Cli {
                 System.out.printf("  %-9s %d%n", s.label(language).toUpperCase(language.locale()), counts.get(s));
             System.out.printf("  %-9s %s%n", I18n.text("cli.total"),
                     I18n.text("cli.total.detail", findings.size(), findings.stream().map(Finding::id).distinct().count()));
-            if (r.ignores().read())
-                System.out.printf("  %-9s %s%n", I18n.text("cli.ignored"), I18n.text("cli.ignored.detail", split.ignored().size(), r.ignores().shown()));
+            if (r.ignores().said()) {
+                var by = new java.util.ArrayList<String>();
+                if (r.ignores().read()) by.add(r.ignores().shown());
+                by.addAll(r.ignores().vexSources());
+                System.out.printf("  %-9s %s%n", I18n.text("cli.ignored"), I18n.text("cli.ignored.detail", split.ignored().size(), String.join(", ", by)));
+            }
             System.out.println();
             for (Path p : written) System.out.println("  " + p.toAbsolutePath());
             if (o.failOn != null && findings.stream().anyMatch(f -> f.severity().compareTo(o.failOn) >= 0)) {

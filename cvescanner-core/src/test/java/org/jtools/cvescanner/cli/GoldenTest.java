@@ -73,7 +73,7 @@ class GoldenTest {
         String[] given = Files.readString(golden.resolve("args.txt")).trim().split("\\s+");
         for (int i = 0; i < given.length; i++) {
             args.add(given[i]);
-            if ((given[i].equals("--db") || given[i].equals("-d") || given[i].equals("--ignore")) && i + 1 < given.length) {
+            if ((given[i].equals("--db") || given[i].equals("-d") || given[i].equals("--ignore") || given[i].equals("--vex")) && i + 1 < given.length) {
                 args.add(SAMPLES.resolve(given[++i]).toString());
             }
         }
@@ -121,7 +121,7 @@ class GoldenTest {
     }
 
     private static Object json(String text) {
-        Map<String, Object> root = new HashMap<>(Json.obj(Json.parse(text)));
+        Map<String, Object> root = new HashMap<>(Json.obj(Json.parse(undated(text))));
         root.remove("generated");
         root.remove("scanned_directory");
         Map<String, Object> databases = new HashMap<>();

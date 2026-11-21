@@ -54,6 +54,8 @@ final class Settings {
     static final String SCAN_MODE = "scanMode";
     /** The days past which a database's newest record is said to be old: a number, 0 for never (View ▸ Database age). */
     static final String DB_MAX_AGE = "dbMaxAge";
+    /** The VEX documents chosen, their paths separated by the system's path separator. */
+    static final String VEX_FILES = "vexFiles";
     private static final String FILE = "cvescanner.properties";
 
     private final Path file;

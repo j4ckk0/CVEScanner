@@ -144,6 +144,10 @@ public final class Reports {
         if (split.ignores().read())
             sb.append("- **").append(I18n.text(language, "markdown.ignoreFile")).append(":** `").append(code(split.ignores().shown()))
                     .append("` (").append(I18n.text(language, "markdown.ignoreFile.entries", split.ignores().rules().size())).append(")\n");
+        if (!split.ignores().vex().isEmpty())
+            sb.append("- **").append(I18n.text(language, "markdown.vex")).append(":** ")
+                    .append(String.join(", ", split.ignores().vexSources().stream().map(v -> "`" + code(v) + "`").toList()))
+                    .append(" (").append(I18n.text(language, "markdown.vex.statements", split.ignores().vex().size())).append(")\n");
         if (!filters.isEmpty()) sb.append("- **").append(I18n.text(language, "markdown.filter")).append(":** ")
                 .append(md(String.join("; ", filters.stream().map(f -> f.text(language)).toList()))).append('\n');
         sb.append("\n## ").append(I18n.text(language, "markdown.summary")).append("\n\n").append(I18n.text(language, "markdown.summary.header")).append("\n|---|---|\n");
@@ -187,7 +191,7 @@ public final class Reports {
                             u.declared().isEmpty() ? "—" : md(u.declared()), md(u.reason().text(language)))));
             sb.append('\n');
         }
-        if (split.ignores().read()) ignored(sb, split, language);
+        if (split.ignores().said()) ignored(sb, split, language);
         sb.append("## ").append(I18n.text(language, "markdown.notes")).append("\n\n").append(I18n.text(language, "markdown.notes.text")).append('\n');
         // how components off-the-shelf are found and matched: said when the report holds some
         if (findings.stream().anyMatch(f -> f.ecosystem() == Ecosystem.COTS)
@@ -209,7 +213,8 @@ public final class Reports {
                 sb.append("| %s | `%s` | %s | %s | %s | %s | %s | %s | %s |\n".formatted(severity(f.severity(), language), code(f.pkg()),
                         md(f.version()), link(f.id(), f.url()), f.cves().isEmpty() ? "—" : md(f.cveText()),
                         i.rule().until() == null ? "—" : i.rule().until(), i.rule().reason().isEmpty() ? "—" : md(i.rule().reason()),
-                        md(f.file()), I18n.text(language, "markdown.ignored.line", i.rule().line())));
+                        md(f.file()), i.rule().fromVex() ? "VEX `" + code(i.rule().source()) + "`"
+                                : I18n.text(language, "markdown.ignored.line", i.rule().line())));
             });
             sb.append('\n');
         }
@@ -284,13 +289,15 @@ public final class Reports {
             return m;
         }).toList());
         // the ignore file's, when there is one: what it sets aside, its entries expired and those setting nothing aside
-        if (split.ignores().read()) {
-            root.put("ignore_file", split.ignores().shown());
+        if (split.ignores().said()) {
+            if (split.ignores().read()) root.put("ignore_file", split.ignores().shown());
+            if (!split.ignores().vex().isEmpty()) root.put("vex_files", split.ignores().vexSources());
             root.put("ignored_findings", split.ignored().stream().map(i -> {
                 var m = json(i.finding());
                 m.put("ignore_reason", i.rule().reason());
                 m.put("ignore_until", i.rule().until() == null ? null : i.rule().until().toString());
                 m.put("ignore_line", i.rule().line());
+                if (i.rule().fromVex()) m.put("ignore_vex", i.rule().source());
                 return m;
             }).toList());
             root.put("ignore_expired", split.expired().stream().map(Reports::json).toList());
