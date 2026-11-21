@@ -15,6 +15,8 @@
   environmental score**: the score for where your software runs (internet-facing, internal network, air-gapped,
   developer workstation, or values of your own), which can lower or raise the severity.
 - **Tells you which version fixes it**, and lists the packages to upgrade and to which version.
+- **Applies the upgrades you tick**, each with the project's own build tool (Maven, Gradle, npm, yarn, pnpm), offline,
+  and only those the project can take: none needing a newer Java or Node than the project targets.
 - **Sets aside the findings you have reviewed**, with a reason and, if you want, an end date, in a file you keep with
   the project.
 - **Shows the findings in a table** you can filter, search and sort, and **writes them as reports**: `report.md` to
@@ -40,8 +42,11 @@ to install, a Java runtime is inside: unpack it anywhere, drop a database zip in
    components by vendor and product (CPE); the CVE List matches by package or by name.
 3. **It scores each finding** from its advisory's CVSS vector (3.x or 4.0), or its rating when it has no vector, then
    applies the environment you chose as CVSS environmental metrics.
-4. **It runs on its own**: each archive carries its Java runtime, and the program makes no download, no name lookup and
-   starts no browser (see [No network](#no-network)).
+4. **It applies the fixes you confirm** with the project's own build tool, in its offline mode: `mvn versions:…`,
+   `npm install`, `yarn add`, `pnpm add`, or the Gradle file edited then checked by Gradle. A tool not installed is
+   not installed for you: that fix is simply not applied.
+5. **It runs on its own**: each archive carries its Java runtime, and the program makes no download, no name lookup and
+   starts no browser; the build tools it starts for a fix run offline (see [No network](#no-network)).
 
 ## Find your way
 
@@ -49,6 +54,7 @@ to install, a Java runtime is inside: unpack it anywhere, drop a database zip in
 |---|---|
 | You scan projects | [**The databases**](#the-databases), then [**The window**](#the-window) or [**The command line**](#the-command-line) |
 | You ship native components | [**Components off-the-shelf**](#components-off-the-shelf): GDAL, FFmpeg, OpenSSL… from an inventory, an SBOM, a build manifest, the binaries |
+| You fix them | [**Applying fixes**](#applying-fixes): tick the packages to upgrade, the project's own build tool does it, offline |
 | You review the findings | [**Ignoring findings**](#ignoring-findings): those reviewed and accepted set aside in `cvescanner-ignore.csv`, why and until when |
 | You read the results | [**Understanding the results**](#understanding-the-results) and [**CVSS scores and environments**](#cvss-scores-and-environments) |
 | You want it on your machine | [**Build and run**](#build-and-run) and [**Packaging**](#packaging): self-contained archives for Windows and Linux |
@@ -59,8 +65,11 @@ to install, a Java runtime is inside: unpack it anywhere, drop a database zip in
 
 The program reads the folder it scans and the database zips it is given, and writes its reports and its settings
 beside it — and the ignore file, when you ask the window to ignore a finding; that is all. No download, no update
-check, no browser, no file manager, no other program started: a link is copied to the clipboard, to open elsewhere,
-and after an export the folder's path is offered to copy.
+check, no browser, no file manager: a link is copied to the clipboard, to open elsewhere, and after an export the
+folder's path is offered to copy. **The one program it starts** is the scanned project's own build tool, when you
+click Apply fixes and confirm the commands shown, and only in its offline mode (`mvn -o`, `--offline`,
+`npm_config_offline`); a version not already in the machine's caches is then not applied (see [Applying
+fixes](#applying-fixes)).
 
 **No name lookup either, not even the JDK's own**: `NoNetworkResolver` takes the place of Java's name service and
 answers every lookup as an unknown host. **A scanned project or a database cannot make it reach the network**: the
@@ -133,7 +142,7 @@ copies the advisory's link, the CVEs, the package's coordinates; a right-click a
 writes the three reports for the rows shown. *View ▸ Look* offers FlatLaf's looks, light and dark; the language is
 on the right of the menus. The choices are kept in `cvescanner.properties`, beside the program.
 
-![Packages to upgrade: one row per package version, the version that fixes its findings](docs/images/packages.png)
+![Packages to upgrade: one row per package version and the version that fixes its findings, three ticked for Apply fixes](docs/images/packages.png)
 
 ![The components off-the-shelf of the examples (FFmpeg, curl, OpenSSL…) matched against NVD, in a dark look](docs/images/cots-dark.png)
 
@@ -190,6 +199,33 @@ lines and comments kept as written. *Ignore file* above the table names another 
 On the command line `--ignore FILE` names another file, `--no-ignore` reads none (every finding reported, for an
 audit). The scan warns of a line it cannot read, of an entry past its date, and of one that sets none of the
 findings aside (it names none, or a line above sets them aside first) — an entry to clean up.
+
+## Applying fixes
+
+In **Packages to upgrade**, tick the package versions to upgrade (each row shows the version that fixes all its
+findings), then **Apply fixes… (n)**. CVEScanner first shows, for each, the exact command it would run, or why it will
+not, and applies only what you confirm; then it shows what each tool said and scans the folder again.
+
+| Project | How a version is changed |
+|---|---|
+| Maven | `mvn -o -N versions:use-dep-version` for a version written in the pom (its dependencies or dependency management, a parent's included), `versions:set-property` for a `${property}`: the [versions-maven-plugin](https://www.mojohaus.org/versions/versions-maven-plugin/) must be in the local repository |
+| Gradle | no Gradle command changes a version: CVEScanner rewrites it where it is written (`'group:artifact:1.0'`, the variable it names, a version catalog's entry), then runs `gradle dependencies --offline`; if that fails the edit is undone |
+| npm, yarn, pnpm | the tool of the lockfile beside `package.json`: `npm install`, `yarn add` (`yarn up` for yarn 2+), `pnpm add`, offline, the project's install scripts not run |
+
+The project's wrapper (`mvnw`, `gradlew`) is used when it has one, else the tool on the `PATH`. **Nothing is
+installed**: a tool that is not there leaves its fixes not applied, and says so. **A fix is not applied** when:
+
+- its new version needs a **newer Java** than the project targets (`maven.compiler.release`, `target`, `source`, the
+  compiler plugin, Gradle's toolchain or compatibility) — read from the new version's jar in the local Maven repository
+  or Gradle's cache — or a **newer Node** than its `package.json`'s `engines` (read from npm's cache);
+- that need **cannot be read offline**, the new version not being cached;
+- it is a **transitive** npm dependency, a peer dependency, or a component off-the-shelf;
+- its version is written in a way no tool can change.
+
+A fix that changes the **major version** (2.x to 3.x) is applied only once ticked in the dialog: its API may have
+changed. Packages whose version is one shared place (a property such as `spring.version`) are raised together to the
+highest of their fixes. Each step's files are kept and **put back if it fails**; `node_modules`, updated by npm, yarn or
+pnpm, is not. The files are changed in place: keep the project under version control.
 
 ## Understanding the results
 
@@ -300,12 +336,13 @@ Two Maven modules, each a jar and a Java module, built in this order by the pare
 | `cvescanner-core/…/project/` | the projects' dependencies: `ProjectFiles` (the files found), `MavenReader` (POMs, their properties and parents), `GradleReader` (build files, catalogs), `NpmReader` (package.json and its lockfiles), `DependencyCollector` |
 | `cvescanner-core/…/db/` | the databases: `VulnDb` (the zips streamed, nested ones followed, only what the projects use kept), `Osv` (OSV records, their ranges), `CveList` (CVE JSON 5 records, their package and name matches), `NvdFeed` (NVD's feeds, read a record at a time: CPE rules) |
 | `cvescanner-core/…/cots/` | components off-the-shelf: `InventoryReader` (cots.csv), `SbomReader` (CycloneDX, SPDX), `ManifestReader` (pkg-config, vcpkg, Conan), `BinaryReader` and `PeVersionInfo` (a DLL's version resource, read in bounded reads), `KnownProducts` (names to vendor:product) |
-| `cvescanner-core/…/engine/` | `Engine` (a scan: files, dependencies, databases, matches) |
+| `cvescanner-core/…/engine/` | `Engine` (a scan: files, dependencies, databases, matches), `Matcher` (which database reports what, in which order) |
+| `cvescanner-core/…/fix/` | applying fixes: `FixPlanner` (the command per project, or why not: Java and Node checks, tools found without running them), `GradleEdit`, `ArtifactJava` and `NodeEngines` (the new version's needs, from the local caches), `ToolRunner` (the one class that starts a program: the build tool, offline, its files put back on failure) |
 | `cvescanner-core/…/cvss/` | `Cvss` (vectors, the 3.x formulas, the 4.0 macrovectors), `Severity`, `Environment`, `Reach`, `Requirement`, `Rating`, `Score` |
 | `cvescanner-core/…/model/` | what a scan finds: `Finding`, `Dependency` (its `Ecosystem`: Maven, npm, COTS), `Unresolved`, `PackageSummary`, `ScanResult`, `MatchBasis`; `Scoring` (a finding scored for an environment), `ScanListener` (a scan's progress) |
 | `cvescanner-core/…/report/`, `…/cli/` | `Reports` (report.md, findings.csv, findings.json, the packages to upgrade); `Options` and `Cli` (the command line) |
 | `cvescanner-core/…/json/`, `…/version/`, `…/i18n/` | `Json` (a small parser and writer), `JsonStream` (a large array's elements one at a time); `Versions` (Maven's and npm's version order); the languages: `I18n`, `I18nLanguage`, `I18nTexts`, `Phrase` |
-| `cvescanner-app/…/` | `Launcher` (the entry point), `MainWindow`, `FindingDetails` (a finding's page, escaped), the table's `Column`, `ListTableModel` and renderers, `Settings`, `Looks`, `HelpMenu`, `I18nLabels` and `I18nLanguageBox`, `NoNetworkResolver` |
+| `cvescanner-app/…/` | `Launcher` (the entry point), `MainWindow`, `FindingTables`, `EnvironmentBar`, `IgnoreActions` and `FixActions` with `FixDialog`, `FindingDetails` (a finding's page, escaped), the table's `Column`, `ListTableModel` and renderers, `Settings`, `Looks`, `HelpMenu`, `I18nLabels` and `I18nLanguageBox`, `NoNetworkResolver` |
 | `cvescanner-app/src/dist/`, `…/src/assembly/` | the distributions' launchers, the `database/` folder, FlatLaf's licence, and what goes in each archive |
 | `*/src/test/` | core: `GoldenTest` (the samples' reports, case by case), `FrenchReportTest`, `CvssReferenceTest` (9,000 vectors scored by another implementation), `HostileReportTest`, the rules' unit tests, `PomParserTest`, `CoreTextsTest`; app: `NoNetworkTest`, `NoNetworkResolverTest`, `HostileAdvisoryTest`, `AppTextsTest` |
 | `examples/` | Maven, Gradle, npm and yarn projects declaring real packages at vulnerable versions, to scan with a real database; in the distributions too |

@@ -5,6 +5,12 @@ checksums.
 
 ## 1.2 — not released yet
 
+- **Apply fixes**: tick the packages to upgrade in *Packages to upgrade*, then *Apply fixes…*. Each upgrade is made
+  by the project's own build tool, offline: `mvn versions:use-dep-version` / `versions:set-property`, the Gradle file
+  edited then checked by Gradle, `npm install`, `yarn add` / `yarn up`, `pnpm add`. Nothing is installed: a missing
+  tool means the fix is not applied. A fix is not applied either when its version needs a newer Java or Node than the
+  project targets, or when that cannot be checked offline; a major version change is applied only once confirmed. The
+  commands are shown first, the files put back if a step fails, the folder scanned again after.
 - **An ignore file for reviewed findings**: `cvescanner-ignore.csv` at the root of the folder scanned (or `--ignore
   FILE`; `--no-ignore` reads none) sets findings aside by CVE or advisory, package and version, with a reason and, if
   you want, a last day. They leave the counters, `findings.csv` and `--fail-on`, and are listed apart in an **Ignored**
