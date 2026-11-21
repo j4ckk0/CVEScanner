@@ -76,6 +76,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
@@ -133,13 +134,13 @@ final class MainWindow extends JFrame {
             new Column<Finding>("column.env", Double.class, 50, Finding::envScore),
             new Column<Finding>("column.cvss", String.class, 45, f -> Objects.requireNonNullElse(f.score().version(), "")),
             new Column<Finding>("column.ecosystem", String.class, 75, Finding::ecosystem),
-            new Column<Finding>("column.package", String.class, 260, Finding::pkg),
+            new Column<Finding>("column.package", String.class, 320, Finding::pkg),
             new Column<Finding>("column.version", String.class, 95, Finding::displayVersion),
             new Column<Finding>("column.fixedIn", String.class, 95, f -> f.fixedIn().isEmpty() ? "—" : f.fixedIn()),
             new Column<Finding>("column.cve", String.class, 130, Finding::cveText),
             new Column<Finding>("column.advisory", String.class, 150, Finding::id),
             new Column<Finding>("column.match", String.class, 125, f -> f.basis().label()),
-            new Column<Finding>("column.scope", String.class, 110, Finding::scope),
+            new Column<Finding>("column.scope", String.class, 160, Finding::scope),
             new Column<Finding>("column.file", String.class, 220, Finding::file),
             new Column<Finding>("column.published", String.class, 85, Finding::publishedDate),
             new Column<Finding>("column.summary", String.class, 380, Finding::summary));
@@ -199,9 +200,9 @@ final class MainWindow extends JFrame {
     private final ListTableModel<Finding> findingsModel = new ListTableModel<>(FINDING_COLUMNS);
     private final ListTableModel<PackageSummary> packagesModel = new ListTableModel<>(PACKAGE_COLUMNS);
     private final ListTableModel<Unresolved> unresolvedModel = new ListTableModel<>(UNRESOLVED_COLUMNS);
-    private final JTable findingsTable = new JTable(findingsModel);
-    private final JTable packagesTable = new JTable(packagesModel);
-    private final JTable unresolvedTable = new JTable(unresolvedModel);
+    private final JTable findingsTable = new ScrollingTable(findingsModel);
+    private final JTable packagesTable = new ScrollingTable(packagesModel);
+    private final JTable unresolvedTable = new ScrollingTable(unresolvedModel);
     private final TableRowSorter<ListTableModel<Finding>> findingsSorter = new TableRowSorter<>(findingsModel);
     private final TableRowSorter<ListTableModel<PackageSummary>> packagesSorter = new TableRowSorter<>(packagesModel);
     private final TableRowSorter<ListTableModel<Unresolved>> unresolvedSorter = new TableRowSorter<>(unresolvedModel);
@@ -231,8 +232,11 @@ final class MainWindow extends JFrame {
 
         var north = new JPanel();
         north.setLayout(new BoxLayout(north, BoxLayout.Y_AXIS));
+        // the rows of controls, each group apart: where to scan, how to score, what to show
         north.add(toolbar());
+        north.add(separator());
         north.add(environmentBar());
+        north.add(separator());
         north.add(filterBar());
         north.add(summaryBar());
         add(north, BorderLayout.NORTH);
@@ -256,11 +260,12 @@ final class MainWindow extends JFrame {
         tabs.setPreferredSize(new Dimension(400, 420));
         var split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, tabs, detailScroll);
         split.setResizeWeight(0.6);
-        split.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
+        split.setDividerSize(10);
+        split.setBorder(BorderFactory.createEmptyBorder(0, 16, 0, 16));
         add(split, BorderLayout.CENTER);
 
-        var status = new JPanel(new BorderLayout(10, 0));
-        status.setBorder(BorderFactory.createEmptyBorder(4, 10, 6, 10));
+        var status = new JPanel(new BorderLayout(16, 0));
+        status.setBorder(BorderFactory.createEmptyBorder(8, 18, 10, 18));
         progressBar.setPreferredSize(new Dimension(220, 14));
         progressBar.setVisible(false);
         status.add(statusLabel, BorderLayout.CENTER);
@@ -285,8 +290,8 @@ final class MainWindow extends JFrame {
         labels.on(() -> List.of(severityCombo, ecosystemCombo, cvssCombo, envCombo, reachCombo, crCombo, irCombo, arCombo)
                 .forEach(Component::repaint));
         labels.on(() -> List.of(findingsTable, packagesTable, unresolvedTable).forEach(Component::repaint));
-        setSize(1360, 860);
-        setMinimumSize(new Dimension(900, 560));
+        setSize(1480, 940);
+        setMinimumSize(new Dimension(1000, 640));
         setLocationRelativeTo(null);
         if (opts.dirGiven) SwingUtilities.invokeLater(this::startScan);
     }
@@ -374,9 +379,18 @@ final class MainWindow extends JFrame {
     }
 
     // ------------------------------------------------------------------------------------ layout
+    /** A line between two groups of controls, with room around it. */
+    private static JComponent separator() {
+        var line = new JPanel(new BorderLayout());
+        line.setBorder(BorderFactory.createEmptyBorder(2, 16, 2, 16));
+        line.add(new JSeparator(), BorderLayout.CENTER);
+        line.setMaximumSize(new Dimension(Integer.MAX_VALUE, 8));
+        return line;
+    }
+
     private JPanel toolbar() {
         var rows = new JPanel(new GridBagLayout());
-        rows.setBorder(BorderFactory.createEmptyBorder(6, 8, 2, 8));
+        rows.setBorder(BorderFactory.createEmptyBorder(12, 14, 8, 14));
         var browse = labels.text(new JButton(), "toolbar.browse");
         browse.addActionListener(_ -> chooseFolder());
         labels.text(scanButton, "toolbar.scan");
@@ -392,7 +406,7 @@ final class MainWindow extends JFrame {
         dbField.setEditable(false);
 
         var c = new GridBagConstraints();
-        c.insets = new Insets(3, 4, 3, 4);
+        c.insets = new Insets(5, 6, 5, 6);
         c.anchor = GridBagConstraints.WEST;
         c.gridy = 0;
         c.gridx = 0;
@@ -427,8 +441,8 @@ final class MainWindow extends JFrame {
     }
 
     private JPanel filterBar() {
-        var p = new JPanel(new WrapLayout(FlowLayout.LEFT, 8, 4));
-        p.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
+        var p = new JPanel(new WrapLayout(FlowLayout.LEFT, 12, 8));
+        p.setBorder(BorderFactory.createEmptyBorder(6, 8, 2, 8));
         labels.bind(searchField::setHint, "filter.searchHint");
         searchField.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent e) { searchTimer.restart(); }
@@ -463,8 +477,8 @@ final class MainWindow extends JFrame {
     }
 
     private JPanel environmentBar() {
-        var p = new JPanel(new WrapLayout(FlowLayout.LEFT, 6, 2));
-        p.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 4));
+        var p = new JPanel(new WrapLayout(FlowLayout.LEFT, 10, 8));
+        p.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 8));
         Environment.PRESETS.forEach(envCombo::addItem);
         labels.tip(envCombo, "environment.preset.tip");
         labels.tip(reachCombo, "environment.reach.tip");
@@ -588,8 +602,8 @@ final class MainWindow extends JFrame {
     }
 
     private JPanel summaryBar() {
-        var p = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 4));
-        p.setBorder(BorderFactory.createEmptyBorder(0, 6, 4, 4));
+        var p = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 6));
+        p.setBorder(BorderFactory.createEmptyBorder(2, 10, 10, 8));
         int index = 1;
         for (var s : List.of(Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM, Severity.LOW, Severity.UNKNOWN)) {
             var chip = new JLabel();
@@ -685,7 +699,7 @@ final class MainWindow extends JFrame {
 
     private <T> void setup(JTable table, TableRowSorter<ListTableModel<T>> sorter, List<Column<T>> columns) {
         table.setRowSorter(sorter);
-        table.setRowHeight(24);
+        table.setRowHeight(30);
         table.setAutoCreateRowSorter(false);
         table.setFillsViewportHeight(true);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);

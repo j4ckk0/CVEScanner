@@ -27,6 +27,7 @@ import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 import com.formdev.flatlaf.themes.FlatMacDarkLaf;
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
+import java.awt.Insets;
 import java.util.Map;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -61,6 +62,9 @@ final class Looks {
             return;
         }
         System.setProperty("flatlaf.useNativeLibrary", "false");
+        // room in the tables and the tabs, in FlatLaf's looks: the window is read for long, not glanced at
+        UIManager.put("Table.cellMargins", new Insets(3, 8, 3, 8));
+        UIManager.put("TabbedPane.tabHeight", 36);
         FlatLightLaf.installLafInfo();
         FlatDarkLaf.installLafInfo();
         FlatIntelliJLaf.installLafInfo();

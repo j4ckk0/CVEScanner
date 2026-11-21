@@ -42,18 +42,18 @@ final class FindingDetails {
 
     /** The page shown when no finding is selected. */
     static String placeholder(boolean scanned) {
-        return "<html><body style='font-family:sans-serif;color:gray;padding:12px'>"
+        return "<html><body style='font-family:sans-serif;color:gray;padding:18px'>"
                 + I18n.text(scanned ? "details.select" : "details.scanFirst")
                 + "</body></html>";
     }
 
     static String page(Finding f, Environment environment) {
-        var sb = new StringBuilder("<html><body style='font-family:sans-serif;padding:6px 10px'>");
+        var sb = new StringBuilder("<html><body style='font-family:sans-serif;padding:12px 18px'>");
         sb.append("<div style='font-size:15pt'><b>").append(Gui.html(f.id())).append("</b> &nbsp;<font color='")
                 .append(Gui.hex(SeverityColors.of(f.severity()))).append("'><b>").append(f.severity().label());
         if (f.envScore() != null) sb.append(" · ").append(I18n.text("details.headline.environmental", Gui.score(f.envScore())));
         else if (f.cvss() != null) sb.append(" · ").append(I18n.text("details.headline.cvss", Gui.score(f.cvss())));
-        sb.append("</b></font></div><p><b>").append(Gui.html(f.summary())).append("</b></p><table cellpadding='2'>");
+        sb.append("</b></font></div><p><b>").append(Gui.html(f.summary())).append("</b></p><table cellpadding='4'>");
         row(sb, "details.package", "<b>" + Gui.html(f.pkg()) + "</b> (" + Gui.html(f.ecosystem()) + ")");
         row(sb, "details.version", Gui.html(f.version()) + (f.approximate()
                 ? " <font color='gray'>" + I18n.text("details.version.approximate") + "</font>" : ""));
