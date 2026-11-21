@@ -34,14 +34,12 @@ import org.jtools.cvescanner.model.Severity;
 
 public final class Options {
     public static final String USAGE = """
-            Usage: run.sh | run.bat | run-cli.bat [options] [DIR]      (or: java -jar cve-scanner.jar ...)
+            Usage: cvescanner.sh | cvescanner.bat [options] [DIR]      (or: java -jar cvescanner.jar ...)
 
               DIR / -d, --dir DIR   Directory to scan (default: current directory)
               -o, --out DIR         Report output directory for --no-gui (default: ./cve-report)
-              -c, --cache DIR       Database cache directory (default: ~/.cache/cve-scan)
-              -s, --skip-download   Use the cached database, don't download
                   --db-dir DIR      Load every *.zip in DIR as a database (used by the launchers: database/)
-                  --db FILE         Load the database from a zip file instead of downloading (repeatable).
+                  --db FILE         Load the database from a zip file (repeatable; at least one is needed).
                                     Accepts the GitHub Advisory Database zip, the CVE List (cvelistV5)
                                     zip, and OSV.dev ecosystem zips
                   --cve-only        Only report vulnerabilities that have a CVE ID
@@ -59,20 +57,13 @@ public final class Options {
     public Path scanDir = Path.of(".");
     public boolean dirGiven;
     public Path outDir = Path.of("cve-report");
-    public Path cacheDir = defaultCache();
-    public boolean skipDownload, cveOnly, noGui, help;
+    public boolean cveOnly, noGui, help;
     Severity failOn;
     public final List<Path> dbFiles = new ArrayList<>();
     public Path dbDir;
     public Environment environment = Environment.NONE;
     public boolean environmentGiven;
     public boolean preferV4 = true, cvssGiven;
-
-    static Path defaultCache() {
-        String xdg = System.getenv("XDG_CACHE_HOME");
-        Path base = xdg != null && !xdg.isBlank() ? Path.of(xdg) : Path.of(System.getProperty("user.home"), ".cache");
-        return base.resolve("cve-scan");
-    }
 
     public static Options parse(String[] args) {
         var o = new Options();
@@ -84,8 +75,6 @@ public final class Options {
             switch (a) {
                 case "-d", "--dir" -> { o.scanDir = Path.of(value(args, ++i, a)); o.dirGiven = true; }
                 case "-o", "--out" -> o.outDir = Path.of(value(args, ++i, a));
-                case "-c", "--cache" -> o.cacheDir = Path.of(value(args, ++i, a));
-                case "-s", "--skip-download" -> o.skipDownload = true;
                 case "--db" -> o.dbFiles.add(Path.of(value(args, ++i, a)));
                 case "--db-dir" -> o.dbDir = Path.of(value(args, ++i, a));
                 case "--env" -> { preset = Environment.preset(value(args, ++i, a)); o.environmentGiven = true; }

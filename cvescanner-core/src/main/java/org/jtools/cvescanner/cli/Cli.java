@@ -42,7 +42,7 @@ public final class Cli {
         };
         try {
             if (!Files.isDirectory(o.scanDir)) throw new IOException("scan directory '" + o.scanDir + "' does not exist");
-            var r = Engine.scan(o.scanDir, o.cacheDir, o.dbFiles.isEmpty() && !o.skipDownload, o.dbFiles, l);
+            var r = Engine.scan(o.scanDir, o.dbFiles, l);
             var scored = Scoring.applyAll(r.findings(), o.environment, o.preferV4);
             var findings = o.cveOnly ? scored.stream().filter(f -> !f.cves().isEmpty()).toList() : scored;
             var written = Reports.writeAll(r, findings, o.outDir, o.cveOnly ? "only vulnerabilities with a CVE ID" : null,
@@ -63,9 +63,6 @@ public final class Cli {
             return 0;
         } catch (IOException e) {
             System.err.println("ERROR: " + e.getMessage().replace("\n\n", " "));
-            return 1;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
             return 1;
         }
     }

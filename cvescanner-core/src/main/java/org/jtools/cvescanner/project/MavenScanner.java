@@ -33,11 +33,14 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 // ----------------------------------------------------------------------------------------------- Maven
 public final class MavenScanner {
@@ -57,19 +60,37 @@ public final class MavenScanner {
 
     private MavenScanner() {}
 
-    public static void scan(List<Path> paths, Collector col, Consumer<String> warn) {
-        DocumentBuilder builder;
+    /**
+     * The program's only XML parser, set to fetch nothing: a pom.xml of a scanned repository could name a DTD or an
+     * external entity, which a parser left as it is would fetch, from the network or a file (README, "No network").
+     * A POM has no DOCTYPE, so one is refused; nothing outside the file is read even should that check give way.
+     */
+    static DocumentBuilder pomParser() {
         try {
             var f = DocumentBuilderFactory.newInstance();
             f.setNamespaceAware(true);
-            f.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);   // no XXE from scanned repos
+            f.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            f.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            f.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            f.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            f.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            f.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            f.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
             f.setXIncludeAware(false);
             f.setExpandEntityReferences(false);
-            builder = f.newDocumentBuilder();
-            builder.setErrorHandler(new org.xml.sax.helpers.DefaultHandler());
+            var builder = f.newDocumentBuilder();
+            builder.setEntityResolver((publicId, systemId) -> {
+                throw new SAXException("external entity refused: " + systemId);
+            });
+            builder.setErrorHandler(new DefaultHandler());
+            return builder;
         } catch (ParserConfigurationException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    public static void scan(List<Path> paths, Collector col, Consumer<String> warn) {
+        DocumentBuilder builder = pomParser();
         var poms = new ArrayList<Pom>();
         for (Path p : paths) {
             try {

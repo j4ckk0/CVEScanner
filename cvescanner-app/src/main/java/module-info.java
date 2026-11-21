@@ -5,7 +5,6 @@
 module org.jtools.cvescanner {
     requires org.jtools.cvescanner.core;
     requires java.desktop;
-    requires java.prefs;
 
     // Launcher's package: the module is then resolved whenever the runtime starts, and Launcher loaded from it
     exports org.jtools.cvescanner;

@@ -25,7 +25,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
-import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -41,7 +40,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -54,6 +52,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.swing.BorderFactory;
@@ -146,14 +145,12 @@ final class MainWindow extends JFrame {
             new Column<Unresolved>("Reason", String.class, 330, Unresolved::reason),
             new Column<Unresolved>("File", String.class, 300, Unresolved::file));
 
-    private static final java.util.prefs.Preferences PREFS = java.util.prefs.Preferences.userRoot().node("cve-scan");
-
     private final Options opts;
+    private final Settings settings = Settings.load();
     private final JTextField dirField = new JTextField(40);
     private final JTextField dbField = new JTextField(40);
     private final JButton clearDbButton = new JButton("Clear");
     private final List<Path> dbFiles = new ArrayList<>();
-    private final JCheckBox downloadBox = new JCheckBox("Download from OSV.dev (needs internet)");
     private final JCheckBox hideNameMatchBox = new JCheckBox("Hide CVE name matches ⚠");
     private final JComboBox<Environment> envCombo = new JComboBox<>();
     private final JComboBox<Reach> reachCombo = new JComboBox<>(Reach.values());
@@ -188,7 +185,7 @@ final class MainWindow extends JFrame {
     private final TableRowSorter<ListTableModel<Unresolved>> unresolvedSorter = new TableRowSorter<>(unresolvedModel);
     private final JTabbedPane tabs = new JTabbedPane();
     private final JEditorPane detailPane = new JEditorPane("text/html", "");
-    private final JLabel statusLabel = new JLabel("Choose a folder and press Scan.");
+    private final JLabel statusLabel = Gui.noHtml(new JLabel("Choose a folder and press Scan."));
     private final JProgressBar progressBar = new JProgressBar(0, 1000);
     private final Timer searchTimer = new Timer(200, _ -> applyFilters());
 
@@ -200,8 +197,6 @@ final class MainWindow extends JFrame {
         this.opts = opts;
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         dirField.setText(opts.scanDir.toAbsolutePath().normalize().toString());
-        downloadBox.setSelected(!opts.skipDownload);
-        downloadBox.addActionListener(_ -> updateDatabaseField());
         if (!opts.dbFiles.isEmpty()) dbFiles.addAll(opts.dbFiles);
         else restoreDatabaseChoice();
         restoreScoringChoice();
@@ -228,7 +223,8 @@ final class MainWindow extends JFrame {
         detailPane.setEditable(false);
         detailPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
         detailPane.addHyperlinkListener(e -> {
-            if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) openBrowser(e.getDescription());
+            // the address as the page wrote it (getDescription), never resolved into a URL
+            if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) copyLink(e.getDescription());
         });
         showDetails(null);
         var detailScroll = new JScrollPane(detailPane);
@@ -275,7 +271,6 @@ final class MainWindow extends JFrame {
         chooseDb.addActionListener(_ -> chooseDatabase());
         clearDbButton.addActionListener(_ -> setDatabase(List.of()));
         dbField.setEditable(false);
-        downloadBox.setToolTipText("Used only when no database zip is chosen: fetches the newest OSV.dev database before scanning");
 
         var c = new GridBagConstraints();
         c.insets = new Insets(3, 4, 3, 4);
@@ -309,8 +304,6 @@ final class MainWindow extends JFrame {
         rows.add(chooseDb, c);
         c.gridx = 3;
         rows.add(clearDbButton, c);
-        c.gridx = 4;
-        rows.add(downloadBox, c);
         return rows;
     }
 
@@ -473,28 +466,27 @@ final class MainWindow extends JFrame {
         if (opts.environmentGiven) environment = opts.environment;
         else {
             try {
-                String key = PREFS.get("env.key", "none");
+                String key = settings.get(Settings.ENVIRONMENT, "none");
                 if (key.equals("custom")) {
-                    environment = Environment.of(Reach.valueOf(PREFS.get("env.reach", "UNRESTRICTED")),
-                            Requirement.valueOf(PREFS.get("env.cr", "NOT_DEFINED")), Requirement.valueOf(PREFS.get("env.ir", "NOT_DEFINED")),
-                            Requirement.valueOf(PREFS.get("env.ar", "NOT_DEFINED")));
+                    environment = Environment.of(Reach.valueOf(settings.get(Settings.REACH, "UNRESTRICTED")),
+                            Requirement.valueOf(settings.get(Settings.CONFIDENTIALITY, "NOT_DEFINED")),
+                            Requirement.valueOf(settings.get(Settings.INTEGRITY, "NOT_DEFINED")),
+                            Requirement.valueOf(settings.get(Settings.AVAILABILITY, "NOT_DEFINED")));
                 } else {
                     environment = Environment.preset(key);
                 }
-            } catch (RuntimeException _) { environment = Environment.NONE; }
+            } catch (RuntimeException _) { environment = Environment.NONE; }   // a value of another version: the default
         }
-        preferV4 = opts.cvssGiven ? opts.preferV4 : PREFS.getBoolean("cvss.preferV4", true);
+        preferV4 = opts.cvssGiven ? opts.preferV4 : Boolean.parseBoolean(settings.get(Settings.PREFER_CVSS4, "true"));
     }
 
     private void saveScoringChoice() {
-        try {
-            PREFS.put("env.key", environment.key());
-            PREFS.put("env.reach", environment.reach().name());
-            PREFS.put("env.cr", environment.confidentiality().name());
-            PREFS.put("env.ir", environment.integrity().name());
-            PREFS.put("env.ar", environment.availability().name());
-            PREFS.putBoolean("cvss.preferV4", preferV4);
-        } catch (RuntimeException _) { /* preferences unavailable */ }
+        settings.set(Settings.ENVIRONMENT, environment.key());
+        settings.set(Settings.REACH, environment.reach().name());
+        settings.set(Settings.CONFIDENTIALITY, environment.confidentiality().name());
+        settings.set(Settings.INTEGRITY, environment.integrity().name());
+        settings.set(Settings.AVAILABILITY, environment.availability().name());
+        settings.set(Settings.PREFER_CVSS4, Boolean.toString(preferV4));
     }
 
     private JPanel summaryBar() {
@@ -572,7 +564,7 @@ final class MainWindow extends JFrame {
             @Override
             public void mouseClicked(MouseEvent e) {
                 var f = selectedFinding();
-                if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e) && f != null) openBrowser(f.url());
+                if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e) && f != null) copyLink(f.url());
             }
         });
         findingsTable.setComponentPopupMenu(findingsMenu());
@@ -615,8 +607,8 @@ final class MainWindow extends JFrame {
 
     private JPopupMenu findingsMenu() {
         var menu = new JPopupMenu();
-        menu.add(item("Open advisory in browser", f -> openBrowser(f.url())));
-        menu.add(item("Open CVE on NVD", f -> f.cves().forEach(c -> openBrowser("https://nvd.nist.gov/vuln/detail/" + c))));
+        menu.add(item("Copy advisory link", f -> copyLink(f.url())));
+        menu.add(item("Copy NVD link", f -> copyLink(f.cves().stream().map(FindingDetails::nvdUrl).collect(Collectors.joining(" ")))));
         menu.addSeparator();
         menu.add(item("Copy CVE IDs", f -> copy(f.cves().isEmpty() ? f.id() : f.cveText())));
         menu.add(item("Copy package coordinate", f -> copy(f.pkg() + (f.ecosystem().equals("npm") ? "@" : ":") + f.version())));
@@ -730,28 +722,23 @@ final class MainWindow extends JFrame {
     private void setDatabase(List<Path> files) {
         dbFiles.clear();
         dbFiles.addAll(files);
-        try {
-            PREFS.put("dbFiles", files.stream().map(Path::toString).collect(Collectors.joining(File.pathSeparator)));
-        } catch (RuntimeException _) { /* preferences unavailable: the choice just isn't remembered */ }
+        settings.set(Settings.DATABASES, files.stream().map(Path::toString).collect(Collectors.joining(File.pathSeparator)));
         updateDatabaseField();
     }
 
     private void restoreDatabaseChoice() {
-        try {
-            String saved = PREFS.get("dbFiles", "");
-            if (!saved.isBlank())
-                Arrays.stream(saved.split(java.util.regex.Pattern.quote(File.pathSeparator))).map(Path::of)
-                        .filter(Files::isRegularFile).forEach(dbFiles::add);
-        } catch (RuntimeException _) { /* ignore */ }
+        String saved = settings.get(Settings.DATABASES, "");
+        if (!saved.isBlank())
+            Arrays.stream(saved.split(Pattern.quote(File.pathSeparator))).map(Path::of)
+                    .filter(Files::isRegularFile).forEach(dbFiles::add);
     }
 
     private void updateDatabaseField() {
         boolean none = dbFiles.isEmpty();
-        dbField.setText(none ? (downloadBox.isSelected() ? "(none chosen: OSV.dev database will be downloaded / cached copy used)"
-                : "(none chosen: cached OSV.dev copy will be used)") : dbFiles.stream().map(Path::toString).collect(Collectors.joining("  ;  ")));
+        dbField.setText(none ? "(none chosen: choose the database zip files you downloaded)"
+                : dbFiles.stream().map(Path::toString).collect(Collectors.joining("  ;  ")));
         dbField.setForeground(none ? Color.GRAY : UIManager.getColor("TextField.foreground"));
         dbField.setCaretPosition(0);
-        downloadBox.setEnabled(none);
         clearDbButton.setEnabled(!none);
     }
 
@@ -765,16 +752,15 @@ final class MainWindow extends JFrame {
     private void startScan() {
         Path dir = Path.of(dirField.getText().strip());
         if (!Files.isDirectory(dir)) {
-            JOptionPane.showMessageDialog(this, "'" + dir + "' is not a folder.", "Cannot scan", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, Gui.plain("'" + dir + "' is not a folder."), "Cannot scan", JOptionPane.WARNING_MESSAGE);
             return;
         }
         setBusy(true);
-        boolean download = downloadBox.isSelected() && dbFiles.isEmpty();
         var databases = List.copyOf(dbFiles);
         new SwingWorker<ScanResult, Void>() {
             @Override
             protected ScanResult doInBackground() throws Exception {
-                return Engine.scan(dir, opts.cacheDir, download, databases, new ScanListener() {
+                return Engine.scan(dir, databases, new ScanListener() {
                     public void status(String m) { SwingUtilities.invokeLater(() -> { if (busy) statusLabel.setText(m); }); }
                     public void progress(double f) { SwingUtilities.invokeLater(() -> { if (busy) updateProgress(f); }); }
                 });
@@ -787,7 +773,8 @@ final class MainWindow extends JFrame {
                     show(get());
                 } catch (ExecutionException e) {
                     statusLabel.setText("Scan failed.");
-                    JOptionPane.showMessageDialog(MainWindow.this, e.getCause().getMessage(), "Scan failed", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(MainWindow.this, Gui.plain(e.getCause().getMessage()), "Scan failed",
+                            JOptionPane.ERROR_MESSAGE);
                     statusLabel.setToolTipText(null);
                 } catch (InterruptedException _) {
                     Thread.currentThread().interrupt();
@@ -838,67 +825,8 @@ final class MainWindow extends JFrame {
     }
 
     private void showDetails(Finding f) {
-        if (f == null) {
-            detailPane.setText("<html><body style='font-family:sans-serif;color:gray;padding:12px'>"
-                    + (result == null ? "Scan a folder to see vulnerable dependencies." : "Select a finding to see its details.")
-                    + "</body></html>");
-            return;
-        }
-        var sb = new StringBuilder("<html><body style='font-family:sans-serif;padding:6px 10px'>");
-        sb.append("<div style='font-size:15pt'><b>").append(Gui.html(f.id())).append("</b> &nbsp;<font color='")
-                .append(Gui.hex(SeverityColors.of(f.severity()))).append("'><b>").append(f.severity().label());
-        if (f.envScore() != null) sb.append(" · environmental ").append("%.1f".formatted(f.envScore()));
-        else if (f.cvss() != null) sb.append(" · CVSS ").append("%.1f".formatted(f.cvss()));
-        sb.append("</b></font></div><p><b>").append(Gui.html(f.summary())).append("</b></p><table cellpadding='2'>");
-        row(sb, "Package", "<b>" + Gui.html(f.pkg()) + "</b> (" + f.ecosystem() + ")");
-        row(sb, "Version in use", Gui.html(f.version()) + (f.approximate()
-                ? " <font color='gray'>≈ lowest version allowed by the declared range; add a lockfile for an exact check</font>" : ""));
-        var sc = f.score();
-        if (sc.base() != null) {
-            row(sb, "Base score", "<b>" + "%.1f".formatted(sc.base()) + "</b> " + sc.baseSeverity().label()
-                    + (sc.version() != null ? " · CVSS " + sc.version() + " <font color='gray'>" + Gui.html(sc.baseVector()) + "</font>"
-                                            : " <font color='gray'>(reported by the advisory, no vector)</font>"));
-        } else {
-            row(sb, "Base score", "<font color='gray'>no CVSS score; severity from the advisory rating ("
-                    + sc.baseSeverity().label() + ")</font>");
-        }
-        if (environment.active()) {
-            if (sc.env() != null) {
-                double delta = sc.env() - sc.base();
-                row(sb, "Environmental", "<b><font color='" + Gui.hex(SeverityColors.of(Severity.fromScore(sc.env()))) + "'>" + "%.1f".formatted(sc.env())
-                        + " " + Severity.fromScore(sc.env()).label() + "</font></b>"
-                        + (delta == 0 ? " (unchanged)" : " (%+.1f)".formatted(delta)) + " · " + Gui.html(environment.describe())
-                        + "<br><font color='gray'>" + Gui.html(sc.envVector()) + "</font>");
-            } else {
-                row(sb, "Environmental", "<font color='gray'>not computed: the advisory has no CVSS vector</font>");
-            }
-        }
-        if (f.rating().cvss3() != null && f.rating().cvss4() != null) {
-            String other = Objects.equals(sc.baseVector(), f.rating().cvss4()) ? f.rating().cvss3() : f.rating().cvss4();
-            Double otherScore = Cvss.baseScore(other);
-            row(sb, "Other version", "CVSS " + Cvss.version(other) + " base " + (otherScore == null ? "—" : "%.1f".formatted(otherScore))
-                    + " <font color='gray'>" + Gui.html(other) + "</font>");
-        }
-        row(sb, "Fixed in", f.fixedIn().isEmpty() ? "<font color='#b00020'>no fixed version published</font>" : "<b>" + Gui.html(f.fixedIn()) + "</b>");
-        row(sb, "CVE", f.cves().isEmpty() ? "—" : f.cves().stream()
-                .map(c -> "<a href='https://nvd.nist.gov/vuln/detail/" + c + "'>" + c + "</a>").collect(Collectors.joining(", ")));
-        if (!f.aliases().isEmpty()) row(sb, "Aliases", Gui.html(String.join(", ", f.aliases())));
-        row(sb, "Found in", Gui.html(f.file()) + " · " + Gui.html(f.scope()));
-        row(sb, "Match", (f.basis() == MatchBasis.CVE_NAME ? "<font color='#b7791f'><b>⚠ " : "<b>") + Gui.html(f.basis().label.replace(" ⚠", ""))
-                + "</b>" + (f.basis() == MatchBasis.CVE_NAME ? "</font>" : "") + " — " + Gui.html(f.basisNote()));
-        if (!f.published().isEmpty()) row(sb, "Published", f.publishedDate());
-        row(sb, f.basis() == MatchBasis.ADVISORY ? "Advisory" : "CVE record", "<a href='" + f.url() + "'>" + f.url() + "</a>");
-        sb.append("</table>");
-        if (!f.details().isBlank()) {
-            String d = f.details().length() > 8000 ? f.details().substring(0, 8000) + "…" : f.details();
-            sb.append("<hr><div>").append(Gui.html(d).replace("\n\n", "<p>").replace("\n", "<br>")).append("</div>");
-        }
-        detailPane.setText(sb.append("</body></html>").toString());
+        detailPane.setText(f == null ? FindingDetails.placeholder(result != null) : FindingDetails.page(f, environment));
         detailPane.setCaretPosition(0);
-    }
-
-    private static void row(StringBuilder sb, String label, String valueHtml) {
-        sb.append("<tr><td valign='top'><font color='gray'>").append(label).append("</font></td><td>").append(valueHtml).append("</td></tr>");
     }
 
     // ----------------------------------------------------------------------------- export, misc
@@ -916,24 +844,25 @@ final class MainWindow extends JFrame {
             var written = Reports.writeAll(result, visible, chooser.getSelectedFile().toPath(),
                     filtered ? "filtered view in the GUI (" + visible.size() + " of " + findingsModel.getRowCount() + " findings)" : null,
                     environment, preferV4);
-            int choice = JOptionPane.showOptionDialog(this, "Wrote:\n" + written.stream().map(Path::toString).collect(Collectors.joining("\n")),
+            // the folder is shown, to copy: the program starts no other one, a file manager no more than a browser
+            int choice = JOptionPane.showOptionDialog(this,
+                    Gui.plain("Wrote:\n" + written.stream().map(Path::toString).collect(Collectors.joining("\n"))),
                     "Export complete", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null,
-                    new Object[]{"Open folder", "OK"}, "OK");
-            if (choice == 0 && Desktop.isDesktopSupported()) Desktop.getDesktop().open(chooser.getSelectedFile());
+                    new Object[]{"Copy folder path", "OK"}, "OK");
+            if (choice == 0) {
+                copy(chooser.getSelectedFile().getAbsolutePath());
+                statusLabel.setText("Folder path copied to the clipboard: " + chooser.getSelectedFile().getAbsolutePath());
+            }
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, e.getMessage(), "Export failed", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, Gui.plain(e.getMessage()), "Export failed", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void openBrowser(String url) {
-        try {
-            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                Desktop.getDesktop().browse(URI.create(url));
-                return;
-            }
-        } catch (IOException | IllegalArgumentException _) { /* fall through to copying the link */ }
+    /** A link is copied, never opened: the program starts no browser (README, "No network"). */
+    private void copyLink(String url) {
+        if (url == null || url.isBlank()) return;
         copy(url);
-        statusLabel.setText("Link copied to clipboard: " + url);
+        statusLabel.setText("Link copied to the clipboard, to open in a browser: " + url);
     }
 
     private static void copy(String text) {

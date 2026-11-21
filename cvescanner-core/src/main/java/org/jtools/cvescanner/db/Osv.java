@@ -38,8 +38,6 @@ import org.jtools.cvescanner.model.Severity;
 import org.jtools.cvescanner.version.Versions;
 
 public final class Osv {
-    static final String BASE_URL = "https://osv-vulnerabilities.storage.googleapis.com";
-
     public record Match(Map<String, Object> vuln, Map<String, Object> affected) {}
 
     private Osv() {}

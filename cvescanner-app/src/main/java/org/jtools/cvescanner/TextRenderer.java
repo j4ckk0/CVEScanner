@@ -25,7 +25,13 @@ import java.awt.Component;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 
+/** A cell's text as it is: what a database or a project wrote is never read as HTML (Gui.noHtml). */
 final class TextRenderer extends DefaultTableCellRenderer {
+
+    TextRenderer() {
+        Gui.noHtml(this);
+    }
+
     @Override
     public Component getTableCellRendererComponent(JTable t, Object v, boolean sel, boolean focus, int row, int col) {
         super.getTableCellRendererComponent(t, v, sel, focus, row, col);

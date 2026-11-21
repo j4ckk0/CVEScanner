@@ -22,6 +22,8 @@ package org.jtools.cvescanner;
 
 
 import java.awt.Color;
+import javax.swing.JComponent;
+import javax.swing.JTextArea;
 import javax.swing.UIManager;
 
 final class Gui {
@@ -40,7 +42,28 @@ final class Gui {
 
     static String hex(Color c) { return String.format("#%02x%02x%02x", c.getRed(), c.getGreen(), c.getBlue()); }
 
+    /** Text as HTML shows it, every character that could open a tag or end an attribute escaped. */
     static String html(String s) {
-        return s == null ? "" : s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
+        return s == null ? "" : s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
+                .replace("'", "&#39;");
+    }
+
+    /**
+     * A message as plain text, for a dialog: a string given to Swing as it is would be read as HTML should it begin
+     * with <html>, and a file name or an advisory may.
+     */
+    static JTextArea plain(String text) {
+        var area = new JTextArea(text);
+        area.setEditable(false);
+        area.setOpaque(false);
+        area.setBorder(null);
+        area.setFont(UIManager.getFont("Label.font"));
+        return area;
+    }
+
+    /** A label that shows its text as it is, never as HTML (see plain). */
+    static <T extends JComponent> T noHtml(T component) {
+        component.putClientProperty("html.disable", Boolean.TRUE);
+        return component;
     }
 }

@@ -24,7 +24,6 @@
  */
 module org.jtools.cvescanner.core {
     requires java.xml;
-    requires java.net.http;
 
     exports org.jtools.cvescanner.cli;
     exports org.jtools.cvescanner.cvss;

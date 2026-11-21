@@ -22,7 +22,6 @@ package org.jtools.cvescanner.engine;
 
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -30,9 +29,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.TreeSet;
 import org.jtools.cvescanner.db.CveList;
-import org.jtools.cvescanner.db.Database;
 import org.jtools.cvescanner.db.Osv;
 import org.jtools.cvescanner.db.VulnDb;
 import org.jtools.cvescanner.json.Json;
@@ -51,11 +48,9 @@ public final class Engine {
     private Engine() {}
 
     /**
-     * @param dbFiles database zips chosen by the user; when empty the OSV.dev cache is used (downloaded first if
-     *                {@code download} is set)
+     * @param dbFiles the database zips the user gave: the only source of vulnerability data, the program fetching none
      */
-    public static ScanResult scan(Path dir, Path cache, boolean download, List<Path> dbFiles, ScanListener listener)
-            throws IOException, InterruptedException {
+    public static ScanResult scan(Path dir, List<Path> dbFiles, ScanListener listener) throws IOException {
         Path root = dir.toAbsolutePath().normalize();
         var warnings = new ArrayList<String>();
         ScanListener l = new ScanListener() {
@@ -76,18 +71,10 @@ public final class Engine {
         var wanted = VulnDb.Wanted.of(col.deps);
         var index = new VulnDb.Index();
         if (!col.deps.isEmpty()) {
-            List<Path> sources = new ArrayList<>(dbFiles);
-            if (sources.isEmpty()) {
-                for (String eco : new TreeSet<>(wanted.byEcosystem().keySet())) {
-                    if (download) Database.update(eco, cache, l);
-                    Path zip = Database.zipPath(cache, eco);
-                    if (!Files.isRegularFile(zip))
-                        throw new IOException("No vulnerability database loaded.\n\nChoose a database zip file (the GitHub "
-                                + "Advisory Database or the CVE List from GitHub), or enable downloading from OSV.dev.");
-                    sources.add(zip);
-                }
-            }
-            index = VulnDb.load(sources, wanted, l);
+            if (dbFiles.isEmpty())
+                throw new IOException("No vulnerability database loaded.\n\nChoose a database zip file: the GitHub "
+                        + "Advisory Database, the CVE List or an OSV.dev export (see the README, \"The databases\").");
+            index = VulnDb.load(dbFiles, wanted, l);
         }
 
         l.status("Matching " + col.deps.size() + " dependencies against the database…");
