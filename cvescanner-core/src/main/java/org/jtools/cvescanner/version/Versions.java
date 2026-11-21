@@ -124,16 +124,29 @@ public final class Versions {
     public static String nearestFix(Comparator<String> order, String version, Collection<String> fixes) {
         List<String> above = fixes.stream().filter(f -> f != null && order.compare(f, version) > 0).toList();
         String flavour = flavour(version);
-        var same = above.stream().filter(f -> flavour(f).equals(flavour)).min(order);
-        if (same.isPresent()) return same.get();
+        if (!isPreRelease(flavour)) {
+            var same = above.stream().filter(f -> flavour(f).equals(flavour)).min(order);
+            if (same.isPresent()) return same.get();
+        }
         String lowest = above.stream().min(order).orElse("");
-        if (FLAVOUR_WORD.matcher(flavour).matches() && FLAVOUR_WORD.matcher(flavour(lowest)).matches())
+        if (isFlavourWord(flavour) && isFlavourWord(flavour(lowest)))
             return lowest.substring(0, lowest.length() - flavour(lowest).length()) + version.strip().substring(version.strip().length() - flavour.length());
         return lowest;
     }
 
-    /** A flavour that is a word after a dash: "-jre", "-android"; not a pre-release ("-rc1") nor ".Final". */
-    private static final Pattern FLAVOUR_WORD = Pattern.compile("-[a-z]+");
+    private static final Pattern WORD_AFTER_DASH = Pattern.compile("-([a-z]+)");
+
+    /** A flavour that is a word after a dash: "-jre", "-android"; not a pre-release ("-rc", "-beta1") nor ".Final". */
+    private static boolean isFlavourWord(String flavour) {
+        var m = WORD_AFTER_DASH.matcher(flavour);
+        return m.matches() && !QUALIFIERS.containsKey(m.group(1));
+    }
+
+    /** A version's suffix that is one of Maven's pre-release qualifiers: "-beta", "-rc", "-snapshot". */
+    private static boolean isPreRelease(String flavour) {
+        var m = WORD_AFTER_DASH.matcher(flavour);
+        return m.matches() && QUALIFIERS.getOrDefault(m.group(1), 6) < 6;
+    }
 
     /** What follows a version's numbers: "-jre", "-android", ".final", or nothing. */
     static String flavour(String version) {

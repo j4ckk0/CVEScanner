@@ -67,6 +67,14 @@ class VersionsTest {
     }
 
     @Test
+    void aPreReleaseWordIsNoFlavour() {
+        // -beta, -rc, -snapshot are Maven qualifiers: a fix is never made up in them, nor from them
+        assertEquals("2.0-rc", Ecosystem.MAVEN.nearestFix("2.0-beta", List.of("2.0-rc", "2.1")));
+        assertEquals("32.0.0-rc", Ecosystem.MAVEN.nearestFix("31.1-jre", List.of("32.0.0-rc")));
+        assertEquals("1.1", Ecosystem.MAVEN.nearestFix("1.0-snapshot", List.of("1.1", "1.2-snapshot")));
+    }
+
+    @Test
     void npmFollowsSemverPrecedence() {
         // the example of the SemVer 2.0 specification, section 11
         ascending(Ecosystem.NPM, "1.0.0-alpha", "1.0.0-alpha.1", "1.0.0-alpha.beta", "1.0.0-beta", "1.0.0-beta.2", "1.0.0-beta.11",
