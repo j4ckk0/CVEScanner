@@ -54,7 +54,7 @@
       "package": "minimist",
       "version": "1.2.5",
       "approximate": false,
-      "scope": "transitive",
+      "scope": "direct",
       "file": "yarn/yarn.lock",
       "id": "GHSA-xvch-5gv4-984h",
       "cves": [
@@ -233,7 +233,7 @@
       ],
       "match": "ADVISORY",
       "match_note": "The advisory lists this exact package and its affected version range.",
-      "fixed_in": "32.0.0-android",
+      "fixed_in": "32.0.0-jre",
       "summary": "Test vuln in com.google.guava:guava",
       "published": "",
       "url": "https://osv.dev/vulnerability/GHSA-7g45-4rm6-3mm3"

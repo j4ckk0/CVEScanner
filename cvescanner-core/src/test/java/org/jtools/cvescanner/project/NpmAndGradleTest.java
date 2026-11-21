@@ -25,7 +25,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /** npm's declared ranges read without a lockfile, and Gradle's variables. */
 class NpmAndGradleTest {
@@ -47,6 +53,30 @@ class NpmAndGradleTest {
         assertEquals("reason.nonRegistry", NpmScanner.minVersion("git+https://github.com/a/b.git").reason().key());
         assertEquals("reason.noLowerBound", NpmScanner.minVersion("<2.0.0").reason().key());
         assertNull(NpmScanner.minVersion("*").version());
+    }
+
+    @Test
+    void aYarnAliasIsADeclaredDependency(@TempDir Path dir) throws Exception {
+        Files.writeString(dir.resolve("package.json"), "{\"dependencies\":{\"lodash-legacy\":\"npm:lodash@4.17.11\",\"async\":\"^2.6.3\"}}");
+        Files.writeString(dir.resolve("yarn.lock"), """
+                # yarn lockfile v1
+
+                async@^2.6.3:
+                  version "2.6.3"
+                  dependencies:
+                    lodash "^4.17.14"
+
+                lodash@^4.17.14:
+                  version "4.17.15"
+
+                "lodash-legacy@npm:lodash@4.17.11":
+                  version "4.17.11"
+                """);
+        var collector = new Collector(dir);
+        NpmScanner.scan(List.of(dir.resolve("package.json")), dir, collector, warning -> { });
+        Map<String, String> scopes = new TreeMap<>();
+        collector.deps.forEach(d -> scopes.put(d.name() + "@" + d.version(), d.scope()));
+        assertEquals(Map.of("async@2.6.3", "direct", "lodash@4.17.11", "direct", "lodash@4.17.15", "transitive"), scopes);
     }
 
     @Test

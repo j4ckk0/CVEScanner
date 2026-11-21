@@ -22,6 +22,7 @@ package org.jtools.cvescanner.version;
 
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -123,4 +124,29 @@ public final class Versions {
     }
 
     public static Comparator<String> comparator(String ecosystem) { return (a, b) -> compare(ecosystem, a, b); }
+
+    /**
+     * The fix to upgrade to: the lowest of these versions above the one in use, of its flavour when there is one —
+     * 32.0.0-jre for 31.1-jre, not 32.0.0-android, which Maven's order puts first —, else the lowest of any; empty
+     * when none is above. A fix given in another flavour word only (an advisory naming 32.0.0-android for every Guava)
+     * is said in the version's own: a library released in flavours releases each fix in all of them.
+     */
+    public static String nearestFix(String ecosystem, String version, Collection<String> fixes) {
+        List<String> above = fixes.stream().filter(f -> f != null && compare(ecosystem, f, version) > 0).toList();
+        String flavour = flavour(version);
+        var same = above.stream().filter(f -> flavour(f).equals(flavour)).min(comparator(ecosystem));
+        if (same.isPresent()) return same.get();
+        String lowest = above.stream().min(comparator(ecosystem)).orElse("");
+        if (FLAVOUR_WORD.matcher(flavour).matches() && FLAVOUR_WORD.matcher(flavour(lowest)).matches())
+            return lowest.substring(0, lowest.length() - flavour(lowest).length()) + version.strip().substring(version.strip().length() - flavour.length());
+        return lowest;
+    }
+
+    /** A flavour that is a word after a dash: "-jre", "-android"; not a pre-release ("-rc1") nor ".Final". */
+    private static final Pattern FLAVOUR_WORD = Pattern.compile("-[a-z]+");
+
+    /** What follows a version's numbers: "-jre", "-android", ".final", or nothing. */
+    static String flavour(String version) {
+        return version.strip().replaceFirst("^[0-9.]+", "").toLowerCase(Locale.ROOT);
+    }
 }

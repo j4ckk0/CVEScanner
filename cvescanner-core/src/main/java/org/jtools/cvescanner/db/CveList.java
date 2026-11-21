@@ -234,7 +234,7 @@ public final class CveList {
             }
             if (status.equals("unaffected") && startsWithDigit(base) && Versions.compare(eco, base, v) > 0) candidates.add(base);
         }
-        return candidates.stream().filter(c -> Versions.compare(eco, c, v) > 0).min(Versions.comparator(eco)).orElse("");
+        return Versions.nearestFix(eco, v, candidates);
     }
 
     public static Finding toFinding(Dependency d, Rule r, MatchBasis basis) {

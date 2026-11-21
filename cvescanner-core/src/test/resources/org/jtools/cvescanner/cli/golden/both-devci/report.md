@@ -31,7 +31,7 @@
 | CRITICAL | Maven | `org.apache.logging.log4j:log4j-core` | 2.14.1 | 2.15.0 | 1 | maven/child/pom.xml |
 | HIGH | npm | `axios` | 0.21.0 ≈ | 0.21.2 | 1 | npm-nolock/package.json |
 | HIGH | Maven | `com.fasterxml.jackson.core:jackson-databind` | 2.9.8 | 2.9.10.7 | 1 | maven/child/pom.xml, maven/pom.xml |
-| HIGH | Maven | `com.google.guava:guava` | 31.1-jre | 32.0.0-android | 1 | gradle/build.gradle |
+| HIGH | Maven | `com.google.guava:guava` | 31.1-jre | 32.0.0-jre | 1 | gradle/build.gradle |
 | HIGH | npm | `lodash` | 4.17.15 | 4.17.21 | 1 | npm-lock/package-lock.json |
 | HIGH | npm | `lodash` | 4.17.20 | 4.17.21 | 1 | yarn/yarn.lock |
 | HIGH | Maven | `org.yaml:snakeyaml` | 1.33 | 2.0 | 1 | gradle/build.gradle |
@@ -45,7 +45,7 @@
 
 | Severity | Base | Env. | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
 |---|---|---|---|---|---|---|---|---|---|---|
-| HIGH | — | — | `com.google.guava:guava` | 31.1-jre | implementation | [GHSA-7g45-4rm6-3mm3](https://osv.dev/vulnerability/GHSA-7g45-4rm6-3mm3) | Advisory | CVE-2023-2976 | 32.0.0-android | Test vuln in com.google.guava:guava |
+| HIGH | — | — | `com.google.guava:guava` | 31.1-jre | implementation | [GHSA-7g45-4rm6-3mm3](https://osv.dev/vulnerability/GHSA-7g45-4rm6-3mm3) | Advisory | CVE-2023-2976 | 32.0.0-jre | Test vuln in com.google.guava:guava |
 | HIGH | 9.8 (v3.1) | 8.8 | `org.yaml:snakeyaml` | 1.33 | implementation | [GHSA-mjmj-j48q-9wg2](https://osv.dev/vulnerability/GHSA-mjmj-j48q-9wg2) | Advisory | CVE-2022-1471 | 2.0 | Test vuln in org.yaml:snakeyaml |
 
 ### `gradle/gradle/libs.versions.toml`
@@ -85,7 +85,7 @@
 
 | Severity | Base | Env. | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
 |---|---|---|---|---|---|---|---|---|---|---|
-| CRITICAL | — | — | `minimist` | 1.2.5 | transitive | [GHSA-xvch-5gv4-984h](https://osv.dev/vulnerability/GHSA-xvch-5gv4-984h) | Advisory | CVE-2021-44906 | 1.2.6 | Test vuln in minimist |
+| CRITICAL | — | — | `minimist` | 1.2.5 | direct | [GHSA-xvch-5gv4-984h](https://osv.dev/vulnerability/GHSA-xvch-5gv4-984h) | Advisory | CVE-2021-44906 | 1.2.6 | Test vuln in minimist |
 | HIGH | 8.6 (v4.0) | 8.4 | `lodash` | 4.17.20 | direct | [GHSA-35jh-r3h4-6jhm](https://osv.dev/vulnerability/GHSA-35jh-r3h4-6jhm) | Advisory | CVE-2021-23337 | 4.17.21 | Test vuln in lodash |
 
 ## Dependencies that could not be checked (3)

@@ -65,7 +65,7 @@
 
 | Severity | Base | Env. | Package | Version | Scope | Advisory | Match | CVE | Fixed in | Summary |
 |---|---|---|---|---|---|---|---|---|---|---|
-| CRITICAL | — | — | `minimist` | 1.2.5 | transitive | [CVE-2021-44906](https://www.cve.org/CVERecord?id=CVE-2021-44906) | CVE name match ⚠ | CVE-2021-44906 | 1.2.6 | Test description. |
+| CRITICAL | — | — | `minimist` | 1.2.5 | direct | [CVE-2021-44906](https://www.cve.org/CVERecord?id=CVE-2021-44906) | CVE name match ⚠ | CVE-2021-44906 | 1.2.6 | Test description. |
 | HIGH | 7.2 (v3.1) | — | `lodash` | 4.17.20 | direct | [CVE-2021-23337](https://www.cve.org/CVERecord?id=CVE-2021-23337) | CVE name match ⚠ | CVE-2021-23337 | 4.17.21 | Command injection in lodash |
 
 ## Dependencies that could not be checked (3)

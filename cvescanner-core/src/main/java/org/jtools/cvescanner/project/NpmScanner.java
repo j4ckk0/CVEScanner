@@ -173,7 +173,8 @@ public final class NpmScanner {
 
     private static List<LockEntry> yarnLock(Path path, Set<String> declared) throws IOException {
         var out = new ArrayList<LockEntry>();
-        var names = new ArrayList<String>();
+        // the packages an entry resolves, each with whether it is declared — under its own name or an npm: alias's
+        var names = new LinkedHashMap<String, Boolean>();
         for (String line : ProjectFiles.readText(path).lines().toList()) {
             if (line.isBlank() || line.strip().startsWith("#")) continue;
             if (!Character.isWhitespace(line.charAt(0))) {
@@ -186,16 +187,16 @@ public final class NpmScanner {
                     if (spec.contains("@npm:")) {
                         String alias = spec.substring(0, spec.indexOf("@npm:")), target = spec.substring(spec.indexOf("@npm:") + 5);
                         int at = target.lastIndexOf('@');
-                        names.add(at > 0 ? target.substring(0, at) : alias);
+                        names.merge(at > 0 ? target.substring(0, at) : alias, declared.contains(alias), Boolean::logicalOr);
                     } else {
                         int at = spec.lastIndexOf('@');
-                        if (at > 0) names.add(spec.substring(0, at));
+                        if (at > 0) names.merge(spec.substring(0, at), declared.contains(spec.substring(0, at)), Boolean::logicalOr);
                     }
                 }
             } else {
                 var m = YARN_VERSION.matcher(line);
                 if (m.lookingAt() && !names.isEmpty()) {
-                    for (String n : new LinkedHashSet<>(names)) out.add(new LockEntry(n, m.group(1), false, declared.contains(n)));
+                    names.forEach((n, direct) -> out.add(new LockEntry(n, m.group(1), false, direct)));
                     names.clear();
                 }
             }

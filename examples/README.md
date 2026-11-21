@@ -43,7 +43,7 @@ gives the version that fixes them all):
 
 | Package | Version | A known CVE | Fixed in |
 |---|---|---|---|
-| `com.google.guava:guava` | 31.1-jre | CVE-2023-2976 | 32.0.0 |
+| `com.google.guava:guava` | 31.1-jre | CVE-2023-2976 | 32.0.0-jre |
 | `io.netty:netty-codec-http` | 4.1.68.Final | CVE-2021-43797 | 4.1.71.Final |
 | `com.google.protobuf:protobuf-java` | 3.21.5 | CVE-2022-3171 | 3.21.7 |
 | `com.thoughtworks.xstream:xstream` | 1.4.17 | CVE-2021-39139 | 1.4.18 |

@@ -52,6 +52,20 @@ class VersionsTest {
     }
 
     @Test
+    void theFixIsOfTheVersionsFlavour() {
+        // Guava's advisories give a fix per flavour; Maven's order puts -android before -jre
+        var fixes = List.of("32.0.0-android", "32.0.0-jre");
+        assertEquals("32.0.0-jre", Versions.nearestFix("Maven", "31.1-jre", fixes));
+        assertEquals("32.0.0-android", Versions.nearestFix("Maven", "31.1-android", fixes));
+        assertEquals("32.0.0-android", Versions.nearestFix("Maven", "31.1", fixes), "no flavour: the lowest");
+        assertEquals("32.0.0-jre", Versions.nearestFix("Maven", "31.1-jre", List.of("32.0.0-android")),
+                "a fix given in another flavour only is said in the version's");
+        assertEquals("2.0.0", Versions.nearestFix("Maven", "1.0-rc1", List.of("2.0.0")), "a pre-release is no flavour");
+        assertEquals("4.1.71.Final", Versions.nearestFix("Maven", "4.1.68.Final", List.of("4.1.71.Final", "4.1.44.Final")));
+        assertEquals("", Versions.nearestFix("npm", "2.0.0", List.of("1.5.0")));
+    }
+
+    @Test
     void npmFollowsSemverPrecedence() {
         // the example of the SemVer 2.0 specification, section 11
         ascending("npm", "1.0.0-alpha", "1.0.0-alpha.1", "1.0.0-alpha.beta", "1.0.0-beta", "1.0.0-beta.2", "1.0.0-beta.11",

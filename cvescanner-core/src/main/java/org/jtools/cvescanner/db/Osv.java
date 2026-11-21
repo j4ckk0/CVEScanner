@@ -82,11 +82,9 @@ public final class Osv {
     }
 
     static String nextFixed(String eco, String version, Map<String, Object> affected) {
-        return Json.arr(affected.get("ranges")).stream()
+        return Versions.nearestFix(eco, version, Json.arr(affected.get("ranges")).stream()
                 .flatMap(r -> Json.arr(Json.obj(r).get("events")).stream())
-                .map(e -> Json.str(Json.obj(e), "fixed"))
-                .filter(f -> f != null && Versions.compare(eco, f, version) > 0)
-                .min(Versions.comparator(eco)).orElse("");
+                .map(e -> Json.str(Json.obj(e), "fixed")).toList());
     }
 
     /** CVSS data of an advisory: the highest-scoring v3.x and v4.0 vectors, plus the textual rating. */
