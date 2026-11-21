@@ -117,7 +117,9 @@ class NoNetworkTest {
             // the module's descriptor: names the resolver's service, which it provides
             new Exemption("module-info", List.of("java/net/spi/InetAddressResolverProvider"), List.of()),
             // makes the program's only XML parser, for the pom.xml files, set to fetch nothing (PomParserTest)
-            new Exemption(MAVEN_READER, List.of("javax/xml/parsers/DocumentBuilderFactory"), List.of()));
+            new Exemption(MAVEN_READER, List.of("javax/xml/parsers/DocumentBuilderFactory"), List.of()),
+            // starts the scanned project's build tool, offline, once the user has confirmed a fix (README, "Applying fixes")
+            new Exemption("org/jtools/cvescanner/fix/ToolRunner", List.of("java/lang/ProcessBuilder$Redirect", "java/lang/ProcessBuilder"), List.of()));
 
     @Test
     void noClassOfTheProgramReachesTheNetwork() throws IOException, URISyntaxException {

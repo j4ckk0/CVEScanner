@@ -30,6 +30,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -55,6 +57,8 @@ public final class MavenReader {
         String[] parent;   // groupId, artifactId, version, relativePath
         final Map<String, String> props = new HashMap<>();
         final List<PomDep> deps = new ArrayList<>(), managed = new ArrayList<>();
+        /** The maven-compiler-plugin's release, target and source, as written: the Java the project is built for. */
+        String compilerRelease, compilerTarget, compilerSource;
 
         Pom(Path path) { this.path = path.toAbsolutePath().normalize(); }
     }
@@ -175,6 +179,12 @@ public final class MavenReader {
         for (Node n = el.getFirstChild(); n != null; n = n.getNextSibling()) {
             if (!(n instanceof Element c)) continue;
             String tag = local(c);
+            if (tag.equals("plugin") && "maven-compiler-plugin".equals(text(c, "artifactId")) && child(c, "configuration") != null) {
+                Element conf = child(c, "configuration");
+                if (pom.compilerRelease == null) pom.compilerRelease = text(conf, "release");
+                if (pom.compilerTarget == null) pom.compilerTarget = text(conf, "target");
+                if (pom.compilerSource == null) pom.compilerSource = text(conf, "source");
+            }
             if (tag.equals("dependency")) {
                 String scope = Objects.requireNonNullElse(text(c, "scope"), "compile");
                 if (ancestors.contains("dependencyManagement")) {
@@ -252,5 +262,108 @@ public final class MavenReader {
                         return d.version();
             return null;
         }
+    }
+
+    /** Where the version of a dependency is written: a literal in a pom, or a property a pom defines. */
+    public record VersionSite(Path pom, String property) {
+        public boolean literal() { return property == null; }
+    }
+
+    /**
+     * The poms of a scanned folder, their parents among them: where a dependency's version is written, and the Java
+     * the project is built for. A pom that cannot be read is left out.
+     */
+    public static final class Tree {
+        private final PomIndex index;
+
+        private Tree(PomIndex index) {
+            this.index = index;
+        }
+
+        public static Tree of(List<Path> poms) {
+            DocumentBuilder builder = pomParser();
+            var read = new ArrayList<Pom>();
+            for (Path p : poms) {
+                try {
+                    read.add(parse(p, builder.parse(p.toFile()).getDocumentElement()));
+                } catch (Exception _) {
+                    // left out: the scan has already said it could not read it
+                }
+            }
+            return new Tree(new PomIndex(read));
+        }
+
+        /**
+         * Where the version of g:a, as this pom uses it, is written: in its dependencies or its dependency management,
+         * else in a parent's dependency management; a literal, or a ${property} of the pom (or parent) defining it.
+         * Empty when the pom is not in the tree, or the version is written some other way.
+         */
+        public Optional<VersionSite> versionSite(Path pomPath, String group, String artifact) {
+            Pom pom = index.byPath.get(pomPath.toAbsolutePath().normalize());
+            if (pom == null) return Optional.empty();
+            Pom where = null;
+            String raw = null;
+            for (PomDep d : concat(pom.deps, pom.managed))
+                if (d.version() != null && group.equals(index.resolve(pom, d.group())) && artifact.equals(index.resolve(pom, d.artifact()))) {
+                    where = pom;
+                    raw = d.version();
+                    break;
+                }
+            if (raw == null) {
+                outer:
+                for (Pom p : index.chain(pom))
+                    for (PomDep d : p.managed)
+                        if (d.version() != null && group.equals(index.resolve(p, d.group())) && artifact.equals(index.resolve(p, d.artifact()))) {
+                            where = p;
+                            raw = d.version();
+                            break outer;
+                        }
+            }
+            if (raw == null) return Optional.empty();
+            if (!raw.contains("${")) return Optional.of(new VersionSite(where.path, null));
+            var m = PROP.matcher(raw.strip());
+            if (!m.matches()) return Optional.empty();
+            for (Pom p : index.chain(where))
+                if (p.props.containsKey(m.group(1))) return Optional.of(new VersionSite(p.path, m.group(1)));
+            return Optional.empty();
+        }
+
+        /** The Java version the pom is built for (8 for "1.8"), from the compiler's properties or plugin; empty when none says. */
+        public OptionalInt javaTarget(Path pomPath) {
+            Pom pom = index.byPath.get(pomPath.toAbsolutePath().normalize());
+            if (pom == null) return OptionalInt.empty();
+            for (String raw : new String[]{index.property(pom, "maven.compiler.release"), first(pom, "release"),
+                    index.property(pom, "maven.compiler.target"), first(pom, "target"), index.property(pom, "maven.compiler.source"),
+                    first(pom, "source")}) {
+                OptionalInt v = javaVersion(index.resolve(pom, raw));
+                if (v.isPresent()) return v;
+            }
+            return OptionalInt.empty();
+        }
+
+        private String first(Pom pom, String which) {
+            for (Pom p : index.chain(pom)) {
+                String v = switch (which) {
+                    case "release" -> p.compilerRelease;
+                    case "target" -> p.compilerTarget;
+                    default -> p.compilerSource;
+                };
+                if (v != null) return index.resolve(p, v);
+            }
+            return null;
+        }
+
+        private static List<PomDep> concat(List<PomDep> a, List<PomDep> b) {
+            var out = new ArrayList<>(a);
+            out.addAll(b);
+            return out;
+        }
+    }
+
+    /** "1.8" and "8" are Java 8, "11" Java 11; anything else says no version. */
+    public static OptionalInt javaVersion(String raw) {
+        if (raw == null) return OptionalInt.empty();
+        var m = Pattern.compile("(?:1\\.)?(\\d+)").matcher(raw.strip());
+        return m.matches() ? OptionalInt.of(Integer.parseInt(m.group(1))) : OptionalInt.empty();
     }
 }

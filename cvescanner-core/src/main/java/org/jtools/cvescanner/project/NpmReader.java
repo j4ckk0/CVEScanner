@@ -49,11 +49,12 @@ public final class NpmReader {
 
     record LockEntry(String name, String version, boolean dev, boolean direct) {}
 
-    record MinVersion(String version, boolean exact, Phrase reason) {}
+    /** The lowest version a range of package.json allows, exact when the range names one version; or why there is none. */
+    public record MinVersion(String version, boolean exact, Phrase reason) {}
 
     private NpmReader() {}
 
-    static MinVersion minVersion(String spec) {
+    public static MinVersion minVersion(String spec) {
         String s = spec.strip();
         if (s.isEmpty() || Set.of("*", "x", "X", "latest", "next").contains(s)) return new MinVersion(null, false, Phrase.of("reason.unpinned", spec));
         if (NON_REGISTRY.matcher(s).lookingAt() || GITHUB_SHORTHAND.matcher(s).matches()) return new MinVersion(null, false, Phrase.of("reason.nonRegistry"));

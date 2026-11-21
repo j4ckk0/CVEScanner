@@ -31,6 +31,7 @@ module org.jtools.cvescanner.core {
     exports org.jtools.cvescanner.cvss;
     exports org.jtools.cvescanner.db;
     exports org.jtools.cvescanner.engine;
+    exports org.jtools.cvescanner.fix;
     exports org.jtools.cvescanner.i18n;
     exports org.jtools.cvescanner.ignore;
     exports org.jtools.cvescanner.json;
