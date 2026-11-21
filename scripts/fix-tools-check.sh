@@ -33,14 +33,17 @@ trap 'rm -rf "$work"' EXIT
 # run's page shows annotations to anyone and its log only to the repository's members.
 step_log=$work/step.log
 quiet() { "$@" > "$step_log" 2>&1; }
+annotate() {   # annotate TITLE TEXT: an error annotation in GitHub Actions, its lines kept
+  [ -n "${GITHUB_ACTIONS:-}" ] || return 0
+  local text=$2
+  text=${text//'%'/'%25'}; text=${text//$'\r'/}; text=${text//$'\n'/'%0A'}
+  echo "::error::fix-tools: $1%0A$text"
+}
 failed_step() {
   local code=$1 line=$2 command=$3 tail
   tail=$(tail -n 15 "$step_log" 2>/dev/null || true)
   echo "  FAILED  line $line: $command (exit $code)"; echo "$tail"
-  if [ -n "${GITHUB_ACTIONS:-}" ]; then
-    tail=${tail//'%'/'%25'}; tail=${tail//$'\r'/}; tail=${tail//$'\n'/'%0A'}
-    echo "::error::fix-tools: line $line: $command%0A$tail"
-  fi
+  annotate "line $line: $command" "$tail"
 }
 trap 'failed_step $? $LINENO "$BASH_COMMAND"' ERR
 failures=0
@@ -113,6 +116,7 @@ check "pnpm: the old version gone"     "$r/pnpm/pnpm-lock.yaml"   '4.17.20' abse
 check "pnpm: the pin said"             "$work/fixes.log"          'pnpm cannot resolve a range offline'
 check "Gradle: the build file"         "$r/gradle/build.gradle"   'commons-text:1.10.0'
 check "scanned again: no finding left" "$work/out/report.md"      'lodash' absent
+[ $failures -eq 0 ] || annotate "what the fixes said" "$(sed -n '/^Fixes:/,$p' "$work/fixes.log" | head -n 120)"
 
 echo "==> Without the tools on the PATH"
 mkdir -p "$work/bare" "$work/nobin"
