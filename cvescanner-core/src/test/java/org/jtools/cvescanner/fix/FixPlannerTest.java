@@ -91,6 +91,7 @@ class FixPlannerTest {
         mavenParentAndChild(null);
         fake.program("mvn", "exit 0");
         fake.versionsPlugin();
+        fake.jar("com.fasterxml.jackson.core", "jackson-databind", "2.9.10.7", 8);
         var p = plan(Ecosystem.MAVEN, "com.fasterxml.jackson.core:jackson-databind", "2.9.8", "2.9.10.7",
                 "pom.xml", "dependencyManagement", "child/pom.xml", "compile");
         assertTrue(p.applicable(), String.valueOf(p.notApplicable()));
@@ -107,12 +108,15 @@ class FixPlannerTest {
     @Test
     void aMavenVersionFromAPropertyIsChangedWhereThePropertyIs() throws IOException {
         mavenParentAndChild(null);
-        Path wrapper = write("mvnw", "#!/bin/sh\n");
-        wrapper.toFile().setExecutable(true);
+        write("mvnw", "#!/bin/sh\n").toFile().setExecutable(true);
         fake.versionsPlugin();
+        fake.jar("org.apache.logging.log4j", "log4j-core", "2.17.1", 8);
+        assertEquals("fix.reason.notInstalled", reason(plan(Ecosystem.MAVEN, "org.apache.logging.log4j:log4j-core", "2.14.1", "2.17.1",
+                "child/pom.xml", "compile")), "a wrapper is not used: it would download its Maven");
+        Path mvn = fake.program("mvn", "exit 0");
         var p = plan(Ecosystem.MAVEN, "org.apache.logging.log4j:log4j-core", "2.14.1", "2.17.1", "child/pom.xml", "compile");
         var cmd = p.steps().getFirst().command();
-        assertEquals(wrapper.toString(), cmd.getFirst(), "the project's own wrapper first");
+        assertEquals(mvn.toString(), cmd.getFirst());
         assertTrue(cmd.containsAll(List.of("-f", root.resolve("pom.xml").toString(), "versions:set-property",
                 "-Dproperty=log4j.version", "-DnewVersion=2.17.1")), cmd.toString());
     }
@@ -129,6 +133,8 @@ class FixPlannerTest {
                 </project>""");
         fake.program("mvn", "exit 0");
         fake.versionsPlugin();
+        fake.jar("org.springframework", "spring-webmvc", "5.3.42", 8);
+        fake.jar("org.springframework", "spring-beans", "5.3.42", 8);
         var declared = List.of(new FixRequest.Declaration(root.resolve("pom.xml"), "compile"));
         var plans = new FixPlanner(root, fake.machine()).plan(List.of(
                 new FixRequest(Ecosystem.MAVEN, "org.springframework:spring-webmvc", "5.3.17", "5.3.42", declared),
@@ -156,8 +162,8 @@ class FixPlannerTest {
         fake.program("mvn", "exit 0");
         fake.versionsPlugin();
         String log4j = "org.apache.logging.log4j:log4j-core";
-        assertEquals(Phrase.of("fix.reason.javaUnknown", "2.17.1"), plan(Ecosystem.MAVEN, log4j, "2.14.1", "2.17.1", "child/pom.xml", "compile").notApplicable(),
-                "its jar not cached: not checked, so not applied");
+        assertEquals(Phrase.of("fix.reason.notCached", "2.17.1"), plan(Ecosystem.MAVEN, log4j, "2.14.1", "2.17.1", "child/pom.xml", "compile").notApplicable(),
+                "not cached: an offline build could not use it, nor can its Java be checked");
         fake.jar("org.apache.logging.log4j", "log4j-core", "2.17.1", 11);
         assertEquals(Phrase.of("fix.reason.javaTooNew", "2.17.1", 11, 8), plan(Ecosystem.MAVEN, log4j, "2.14.1", "2.17.1", "child/pom.xml", "compile").notApplicable());
         fake.jar("org.apache.logging.log4j", "log4j-core", "2.12.4", 8);
@@ -214,6 +220,8 @@ class FixPlannerTest {
         write("d/package.json", "{\"devDependencies\":{\"lodash\":\"^4.17.0\"}}");
         write("d/pnpm-lock.yaml", "lockfileVersion: '6.0'\n");
         for (String tool : List.of("npm", "yarn", "pnpm")) fake.program(tool, "exit 0");
+        assertEquals("fix.reason.notCachedNpm", reason(plan(Ecosystem.NPM, "lodash", "4.17.15", "4.17.21", "a/package-lock.json", "direct (dev)")));
+        fake.npmTarball("lodash", "4.17.21");
         var npm = plan(Ecosystem.NPM, "lodash", "4.17.15", "4.17.21", "a/package-lock.json", "direct (dev)").steps().getFirst();
         assertEquals(List.of("install", "lodash@4.17.21", "--offline", "--ignore-scripts", "--save-dev"), npm.command().subList(1, 6));
         assertEquals(Map.of("npm_config_offline", "true"), npm.environment());
@@ -231,6 +239,7 @@ class FixPlannerTest {
     void aFixNeedingANewerNodeThanTheProjectsIsNotApplied() throws Exception {
         write("package.json", "{\"engines\":{\"node\":\">=14\"},\"dependencies\":{\"axios\":\"0.21.0\"}}");
         fake.program("npm", "exit 0");
+        for (String v : List.of("1.6.0", "0.21.2", "0.21.4")) fake.npmTarball("axios", v);
         assertEquals("fix.reason.nodeUnknown", reason(plan(Ecosystem.NPM, "axios", "0.21.0", "1.6.0", "package.json", "dependencies")));
         fake.npmPackage("axios", "{\"versions\":{\"1.6.0\":{\"engines\":{\"node\":\">=18\"}},\"0.21.2\":{\"engines\":{\"node\":\">=12\"}},\"0.21.4\":{}}}");
         assertEquals(Phrase.of("fix.reason.nodeTooNew", "1.6.0", ">=18", ">=14"),
@@ -243,6 +252,13 @@ class FixPlannerTest {
     void componentsOffTheShelfAndPackagesWithoutAFixAreNotApplied() {
         assertEquals("fix.reason.cots", reason(plan(Ecosystem.COTS, "osgeo:gdal", "3.4.1", "3.5.0", "cots.csv", "inventory")));
         assertEquals("fix.reason.noFix", reason(plan(Ecosystem.NPM, "x", "1.0.0", "", "package.json", "dependencies")));
+    }
+
+    @Test
+    void aNameOrVersionThatCouldBeAnOptionIsNotApplied() {
+        assertEquals("fix.reason.unsafe", reason(plan(Ecosystem.NPM, "--registry=http://x", "1.0.0", "1.0.1", "package.json", "dependencies")));
+        assertEquals("fix.reason.unsafe", reason(plan(Ecosystem.MAVEN, "g:a", "1.0", "1.1 & calc", "pom.xml", "compile")));
+        assertEquals("fix.reason.unsafe", reason(plan(Ecosystem.NPM, "lodash", "4.17.15", "-1", "package.json", "dependencies")));
     }
 
     @Test

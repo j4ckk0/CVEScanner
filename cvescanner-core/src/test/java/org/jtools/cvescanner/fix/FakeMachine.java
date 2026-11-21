@@ -68,6 +68,14 @@ final class FakeMachine {
         }
     }
 
+    /** npm's cache holding a version's tarball (its index entry is what is looked for). */
+    void npmTarball(String name, String version) throws Exception {
+        String key = "make-fetch-happen:request-cache:https://registry.npmjs.org/" + name + "/-/" + name.substring(name.lastIndexOf('/') + 1) + "-" + version + ".tgz";
+        String h = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(key.getBytes(StandardCharsets.UTF_8)));
+        Path bucket = Files.createDirectories(home.resolve(".npm/_cacache/index-v5").resolve(h.substring(0, 2)).resolve(h.substring(2, 4)));
+        Files.writeString(bucket.resolve(h.substring(4)), "\n0\t{\"key\":\"" + key + "\"}");
+    }
+
     /** npm's cache holding the registry document of a package: its versions and their engines.node. */
     void npmPackage(String name, String documentJson) throws Exception {
         Path cache = home.resolve(".npm/_cacache");

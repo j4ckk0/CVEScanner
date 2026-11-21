@@ -58,6 +58,18 @@ final class NodeEngines {
         return Optional.empty();
     }
 
+    /** Whether npm's cache holds this version's tarball: what npm install --offline needs. */
+    static boolean tarballCached(Machine machine, String pkg, String version) {
+        String name = pkg.substring(pkg.lastIndexOf('/') + 1);
+        String key = "make-fetch-happen:request-cache:" + REGISTRY + pkg + "/-/" + name + "-" + version + ".tgz";
+        try {
+            String h = hex("SHA-256", key.getBytes(StandardCharsets.UTF_8));
+            return Files.isRegularFile(machine.npmCache().resolve("index-v5").resolve(h.substring(0, 2)).resolve(h.substring(2, 4)).resolve(h.substring(4)));
+        } catch (NoSuchAlgorithmException _) {
+            return false;
+        }
+    }
+
     /** The JSON content cached under this key: its index bucket, its last entry's integrity, that content. */
     static Optional<Map<String, Object>> document(Path cache, String key) {
         try {

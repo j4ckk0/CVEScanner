@@ -54,15 +54,10 @@ public record Machine(List<Path> path, boolean windows, List<String> pathExt, Pa
     }
 
     /**
-     * A program, found without starting anything: the project's own wrapper first (mvnw, gradlew, from the folder up
-     * to the one scanned), else on PATH. Empty when it is nowhere: the fix is then not applied, nothing installed.
+     * A program on PATH, found without starting anything. Empty when it is not there: the fix is then not applied, and
+     * nothing is installed. A project's wrapper (mvnw, gradlew) is not used: it downloads its tool when not unpacked.
      */
-    public Optional<Path> program(String name, String wrapper, Path from, Path root) {
-        if (wrapper != null)
-            for (Path dir = from; dir != null && dir.startsWith(root); dir = dir.getParent()) {
-                Optional<Path> w = executable(dir, wrapper);
-                if (w.isPresent()) return w;
-            }
+    public Optional<Path> program(String name) {
         for (Path dir : path) {
             Optional<Path> p = executable(dir, name);
             if (p.isPresent()) return p;

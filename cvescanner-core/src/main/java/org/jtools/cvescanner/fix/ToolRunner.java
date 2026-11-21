@@ -67,6 +67,7 @@ public final class ToolRunner {
                 return new FixOutcome(plan, false, failure, log.toString());
             }
         }
+        if (unchanged(kept)) return new FixOutcome(plan, false, Phrase.of("fix.outcome.unchanged"), log.toString());
         return new FixOutcome(plan, true, Phrase.of("fix.outcome.applied"), log.toString());
     }
 
@@ -92,7 +93,7 @@ public final class ToolRunner {
                 process.destroyForcibly();
                 process.waitFor(10, TimeUnit.SECONDS);
             }
-            log.append(Files.readString(output, Charset.defaultCharset())).append('\n');
+            log.append(new String(Files.readAllBytes(output), Charset.defaultCharset())).append('\n');   // leniently: a console's bytes
             if (!finished) return Phrase.of("fix.outcome.timeout", program(step), timeout.toMinutes());
             if (process.exitValue() != 0) return Phrase.of("fix.outcome.failed", program(step), process.exitValue());
             return null;
@@ -128,6 +129,19 @@ public final class ToolRunner {
     /** The files as they are before their first step, null for one not there (to delete should a step make it). */
     private static void keep(List<Path> files, Map<Path, byte[]> kept) throws IOException {
         for (Path f : files) if (!kept.containsKey(f)) kept.put(f, Files.isRegularFile(f) ? Files.readAllBytes(f) : null);
+    }
+
+    /** Every file as it was: the tool ended well yet changed nothing (a version it does not manage, as in a plugin). */
+    private static boolean unchanged(Map<Path, byte[]> kept) {
+        for (var e : kept.entrySet()) {
+            try {
+                byte[] now = Files.isRegularFile(e.getKey()) ? Files.readAllBytes(e.getKey()) : null;
+                if (!java.util.Arrays.equals(now, e.getValue())) return false;
+            } catch (IOException _) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static void restore(Map<Path, byte[]> kept, StringBuilder log) {

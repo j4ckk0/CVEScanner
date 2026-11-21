@@ -50,10 +50,17 @@ public final class FixPlanner {
     private static final Map<String, String> NPM_OFFLINE = Map.of("npm_config_offline", "true");
     private static final Map<String, String> YARN_BERRY_OFFLINE = Map.of("YARN_ENABLE_NETWORK", "0", "YARN_ENABLE_SCRIPTS", "0");
     private static final Pattern LEADING_NUMBER = Pattern.compile("^\\D*(\\d+)");
+    /** What may go on a tool's command line: a name or a version from a project or a database, never an option. */
+    private static final Pattern SAFE_VERSION = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._+~-]*");
+    private static final Pattern SAFE_MAVEN_NAME = Pattern.compile("[A-Za-z0-9_][A-Za-z0-9._-]*:[A-Za-z0-9_][A-Za-z0-9._-]*");
+    private static final Pattern SAFE_NPM_NAME = Pattern.compile("(@[A-Za-z0-9_][A-Za-z0-9._~-]*/)?[A-Za-z0-9_][A-Za-z0-9._~-]*");
+    private static final Pattern SAFE_PROPERTY = Pattern.compile("[A-Za-z0-9_][A-Za-z0-9._-]*");
 
     private final Path root;
     private final Machine machine;
     private MavenReader.Tree poms;
+    /** The shared places (a Maven property, a Gradle variable) each request's version comes from, found while planning. */
+    private final Map<FixRequest, List<String>> sharedSites = new java.util.HashMap<>();
 
     public FixPlanner(Path root, Machine machine) {
         this.root = root.toAbsolutePath().normalize();
@@ -69,7 +76,7 @@ public final class FixPlanner {
         var plans = new ArrayList<FixPlan>(requests.stream().map(this::plan).toList());
         var bySite = new LinkedHashMap<String, List<Integer>>();
         for (int i = 0; i < plans.size(); i++)
-            for (String site : sharedSites(plans.get(i))) bySite.computeIfAbsent(site, _ -> new ArrayList<>()).add(i);
+            for (String site : sharedSites.getOrDefault(plans.get(i).request(), List.of())) bySite.computeIfAbsent(site, _ -> new ArrayList<>()).add(i);
         for (var group : bySite.values()) {
             if (group.size() < 2) continue;
             String highest = group.stream().map(i -> plans.get(i).request().to()).max(Ecosystem.MAVEN.versionOrder()).orElseThrow();
@@ -84,22 +91,16 @@ public final class FixPlanner {
         return List.copyOf(plans);
     }
 
-    /** The places a plan changes that other packages' versions may come from: a Maven property, a Gradle variable. */
-    private static List<String> sharedSites(FixPlan plan) {
-        var sites = new ArrayList<String>();
-        for (Step step : plan.steps()) {
-            for (String arg : step.command())
-                if (arg.startsWith("-Dproperty=")) sites.add(step.touched().getFirst() + " " + arg);
-            var e = step.edit();
-            if (e != null && !e.before().contains(plan.request().pkg())) sites.add(e.file() + " " + e.before());
-        }
-        return sites;
+    private void shared(FixRequest r, String site) {
+        sharedSites.computeIfAbsent(r, _ -> new ArrayList<>()).add(site);
     }
 
     FixPlan plan(FixRequest r) {
         if (r.to() == null || r.to().isEmpty()) return FixPlan.not(r, Phrase.of("fix.reason.noFix"));
         if (r.ecosystem() == Ecosystem.COTS) return FixPlan.not(r, Phrase.of("fix.reason.cots"));
         if (r.declarations().isEmpty()) return FixPlan.not(r, Phrase.of("fix.reason.notDeclared"));
+        if (!SAFE_VERSION.matcher(r.to()).matches() || !(r.ecosystem() == Ecosystem.NPM ? SAFE_NPM_NAME : SAFE_MAVEN_NAME).matcher(r.pkg()).matches())
+            return FixPlan.not(r, Phrase.of("fix.reason.unsafe"));
         try {
             return r.ecosystem() == Ecosystem.NPM ? npm(r) : java(r);
         } catch (IOException e) {
@@ -120,7 +121,10 @@ public final class FixPlanner {
                 var site = poms().versionSite(d.file(), group, artifact);
                 if (site.isEmpty()) return FixPlan.not(r, Phrase.of("fix.reason.versionNotFound", rel(d.file())));
                 Path pom = site.get().pom();
-                Optional<Path> mvn = machine.program("mvn", "mvnw", pom.getParent(), root);
+                if (!site.get().literal()) shared(r, pom + " " + site.get().property());
+                if (!site.get().literal() && !SAFE_PROPERTY.matcher(site.get().property()).matches())
+                    return FixPlan.not(r, Phrase.of("fix.reason.unsafe"));
+                Optional<Path> mvn = machine.program("mvn");
                 if (mvn.isEmpty()) return FixPlan.not(r, Phrase.of("fix.reason.notInstalled", "mvn"));
                 if (!versionsPluginCached()) return FixPlan.not(r, Phrase.of("fix.reason.versionsPlugin"));
                 var command = new ArrayList<>(List.of(mvn.get().toString(), "-o", "-B", "-q", "-N", "-f", pom.toString()));
@@ -135,8 +139,9 @@ public final class FixPlanner {
             } else {
                 Step.TextEdit edit = GradleEdit.of(d.file(), d.scope(), group, artifact, r.from(), r.to());
                 if (edit == null) return FixPlan.not(r, Phrase.of("fix.reason.versionNotFound", rel(d.file())));
+                if (!edit.before().contains(r.pkg())) shared(r, edit.file() + " " + edit.before());
                 Path project = gradleProject(d.file());
-                Optional<Path> gradle = machine.program("gradle", "gradlew", project, root);
+                Optional<Path> gradle = machine.program("gradle");
                 if (gradle.isEmpty()) return FixPlan.not(r, Phrase.of("fix.reason.notInstalled", "gradle"));
                 var command = List.of(gradle.get().toString(), "--offline", "-q", "-p", project.toString(), "dependencies");
                 steps.putIfAbsent(edit.file() + " " + edit.before(), new Step(edit, command, project, Map.of(), List.of(edit.file())));
@@ -144,6 +149,7 @@ public final class FixPlanner {
             }
             if (t.isPresent() && (target.isEmpty() || t.getAsInt() < target.getAsInt())) target = t;
         }
+        if (!ArtifactJava.cached(machine, group, artifact, r.to())) return FixPlan.not(r, Phrase.of("fix.reason.notCached", r.to()));
         Phrase requirement;
         if (target.isEmpty()) {
             requirement = Phrase.of("fix.requirement.noJavaTarget");
@@ -205,7 +211,7 @@ public final class FixPlanner {
             String spec = r.pkg() + "@" + r.to();
             Step step;
             if (Files.isRegularFile(dir.resolve("yarn.lock"))) {
-                Optional<Path> yarn = machine.program("yarn", null, dir, root);
+                Optional<Path> yarn = machine.program("yarn");
                 if (yarn.isEmpty()) return FixPlan.not(r, Phrase.of("fix.reason.notInstalled", "yarn"));
                 var touched = List.of(packageJson, dir.resolve("yarn.lock"));
                 if (yarnBerry(dir))
@@ -216,14 +222,15 @@ public final class FixPlanner {
                     step = new Step(null, command, dir, Map.of(), touched);
                 }
             } else if (Files.isRegularFile(dir.resolve("pnpm-lock.yaml"))) {
-                Optional<Path> pnpm = machine.program("pnpm", null, dir, root);
+                Optional<Path> pnpm = machine.program("pnpm");
                 if (pnpm.isEmpty()) return FixPlan.not(r, Phrase.of("fix.reason.notInstalled", "pnpm"));
                 var command = new ArrayList<>(List.of(pnpm.get().toString(), "add", spec, "--offline", "--ignore-scripts"));
                 if (dev) command.add("-D");
                 step = new Step(null, command, dir, Map.of(), List.of(packageJson, dir.resolve("pnpm-lock.yaml")));
             } else {
-                Optional<Path> npm = machine.program("npm", null, dir, root);
+                Optional<Path> npm = machine.program("npm");
                 if (npm.isEmpty()) return FixPlan.not(r, Phrase.of("fix.reason.notInstalled", "npm"));
+                if (!NodeEngines.tarballCached(machine, r.pkg(), r.to())) return FixPlan.not(r, Phrase.of("fix.reason.notCachedNpm", r.to()));
                 var command = List.of(npm.get().toString(), "install", spec, "--offline", "--ignore-scripts", dev ? "--save-dev" : "--save");
                 step = new Step(null, command, dir, NPM_OFFLINE,
                         List.of(packageJson, dir.resolve("package-lock.json"), dir.resolve("npm-shrinkwrap.json")));

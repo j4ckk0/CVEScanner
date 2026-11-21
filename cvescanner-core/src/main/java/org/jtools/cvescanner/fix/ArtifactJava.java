@@ -39,6 +39,12 @@ final class ArtifactJava {
 
     private ArtifactJava() {}
 
+    /** Whether this version is in the local Maven repository or Gradle's cache: what an offline build can use. */
+    static boolean cached(Machine machine, String group, String artifact, String version) {
+        if (Files.isDirectory(machine.mavenRepository().resolve(group.replace('.', '/')).resolve(artifact).resolve(version))) return true;
+        return Files.isDirectory(machine.gradleCache().resolve(group).resolve(artifact).resolve(version));
+    }
+
     static OptionalInt of(Machine machine, String group, String artifact, String version) {
         String file = artifact + "-" + version + ".jar";
         Path maven = machine.mavenRepository().resolve(group.replace('.', '/')).resolve(artifact).resolve(version).resolve(file);

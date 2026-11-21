@@ -209,23 +209,26 @@ not, and applies only what you confirm; then it shows what each tool said and sc
 | Project | How a version is changed |
 |---|---|
 | Maven | `mvn -o -N versions:use-dep-version` for a version written in the pom (its dependencies or dependency management, a parent's included), `versions:set-property` for a `${property}`: the [versions-maven-plugin](https://www.mojohaus.org/versions/versions-maven-plugin/) must be in the local repository |
-| Gradle | no Gradle command changes a version: CVEScanner rewrites it where it is written (`'group:artifact:1.0'`, the variable it names, a version catalog's entry), then runs `gradle dependencies --offline`; if that fails the edit is undone |
+| Gradle | no Gradle command changes a version: CVEScanner rewrites it where it is written (`'group:artifact:1.0'`, the variable it names, a version catalog's entry), then runs `gradle dependencies --offline`, which runs the project's build scripts; if that fails the edit is undone |
 | npm, yarn, pnpm | the tool of the lockfile beside `package.json`: `npm install`, `yarn add` (`yarn up` for yarn 2+), `pnpm add`, offline, the project's install scripts not run |
 
-The project's wrapper (`mvnw`, `gradlew`) is used when it has one, else the tool on the `PATH`. **Nothing is
-installed**: a tool that is not there leaves its fixes not applied, and says so. **A fix is not applied** when:
+The tools are those on the `PATH`; a project's wrapper (`mvnw`, `gradlew`) is not used, since it downloads its tool
+when that is not unpacked yet. **Nothing is installed**: a tool that is not there leaves its fixes not applied, and says
+so. **A fix is not applied** when:
 
 - its new version needs a **newer Java** than the project targets (`maven.compiler.release`, `target`, `source`, the
   compiler plugin, Gradle's toolchain or compatibility) — read from the new version's jar in the local Maven repository
   or Gradle's cache — or a **newer Node** than its `package.json`'s `engines` (read from npm's cache);
-- that need **cannot be read offline**, the new version not being cached;
+- the new version is **not in the machine's caches** (the local Maven repository, Gradle's or npm's cache): an offline
+  build could not use it, nor can its needs be read;
 - it is a **transitive** npm dependency, a peer dependency, or a component off-the-shelf;
 - its version is written in a way no tool can change.
 
 A fix that changes the **major version** (2.x to 3.x) is applied only once ticked in the dialog: its API may have
 changed. Packages whose version is one shared place (a property such as `spring.version`) are raised together to the
 highest of their fixes. Each step's files are kept and **put back if it fails**; `node_modules`, updated by npm, yarn or
-pnpm, is not. The files are changed in place: keep the project under version control.
+pnpm, is not. A tool that ends well without changing any file has not applied the fix, and that is said. The files are
+changed in place: keep the project under version control.
 
 ## Understanding the results
 

@@ -84,6 +84,15 @@ class ToolRunnerTest {
     }
 
     @Test
+    void aToolThatEndsWellButChangesNothingHasNotAppliedTheFix() throws IOException {
+        Path pom = Files.writeString(dir.resolve("pom.xml"), "<project/>");
+        Path mvn = tool("mvn", "echo nothing to do");
+        var outcome = new ToolRunner(Duration.ofSeconds(30)).run(plan(new Step(null, List.of(mvn.toString()), dir, Map.of(), List.of(pom))), _ -> { });
+        assertFalse(outcome.applied());
+        assertEquals("fix.outcome.unchanged", outcome.reason().key());
+    }
+
+    @Test
     void aStepTooLongIsStoppedItsFilesPutBack() throws IOException {
         Path file = Files.writeString(dir.resolve("pom.xml"), "<old/>");
         Path slow = tool("mvn", "printf '<new/>' > pom.xml; sleep 30");

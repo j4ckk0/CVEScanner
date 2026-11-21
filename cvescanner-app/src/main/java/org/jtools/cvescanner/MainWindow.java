@@ -789,6 +789,9 @@ final class MainWindow extends JFrame {
         tables.unresolvedModel.setRows(r.unresolved());
         refreshFindings();
         exportButton.setEnabled(true);
+        // a tick stays only on a package version this scan still reports: another folder's mean nothing here
+        var reported = PackageSummary.of(split.active()).stream().map(FindingTables.PackageKey::of).collect(Collectors.toSet());
+        tables.ticked.retainAll(reported);
         fixActions.update();
         int files = r.fileCounts().values().stream().mapToInt(Integer::intValue).sum();
         say(() -> {
