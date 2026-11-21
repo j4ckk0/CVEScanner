@@ -223,10 +223,13 @@ public final class FixPlanner {
                     step = new Step(null, List.of(yarn.get().toString(), "up", spec), dir, YARN_BERRY_OFFLINE, touched);
                     if (!range.isEmpty()) pinned.add(Phrase.of("fix.note.pinned", "yarn", r.to(), range));
                 } else {
-                    // yarn 1 writes "^" only as given, "~" and an exact version by its options
-                    var command = new ArrayList<>(List.of(yarn.get().toString(), "add", range.equals("^") ? r.pkg() + "@^" + r.to() : spec,
+                    // yarn 1 writes "^" only as given, "~" and an exact version by its options. On Windows yarn.cmd goes
+                    // through cmd.exe, where a caret escapes the next character: the version is pinned there instead.
+                    boolean caret = range.equals("^") && !machine.windows();
+                    var command = new ArrayList<>(List.of(yarn.get().toString(), "add", caret ? r.pkg() + "@^" + r.to() : spec,
                             "--offline", "--ignore-scripts"));
-                    if (!range.equals("^")) command.add(range.isEmpty() ? "--exact" : "--tilde");
+                    if (!caret) command.add(range.equals("~") ? "--tilde" : "--exact");
+                    if (range.equals("^") && !caret) pinned.add(Phrase.of("fix.note.pinnedWindows", r.to()));
                     if (dev) command.add("--dev");
                     step = new Step(null, command, dir, Map.of(), touched);
                 }

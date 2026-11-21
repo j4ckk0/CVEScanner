@@ -265,10 +265,17 @@ class FixPlannerTest {
     }
 
     @Test
-    void aCaretGoingThroughCmdIsQuotedSoThatCmdKeepsIt() {
-        assertEquals(List.of("cmd.exe", "/c", "C:\\node\\yarn.cmd", "add", "\"lodash@^4.17.21\"", "--offline"),
-                ToolRunner.command(List.of("C:\\node\\yarn.cmd", "add", "lodash@^4.17.21", "--offline")));
-        assertEquals(List.of("/usr/bin/yarn", "add", "lodash@^4.17.21"), ToolRunner.command(List.of("/usr/bin/yarn", "add", "lodash@^4.17.21")));
+    void onWindowsNoCaretGoesThroughCmdYarn1PinsTheVersionAndSaysSo() throws Exception {
+        write("b/package.json", "{\"dependencies\":{\"lodash\":\"^4.17.0\"}}");
+        write("b/yarn.lock", "# yarn lockfile v1\n");
+        Path yarn = fake.program("yarn.cmd", "exit 0");
+        var windows = new Machine(List.of(fake.bin), true, List.of(".cmd"), fake.home, null);
+        var plan = new FixPlanner(root, windows).plan(List.of(new FixRequest(Ecosystem.NPM, "lodash", "4.17.15", "4.17.21",
+                List.of(new FixRequest.Declaration(root.resolve("b/yarn.lock"), "direct"))))).getFirst();
+        assertEquals(List.of(yarn.toString(), "add", "lodash@4.17.21", "--offline", "--ignore-scripts", "--exact"), plan.steps().getFirst().command());
+        assertEquals(List.of("fix.note.pinnedWindows"), plan.notes().stream().map(Phrase::key).toList());
+        assertEquals(List.of("cmd.exe", "/c", "C:\\Program Files\\nodejs\\yarn.cmd", "add", "lodash@4.17.21"),
+                ToolRunner.command(List.of("C:\\Program Files\\nodejs\\yarn.cmd", "add", "lodash@4.17.21")));
     }
 
     @Test

@@ -12,8 +12,8 @@
 # First the tools fill their own caches, online: the versions the projects lock and the versions that fix them. These
 # downloads are the tools' and this script's, never CVEScanner's: the scan and the fixes then run with the tools offline.
 # Then each project is checked: its manifest and lockfile name the fixed version, written as the project wrote it
-# (exact, ^ or ~; pnpm and yarn 4 pin it, since offline they resolve no range), and the folder scanned again holds no
-# finding. Last, without the tools on the PATH, nothing is applied and nothing changes.
+# (exact, ^ or ~; pnpm and yarn 4 pin it, since offline they resolve no range, and so does yarn 1 a ^ on Windows), and
+# the folder scanned again holds no finding. Last, without the tools on the PATH, nothing is applied and nothing changes.
 #
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")/.."
@@ -36,6 +36,8 @@ check() {   # check DESCRIPTION FILE TEXT [absent]: the file holds the text, or 
     echo "  ok      $1"
   else
     echo "  FAILED  $1 ($2 $([ "${4:-}" = absent ] && echo holds || echo lacks) $3)"; failures=$((failures + 1))
+    # in GitHub Actions, an annotation too: the run's page shows which check failed
+    [ -n "${GITHUB_ACTIONS:-}" ] && echo "::error::fix-tools: $1"
   fi
 }
 
@@ -70,12 +72,18 @@ java -jar "$(native "$jar")" --no-gui --lang en -d "$(native "$work/run")" --db 
 code=$?
 set -e
 sed -n '/^Fixes:/,/^====/p' "$work/fixes.log"
-[ $code -eq 0 ] || { echo "  FAILED  exit code $code, not 0"; cat "$work/fixes.log"; failures=$((failures + 1)); }
+[ $code -eq 0 ] || { echo "  FAILED  exit code $code, not 0"; cat "$work/fixes.log"; failures=$((failures + 1));
+  [ -n "${GITHUB_ACTIONS:-}" ] && echo "::error::fix-tools: the fixes exited $code"; }
 r=$work/run
 check "npm: exact, as written"         "$r/npm/package.json"      '"lodash": "4.17.21"'
 check "npm: locked"                    "$r/npm/package-lock.json" 'lodash-4.17.21.tgz'
 check "npm: the old version gone"      "$r/npm/package-lock.json" '4.17.20' absent
-check "yarn 1: ^, as written"          "$r/yarn1/package.json"    '"lodash": "^4.17.21"'
+if command -v cygpath >/dev/null; then   # Windows: no caret reaches yarn 1 through cmd.exe, the version is pinned
+  check "yarn 1: ^ pinned on Windows"  "$r/yarn1/package.json"    '"lodash": "4.17.21"'
+  check "yarn 1: the pin said"         "$work/fixes.log"          'cannot reach yarn 1 intact'
+else
+  check "yarn 1: ^, as written"        "$r/yarn1/package.json"    '"lodash": "^4.17.21"'
+fi
 check "yarn 1: locked"                 "$r/yarn1/yarn.lock"       'lodash-4.17.21.tgz'
 check "yarn 1: the old version gone"   "$r/yarn1/yarn.lock"       '4.17.20' absent
 check "yarn 4: exact, as written"      "$r/yarn4/package.json"    '"lodash": "4.17.21"'

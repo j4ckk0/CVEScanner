@@ -17,9 +17,9 @@ checksums.
   `--ignore-remove ID`, `--ignore-list`, without a scan.
 - **Apply fixes, checked with the real npm, yarn 1, yarn 4, pnpm and Gradle** (`scripts/fix-tools-check.sh`, run on
   Linux and Windows by a workflow). A version is written as the project wrote it: npm no longer turns an exact version
-  into `^`; yarn 1 keeps `^` and `~`; pnpm and yarn 4, which resolve no range offline, pin the version and say so. On
-  Windows a `^` going through `npm.cmd` or `yarn.cmd` is kept. Gradle's and npm's caches are found where
-  `GRADLE_USER_HOME` and `npm_config_cache` put them.
+  into `^`; yarn 1 keeps `^` (on Linux; on Windows it pins, a caret not reaching it intact through `cmd.exe`) and `~`;
+  pnpm and yarn 4, which resolve no range offline, pin the version; each pin is said in the plan. Gradle's and npm's
+  caches are found where `GRADLE_USER_HOME` and `npm_config_cache` put them.
 
 ## 1.2 — 2026-11-21
 

@@ -113,16 +113,12 @@ public final class ToolRunner {
         }
     }
 
-    /**
-     * A Windows batch file (mvn.cmd, npm.cmd) is run through cmd.exe, as Windows starts it. There a caret escapes the
-     * next character, twice over once the batch file passes its arguments on: an argument holding one (lodash@^4.17.21)
-     * is quoted, which keeps it as written.
-     */
+    /** A Windows batch file (mvn.cmd, gradlew.bat) is run through cmd.exe, as Windows starts it. */
     static List<String> command(List<String> command) {
         String exe = command.getFirst().toLowerCase(java.util.Locale.ROOT);
         if (!exe.endsWith(".cmd") && !exe.endsWith(".bat")) return command;
         var out = new ArrayList<>(List.of("cmd.exe", "/c"));
-        for (String a : command) out.add(a.contains("^") && !a.startsWith("\"") ? "\"" + a + "\"" : a);
+        out.addAll(command);
         return out;
     }
 
