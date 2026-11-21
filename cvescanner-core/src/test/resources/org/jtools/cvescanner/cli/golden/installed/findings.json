@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-21 11:30 UTC",
+  "generated": "2026-11-21 20:10 UTC",
   "scanned_directory": "/home/j4ckk0/Developpement/github/CVEScanner/samples/installed",
   "scan_mode": "installed",
   "databases": {
@@ -14,6 +14,34 @@
     "availability_requirement": "X"
   },
   "findings": [
+    {
+      "severity": "CRITICAL",
+      "base_severity": "CRITICAL",
+      "cvss_version": "4.0",
+      "base_score": 10.0,
+      "base_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "Maven",
+      "package": "log4j-core",
+      "version": "2.14.1",
+      "approximate": false,
+      "scope": "installed",
+      "file": "lib/log4j-core-2.14.1.jar",
+      "id": "GHSA-jfh8-c2jp-5v3q",
+      "cves": [
+        "CVE-2021-44228"
+      ],
+      "aliases": [
+        "CVE-2021-44228"
+      ],
+      "match": "ADVISORY_NAME",
+      "match_note": "Name-based match: the jar has no Maven coordinates; its name, log4j-core, is the artifact of the advisory's org.apache.logging.log4j:log4j-core. Check that it is that package.",
+      "fixed_in": "2.15.0",
+      "summary": "Test vuln in org.apache.logging.log4j:log4j-core",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-jfh8-c2jp-5v3q"
+    },
     {
       "severity": "CRITICAL",
       "base_severity": "CRITICAL",
@@ -67,6 +95,34 @@
       "summary": "SM2 decryption buffer overflow",
       "published": "2022-10-13T00:00:00.000Z",
       "url": "https://www.cve.org/CVERecord?id=CVE-2021-3711"
+    },
+    {
+      "severity": "CRITICAL",
+      "base_severity": "CRITICAL",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "Maven",
+      "package": "org.apache.commons:commons-text",
+      "version": "1.9",
+      "approximate": false,
+      "scope": "installed",
+      "file": "lib/commons-text-1.9.jar",
+      "id": "GHSA-599f-7c49-w659",
+      "cves": [
+        "CVE-2022-42889"
+      ],
+      "aliases": [
+        "CVE-2022-42889"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "1.10.0",
+      "summary": "Test vuln in org.apache.commons:commons-text",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-599f-7c49-w659"
     },
     {
       "severity": "CRITICAL",
@@ -181,13 +237,5 @@
       "url": "https://osv.dev/vulnerability/GHSA-j8r2-6x86-q33q"
     }
   ],
-  "unresolved_dependencies": [
-    {
-      "ecosystem": "Maven",
-      "name": "plain-lib",
-      "declared": "1.0",
-      "file": "app/app.jar!/BOOT-INF/lib/plain-1.0.jar",
-      "reason": "the jar holds no Maven coordinates (META-INF/maven/…/pom.properties)"
-    }
-  ]
+  "unresolved_dependencies": []
 }

@@ -36,6 +36,7 @@ import org.jtools.cvescanner.db.Osv;
 import org.jtools.cvescanner.db.VulnDb;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Dependency;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
 
@@ -57,7 +58,7 @@ final class Matcher {
             String id = Json.str(m.vuln(), "id");
             if (seen.contains(id) || !Osv.isAffected(d.ecosystem(), d.version(), m.affected())) continue;
             seen.add(id);
-            advisories.add(Osv.toFinding(d, m));
+            advisories.add(d.ecosystem() == Ecosystem.MAVEN && !d.name().contains(":") ? Osv.byArtifactName(d, m) : Osv.toFinding(d, m));
         }
         // one CVE, several advisories (GitHub's and OSV's PYSEC for a Python package): the one with a CVSS vector kept
         advisories.sort(Comparator.comparing((Finding f) -> f.rating().cvss3() == null && f.rating().cvss4() == null));

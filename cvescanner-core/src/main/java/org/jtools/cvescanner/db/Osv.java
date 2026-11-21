@@ -115,6 +115,16 @@ public final class Osv {
     }
 
     public static Finding toFinding(Dependency d, Match m) {
+        return toFinding(d, m, MatchBasis.ADVISORY, Phrase.of("match.note.advisory"));
+    }
+
+    /** The finding of a jar known by its artifactId alone: an advisory for some group's artifact of that name. */
+    public static Finding byArtifactName(Dependency d, Match m) {
+        String named = Objects.requireNonNullElse(Json.str(Json.obj(m.affected().get("package")), "name"), "");
+        return toFinding(d, m, MatchBasis.ADVISORY_NAME, Phrase.of("match.note.artifactName", d.name(), named));
+    }
+
+    private static Finding toFinding(Dependency d, Match m, MatchBasis basis, Phrase note) {
         var v = m.vuln();
         String id = Json.str(v, "id");
         var aliases = Json.arr(v.get("aliases")).stream().filter(String.class::isInstance).map(String.class::cast).toList();
@@ -125,8 +135,7 @@ public final class Osv {
         var f = new Finding(Severity.UNKNOWN, null, d.ecosystem(), d.name(), d.version(), d.approximate(),
                 d.scope(), d.file(), id, cves, aliases, nextFixed(d.ecosystem(), d.version(), m.affected()),
                 summary.strip(), details, Objects.requireNonNullElse(Json.str(v, "published"), ""),
-                "https://osv.dev/vulnerability/" + id, MatchBasis.ADVISORY,
-                Phrase.of("match.note.advisory"), ratingOf(v, m.affected()));
+                "https://osv.dev/vulnerability/" + id, basis, note, ratingOf(v, m.affected()));
         return Scoring.apply(f, Environment.NONE, true);
     }
 }

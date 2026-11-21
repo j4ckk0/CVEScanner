@@ -92,10 +92,27 @@ class InstalledReadersTest {
                 "com.example:app 1.0 app.jar installed",
                 "org.apache.commons:commons-text 1.9 shop.ear!/shop.war!/WEB-INF/lib/commons-text-1.9.jar installed",
                 "org.apache.logging.log4j:log4j-core 2.14.1 app.jar!/BOOT-INF/lib/log4j-core-2.14.1.jar installed",
-                "unchecked plain-lib 1.0 app.jar!/BOOT-INF/lib/plain-1.0.jar"),
+                "plain 1.0 app.jar!/BOOT-INF/lib/plain-1.0.jar installed"),
                 read(List.of(app, ear, shadedJar, broken)).stream().filter(s -> !s.startsWith("warning")).toList());
         assertEquals(List.of("warning warning.skipped"), read(List.of(broken)), "not a zip: said, nothing claimed");
         assertTrue(read(List.of(app)).contains("warning warning.skipped"), "a broken jar inside is said, and the jars after it still read");
+    }
+
+    @Test
+    void aJarWithoutCoordinatesIsCheckedByItsNameItsGroupFromItsOsgiNameWhenItGivesIt() throws IOException {
+        Path text = Files.write(root.resolve("commons-text-1.9.jar"),
+                jar("META-INF/MANIFEST.MF", "Manifest-Version: 1.0\nBundle-SymbolicName: org.apache.commons.commons-text;singleton:=true\n"));
+        Path log4j = Files.write(root.resolve("log4j-core-2.14.1.jar"),
+                jar("META-INF/MANIFEST.MF", "Manifest-Version: 1.0\nBundle-SymbolicName: org.apache.logging.log4j.core\n"));
+        Path versionless = Files.write(root.resolve("tools.jar"),
+                jar("META-INF/MANIFEST.MF", "Manifest-Version: 1.0\nImplementation-Title: Tools\n"));
+        Path byManifest = Files.write(root.resolve("helper.jar"),
+                jar("META-INF/MANIFEST.MF", "Manifest-Version: 1.0\nImplementation-Title: helper\nImplementation-Version: 3.1\n"));
+        assertEquals(List.of("log4j-core 2.14.1 log4j-core-2.14.1.jar installed",
+                "org.apache.commons:commons-text 1.9 commons-text-1.9.jar installed",
+                "unchecked Tools  tools.jar",
+                "unchecked helper 3.1 helper.jar"), read(List.of(text, log4j, versionless, byManifest)),
+                "no artifactId in its file name, or no version: not checked");
     }
 
     @Test

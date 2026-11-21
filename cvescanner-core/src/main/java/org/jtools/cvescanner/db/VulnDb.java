@@ -68,21 +68,27 @@ public final class VulnDb {
     private static final Pattern CVE_NAME = Pattern.compile("\"(?:product|packageName)\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
 
     /** What the scan looks for: packages by ecosystem, the CVE List's keys, and the products of the COTS components. */
+    /**
+     * @param mavenArtifacts the artifactIds of jars known by their name alone (no group): every group's advisories for
+     *                       them are wanted
+     */
     public record Wanted(Map<String, Set<String>> byEcosystem, Set<String> allNames, Set<String> cveKeys,
-                         Set<String> cotsProducts) {
+                         Set<String> cotsProducts, Set<String> mavenArtifacts) {
         public static Wanted of(List<Dependency> deps) {
             var by = new HashMap<String, Set<String>>();
             var all = new HashSet<String>();
             var keys = new HashSet<String>();
             var products = new HashSet<String>();
+            var artifacts = new HashSet<String>();
             for (var d : deps) {
+                if (d.ecosystem() == Ecosystem.MAVEN && !d.name().contains(":")) artifacts.add(d.name());
                 by.computeIfAbsent(d.ecosystem().id(), _ -> new HashSet<>()).add(d.ecosystem().matchName(d.name()));
                 all.add(d.name());
                 all.add(d.ecosystem().matchName(d.name()));
                 keys.addAll(CveList.keysFor(d));
                 if (d.ecosystem() == Ecosystem.COTS) products.addAll(KnownProducts.products(Ecosystem.product(d.name())));
             }
-            return new Wanted(by, all, keys, products);
+            return new Wanted(by, all, keys, products, artifacts);
         }
     }
 
@@ -239,6 +245,18 @@ public final class VulnDb {
         return false;
     }
 
+    /** Whether the record names group:artifact for one of these artifactIds. */
+    private static boolean mentionsArtifact(String text, Set<String> artifacts) {
+        if (artifacts.isEmpty()) return false;
+        var m = OSV_NAME.matcher(text);
+        while (m.find()) {
+            String v = m.group(1);
+            int colon = v.indexOf(':');
+            if (colon > 0 && artifacts.contains(v.substring(colon + 1))) return true;
+        }
+        return false;
+    }
+
     private static void indexRecord(byte[] data, Wanted wanted, Index index, Counts counts) {
         String text = new String(data, UTF_8);
         if (text.contains("\"cveMetadata\"")) {                               // CVE List record
@@ -258,7 +276,7 @@ public final class VulnDb {
         } else if (text.contains("\"affected\"") && text.contains("\"ecosystem\"")) {   // OSV / GitHub advisory
             counts.osv++;
             counts.dated(RECORD_DATE, text);
-            if (!mentions(OSV_NAME, text, wanted.allNames(), false)) return;
+            if (!mentions(OSV_NAME, text, wanted.allNames(), false) && !mentionsArtifact(text, wanted.mavenArtifacts())) return;
             Map<String, Object> vuln;
             try { vuln = Json.obj(Json.parse(text)); } catch (IllegalArgumentException _) { return; }
             if (vuln.get("withdrawn") != null || Json.str(vuln, "id") == null) return;
@@ -271,6 +289,13 @@ public final class VulnDb {
                 if (name != null && Ecosystem.PYPI.id().equals(eco)) name = Ecosystem.pep503(name);
                 if (name != null && wanted.byEcosystem().getOrDefault(eco, Set.of()).contains(name)) {
                     index.osv.computeIfAbsent(eco, _ -> new HashMap<>()).computeIfAbsent(name, _ -> new ArrayList<>())
+                            .add(new Osv.Match(vuln, aff));
+                    used = true;
+                }
+                // a jar known by its artifactId alone: the advisory of any group:artifactId, under that artifactId
+                String artifact = name != null && Ecosystem.MAVEN.id().equals(eco) ? name.substring(name.indexOf(':') + 1) : null;
+                if (artifact != null && name.contains(":") && wanted.mavenArtifacts().contains(artifact)) {
+                    index.osv.computeIfAbsent(eco, _ -> new HashMap<>()).computeIfAbsent(artifact, _ -> new ArrayList<>())
                             .add(new Osv.Match(vuln, aff));
                     used = true;
                 }

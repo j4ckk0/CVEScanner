@@ -161,6 +161,7 @@ public final class CveList {
                     ? MatchBasis.CVE_PACKAGE : MatchBasis.CVE_NAME;
         }
         if (!maven) return product.equals(name) ? MatchBasis.CVE_NAME : null;
+        if (!name.contains(":")) return product.equals(name) && name.length() >= 4 ? MatchBasis.CVE_NAME : null;   // a jar's name alone
         if (product.equals(name) || product.equals(name.replace(':', '/'))) return MatchBasis.CVE_PACKAGE;
         String group = name.substring(0, name.indexOf(':')), artifact = name.substring(name.indexOf(':') + 1);
         return product.equals(artifact) && artifact.length() >= 4 && vendorMatchesGroup(r.vendor(), group) ? MatchBasis.CVE_NAME : null;

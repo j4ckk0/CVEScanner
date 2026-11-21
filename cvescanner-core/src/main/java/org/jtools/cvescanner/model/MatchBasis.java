@@ -28,9 +28,15 @@ import org.jtools.cvescanner.i18n.I18nLanguage;
 public enum MatchBasis {
     /**
      * An advisory naming the package; a CVE record naming it, or only its name; NVD naming a component's vendor and
-     * product (CPE), or only its product, its vendor unknown (CPE_PRODUCT, to check).
+     * product (CPE), or only its product, its vendor unknown (CPE_PRODUCT, to check); an advisory naming an artifact a
+     * jar without coordinates bears the name of, whatever its group (ADVISORY_NAME, to check).
      */
-    ADVISORY, CVE_PACKAGE, CVE_NAME, CPE, CPE_PRODUCT;
+    ADVISORY, CVE_PACKAGE, CVE_NAME, CPE, CPE_PRODUCT, ADVISORY_NAME;
+
+    /** Matched by a name only: to check that it is the package (--hide-name-matches leaves these out). */
+    public boolean byName() {
+        return this == CVE_NAME || this == ADVISORY_NAME;
+    }
 
     /** How it is shown in the language in use: "Advisory", "CVE name match ⚠". */
     public String label() { return label(I18n.language()); }

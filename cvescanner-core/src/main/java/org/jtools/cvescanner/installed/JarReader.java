@@ -43,8 +43,8 @@ import org.jtools.cvescanner.project.DependencyCollector;
 /**
  * The Maven artifacts an installed product ships, read from its jars, WARs and EARs: each META-INF/maven/…/pom.properties
  * names one (a shaded jar names several), and the jars inside (a fat jar's BOOT-INF/lib, a WAR's WEB-INF/lib, an
- * EAR's modules) are read in turn, nothing extracted to disk. A jar is not trusted for being one: what is read is
- * bounded, and a jar that cannot be read is said and passed over.
+ * EAR's modules) are read in turn, nothing extracted to disk. A jar without any is checked by its name.
+ * A jar is not trusted for being one: what is read is bounded, and a jar that cannot be read is said and passed over.
  */
 public final class JarReader {
 
@@ -105,17 +105,32 @@ public final class JarReader {
         if (!coordinates && !nested) unchecked(manifest, shown, name, col);
     }
 
+    /**
+     * A jar without Maven coordinates, checked by its name: its artifactId and version from its file name
+     * (log4j-core-2.14.1.jar), else its manifest's. Its group too when its OSGi symbolic name is group.artifactId
+     * (org.apache.commons.commons-text); else its artifactId alone, matched against every group's advisories (a
+     * name match, MatchBasis.ADVISORY_NAME). Its version is the jar's own, not approximate. Without one, it cannot be
+     * checked: said.
+     */
     private static void unchecked(Manifest manifest, String shown, String name, DependencyCollector col) {
-        String title = null, version = null;
+        String symbolic = null, title = null, manifestVersion = null;
         if (manifest != null) {
             var a = manifest.getMainAttributes();
-            title = first(a.getValue("Bundle-SymbolicName"), a.getValue("Implementation-Title"));
-            version = first(a.getValue("Bundle-Version"), a.getValue("Implementation-Version"));
+            symbolic = a.getValue("Bundle-SymbolicName") == null ? null : a.getValue("Bundle-SymbolicName").split(";")[0].strip();
+            title = first(symbolic, a.getValue("Implementation-Title"));
+            manifestVersion = first(a.getValue("Bundle-Version"), a.getValue("Implementation-Version"));
         }
         Matcher m = FILE_NAME.matcher(name);
-        if (title == null) title = m.matches() ? m.group(1) : name;
-        if (version == null && m.matches()) version = m.group(2);
-        col.miss(Ecosystem.MAVEN, title.split(";")[0].strip(), version, shown, Phrase.of("reason.jarNoCoordinates"));
+        String artifact = m.matches() ? m.group(1) : null;
+        String version = m.matches() ? m.group(2) : manifestVersion;
+        if (artifact == null || version == null || version.isBlank()) {
+            col.miss(Ecosystem.MAVEN, title != null ? title.strip() : artifact != null ? artifact : name,
+                    version, shown, Phrase.of("reason.jarNoCoordinates"));
+            return;
+        }
+        String id = symbolic != null && symbolic.endsWith("." + artifact) && symbolic.length() > artifact.length() + 1
+                ? symbolic.substring(0, symbolic.length() - artifact.length() - 1) + ":" + artifact : artifact;
+        col.add(Ecosystem.MAVEN, id, version.strip(), shown, "installed", false);
     }
 
     private static boolean isArchive(String entry) {

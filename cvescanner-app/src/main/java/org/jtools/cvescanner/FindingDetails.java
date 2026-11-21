@@ -106,10 +106,10 @@ final class FindingDetails {
                 .map(c -> link(nvdUrl(c), c)).collect(Collectors.joining(", ")));
         if (!f.aliases().isEmpty()) row(sb, "details.aliases", SwingText.html(String.join(", ", f.aliases())));
         row(sb, "details.foundIn", SwingText.html(f.file()) + " · " + SwingText.html(f.scope()));
-        row(sb, "details.match", (f.basis() == MatchBasis.CVE_NAME ? "<font color='#b7791f'><b>⚠ " : "<b>") + SwingText.html(f.basis().label().replace(" ⚠", ""))
-                + "</b>" + (f.basis() == MatchBasis.CVE_NAME ? "</font>" : "") + " — " + SwingText.html(f.basisNote().text()));
+        row(sb, "details.match", (f.basis().byName() ? "<font color='#b7791f'><b>⚠ " : "<b>") + SwingText.html(f.basis().label().replace(" ⚠", ""))
+                + "</b>" + (f.basis().byName() ? "</font>" : "") + " — " + SwingText.html(f.basisNote().text()));
         if (!f.published().isEmpty()) row(sb, "details.published", SwingText.html(f.publishedDate()));
-        row(sb, f.basis() == MatchBasis.ADVISORY ? "details.advisory" : "details.cveRecord", link(f.url(), f.url()));
+        row(sb, f.basis() == MatchBasis.ADVISORY || f.basis() == MatchBasis.ADVISORY_NAME ? "details.advisory" : "details.cveRecord", link(f.url(), f.url()));
         sb.append("</table>");
         if (!f.details().isBlank()) {
             String d = f.details().length() > 8000 ? f.details().substring(0, 8000) + "…" : f.details();

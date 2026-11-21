@@ -48,7 +48,7 @@ public record FindingFilter(Severity minSeverity, Set<Ecosystem> ecosystems, boo
         if (minSeverity != null && f.severity().compareTo(minSeverity) < 0) return false;
         if (!ecosystems.isEmpty() && !ecosystems.contains(f.ecosystem())) return false;
         if (cveOnly && f.cves().isEmpty()) return false;
-        if (hideNameMatches && f.basis() == MatchBasis.CVE_NAME) return false;
+        if (hideNameMatches && f.basis().byName()) return false;
         if (hideApproximate && f.approximate()) return false;
         if (searchWords.isEmpty()) return true;
         String text = String.join("\u0001", f.ecosystem().id(), f.pkg(), f.version(), f.id(), String.join(" ", f.cves()),
