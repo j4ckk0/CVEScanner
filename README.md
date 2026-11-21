@@ -22,7 +22,9 @@
 - **Sets aside the findings you have reviewed**, with a reason and, if you want, an end date, in a file you keep with
   the project.
 - **Shows the findings in a table** you can filter, search and sort, and **writes them as reports**: `report.md` to
-  read, `findings.csv` and `findings.json` for other tools. On the command line, a CI build can fail past a severity.
+  read, `findings.csv` and `findings.json` for other tools, and `bom.cdx.json`, a **CycloneDX SBOM** of every
+  dependency and its vulnerabilities. On the command line, a CI build can fail past a severity.
+- **Says when a database is old**: it reads the date of its newest record, and warns past a month.
 - **Works offline**: a desktop program with a command line, made for computers without internet access, that **never
   reaches the network**. In French and English.
 
@@ -41,7 +43,8 @@ to install, a Java runtime is inside: unpack it anywhere, drop a database zip in
      manifest (pkg-config, vcpkg, Conan), or the binaries themselves (a DLL's version resource, a file name).
    - or, for an **installed product** (*Installed product*, `--installed`), what it ships: each jar's Maven
      coordinates, the jars inside fat jars, WARs and EARs, each installed npm package's `package.json`, each Python
-     package's `METADATA`, the version strings native libraries hold (see [Installed products](#installed-products)).
+     package's `METADATA`, the version strings native libraries hold, the name of a jar without coordinates (see
+     [Installed products](#installed-products)).
 2. **It checks them against vulnerability databases you download** as zip files: the GitHub Advisory Database, the
    CVE List, OSV.dev's exports and NVD's CVE feeds. Nothing is fetched. Advisories match packages exactly; NVD matches
    components by vendor and product (CPE); the CVE List matches by package or by name.
@@ -98,7 +101,10 @@ window, or name them with `--db`.
 | NVD CVE feeds, for components off-the-shelf | `https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-YYYY.json.zip`, one per year from 2002 (about 25 MB each), and `nvdcve-2.0-modified.json.zip` | GDAL, FFmpeg, OpenSSL… by their CPE: vendor, product and version ranges (see [Components off-the-shelf](#components-off-the-shelf)) |
 
 When several are loaded, a CVE already covered by an advisory is reported once. To update, download fresh files and
-delete the old ones; each report says which files, of which date, it used.
+delete the old ones; each report says which files it used and **the date of each one's newest record**, which is how
+old its data is (a file copied yesterday may hold last year's). A scan warns of a database whose newest record is more
+than 30 days old, in the window's status line and in the reports: `--db-max-age DAYS` on the command line, *View ▸
+Database age…* in the window, change the limit (0: never).
 
 ## Components off-the-shelf
 
@@ -139,13 +145,13 @@ declaring real packages at vulnerable versions (Log4Shell, Text4Shell, Spring4Sh
 
 The table sorts by any column and filters as you type: **Search** (every word must match, across the columns and the
 aliases; Ctrl+F, Esc to clear), the **severity** (the coloured counters do the same), the **ecosystem**, *Only with
-CVE ID*, *Hide approximate (≈) versions*, *Hide CVE name matches ⚠*. Its tabs: **Findings**, one row per
+CVE ID*, *Hide approximate (≈) versions*, *Hide name matches ⚠*. Its tabs: **Findings**, one row per
 vulnerability and dependency, its details below (the fix, the scores, the match, the links); **Packages to
 upgrade**, one row per package version with the version that fixes all its findings; **Unchecked dependencies**,
 those whose version could not be known (an external BOM, a dynamic version like `1.+`), and why; **Ignored**, the
 findings the ignore file sets aside (see [Ignoring findings](#ignoring-findings)). A double-click or a right-click
 copies the advisory's link, the CVEs, the package's coordinates; a right-click also ignores a finding. **Export…**
-writes the three reports for the rows shown. *View ▸ Look* offers FlatLaf's looks, light and dark; the language is
+writes the four reports for the rows shown. *View ▸ Look* offers FlatLaf's looks, light and dark; the language is
 on the right of the menus. The choices are kept in `cvescanner.properties`, beside the program.
 
 ![Packages to upgrade: one row per package version and the version that fixes its findings, three ticked for Apply fixes](docs/images/packages.png)
@@ -171,12 +177,20 @@ cvescanner-cli.bat --no-gui -d C:\src\my-app --fail-on HIGH               (Windo
 | `--lang fr\|en` | the messages' and `report.md`'s language (default: the window's, else French) |
 | `--fail-on LEVEL` | exit code 2 when a finding is at or above `LOW`, `MEDIUM`, `HIGH` or `CRITICAL` |
 | `--ignore FILE`, `--no-ignore` | the ignore file to read (default: the folder's `cvescanner-ignore.csv`, if any); none |
+| `--ignore-add ID --reason "TEXT"` [`--package P`] [`--version V`] [`--until YYYY-MM-DD`], `--ignore-remove ID` [`--package P`] [`--version V`], `--ignore-list` | the ignore file edited or listed, as the window's *Ignore this finding…* and *Stop ignoring* do, without a scan (see [Ignoring findings](#ignoring-findings)) |
+| `--db-max-age DAYS` | warn of a database whose newest record is older (default 30; 0: never) |
 | `--installed` | scan an installed product from what it ships, rather than source projects (see [Installed products](#installed-products)) |
 | `--min-severity LEVEL`, `--ecosystem LIST`, `--hide-approximate`, `--hide-name-matches`, `--search "WORDS"` | the window's filters: the reports, the counts and `--fail-on` keep only what they keep, and `report.md` says them |
 | `--apply-fixes` [`--yes`] [`--allow-major`] [`--fix-packages LIST`] | the window's *Apply fixes* (see [Applying fixes](#applying-fixes)): the plan of each package the report keeps is said, and nothing changes without `--yes`; then the folder is scanned again before the reports are written |
 
-Exit codes: `0`, `1` on an error, `2` past `--fail-on`, `3` when a fix confirmed by `--yes` could not be applied.
-Without a display the program goes to the command line by itself.
+Exit codes: `0`, `1` on an error (and when `--ignore-remove` finds no entry to remove), `2` past `--fail-on`, `3` when
+a fix confirmed by `--yes` could not be applied. Without a display the program goes to the command line by itself.
+
+The reports, in the `-o` folder: `report.md` (in the language chosen), `findings.csv` and `findings.json` (in English),
+and `bom.cdx.json`, a [CycloneDX](https://cyclonedx.org/) 1.6 SBOM: every dependency found, by its package URL
+(`pkg:maven/…`, `pkg:npm/…`, `pkg:pypi/…`; a component off-the-shelf with its CPE), and every finding reported with
+its base and environmental CVSS ratings and the version that fixes it; the findings the ignore file sets aside are
+there too, analysed `not_affected` with the entry's reason. The same scan writes the same SBOM, its time aside.
 
 ## Ignoring findings
 
@@ -207,7 +221,9 @@ at once, without scanning again; in the **Ignored** tab, **Stop ignoring** takes
 lines and comments kept as written. *Ignore file* above the table names another file, for every folder scanned.
 
 On the command line `--ignore FILE` names another file, `--no-ignore` reads none (every finding reported, for an
-audit). The scan warns of a line it cannot read, of an entry past its date, and of one that sets none of the
+audit). The file can be edited there too, no scan run: `--ignore-add CVE-2021-44228 --package
+org.apache.logging.log4j:log4j-core --reason "Not exposed" --until 2027-06-30` adds an entry, `--ignore-remove
+CVE-2021-44228` takes out every entry naming it (`--package` and `--version` narrow it), `--ignore-list` lists them. The scan warns of a line it cannot read, of an entry past its date, and of one that sets none of the
 findings aside (it names none, or a line above sets them aside first) — an entry to clean up.
 
 ## Applying fixes
@@ -222,7 +238,7 @@ not, and applies only what you confirm; then it shows what each tool said and sc
 |---|---|
 | Maven | `mvn -o -N versions:use-dep-version` for a version written in the pom (its dependencies or dependency management, a parent's included), `versions:set-property` for a `${property}`: the [versions-maven-plugin](https://www.mojohaus.org/versions/versions-maven-plugin/) must be in the local repository |
 | Gradle | no Gradle command changes a version: CVEScanner rewrites it where it is written (`'group:artifact:1.0'`, the variable it names, a version catalog's entry), then runs `gradle dependencies --offline`, which runs the project's build scripts; if that fails the edit is undone |
-| npm, yarn, pnpm | the tool of the lockfile beside `package.json`: `npm install`, `yarn add` (`yarn up` for yarn 2+), `pnpm add`, offline, the project's install scripts not run |
+| npm, yarn, pnpm | the tool of the lockfile beside `package.json`: `npm install`, `yarn add` (`yarn up` for yarn 2+), `pnpm add`, offline, the project's install scripts not run. The new version is written as the old one was: exact stays exact, `^` and `~` are kept by npm and yarn 1; pnpm and yarn 2+ resolve no range offline, so they write the exact version, and the plan says so |
 
 The tools are those on the `PATH`; a project's wrapper (`mvnw`, `gradlew`) is not used, since it downloads its tool
 when that is not unpacked yet. **Nothing is installed**: a tool that is not there leaves its fixes not applied, and says
@@ -242,6 +258,10 @@ highest of their fixes. Each step's files are kept and **put back if it fails**;
 pnpm, is not. A tool that ends well without changing any file has not applied the fix, and that is said. The files are
 changed in place: keep the project under version control.
 
+Tested with the real tools — npm 11, yarn 1.22 and 4.9, pnpm 12 and Gradle 9.9 — by `scripts/fix-tools-check.sh`,
+which upgrades the projects of `samples/fix-tools` with each and checks the files they wrote; the `fix-tools` workflow
+runs it on Linux and Windows. Maven's fixes are checked with the real `mvn` on the examples.
+
 ## Installed products
 
 A production installation has no pom or `package.json` to read, only what was built: choose **Installed product**
@@ -256,8 +276,11 @@ included:
 | native libraries and programs | as for [components off-the-shelf](#components-off-the-shelf), and the version string a known library holds (`OpenSSL 1.1.1k`, `GDAL 3.4.1, released…`, `libcurl/7.79.1`, `deflate 1.2.11`…), so that a `libgdal.so.30` gets a version |
 
 SBOMs, component inventories and pkg-config files are read in both modes, and so are the version strings of binaries
-named after a known component. A jar without Maven coordinates is listed in *Unchecked dependencies* with what its
-manifest or its name says. A native library without a version string stays unchecked too, as do some distributions'
+named after a known component. **A jar without Maven coordinates** (one copied in by hand) is checked by its name:
+its file name gives its artifactId and version (`commons-collections-3.2.1.jar`), its manifest's OSGi name its group
+when it spells it (`org.apache.commons.commons-text`). Without a group, every group's advisories for that artifactId
+are matched, each a **Jar name match ⚠** to check, which *Hide name matches* and `--hide-name-matches` leave out. A
+jar without a version in its name or manifest is listed in *Unchecked dependencies*. A native library without a version string stays unchecked too, as do some distributions'
 builds (Debian's zlib holds none). A distribution that backports a fix without changing the version string makes its
 library safer than its version says: the findings then say what the version is known for. A CVE published both as a
 GitHub advisory and in OSV's own records (PYSEC) is reported once, the record with a CVSS vector kept. What an
@@ -327,9 +350,10 @@ scripts\setup.bat, scripts\run.bat    # same, on Windows
 | `scripts/package.sh` / `.bat` | builds the distribution into `releases/` (see "Packaging") |
 | `scripts/ci.sh` | a clean build with every test, run by `.githooks/pre-push` |
 | `scripts/release.sh` | by hand, the GitHub release of a pushed tag (the release workflow does it on its own, see PUBLISHING.md) |
+| `scripts/fix-tools-check.sh` | *Apply fixes* with the real npm, yarn, pnpm and Gradle on `samples/fix-tools`; uses the tools on the `PATH`, which it lets fill their caches online first (see [Applying fixes](#applying-fixes)) |
 | `scripts/cvss-reference.py` | writes the CVSS scores `CvssReferenceTest` expects, with Red Hat's Python library `cvss` (used at development time only, never shipped) |
 
-Every script uses the externals of `external/` and nothing installed on the machine. The version lives in `pom.xml`,
+Every script but `fix-tools-check.sh` uses the externals of `external/` and nothing installed on the machine. The version lives in `pom.xml`,
 once, as `<revision>`. The pre-push hook is enabled once per clone with `git config core.hooksPath .githooks`.
 
 ## Externals

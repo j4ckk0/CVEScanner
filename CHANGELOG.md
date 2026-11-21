@@ -3,6 +3,24 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
+## 1.3 — not released yet
+
+- **A CycloneDX SBOM** beside the reports, `bom.cdx.json` (CycloneDX 1.6): every dependency by its package URL, a
+  component off-the-shelf with its CPE, and every finding with its base and environmental ratings and its fix; the
+  findings the ignore file sets aside are analysed `not_affected`, with the entry's reason.
+- **A database's age**: each report says the date of each database's newest record, and a scan warns of one older than
+  30 days (`--db-max-age DAYS`, *View ▸ Database age…*; 0: never).
+- **Jars without Maven coordinates**, in an installed product, are checked by their name: their group from their OSGi
+  name when it spells it, otherwise every group's advisories for their artifactId, as *Jar name match ⚠*, which *Hide
+  name matches* and `--hide-name-matches` leave out.
+- **The ignore file from the command line**: `--ignore-add ID --reason … [--package] [--version] [--until]`,
+  `--ignore-remove ID`, `--ignore-list`, without a scan.
+- **Apply fixes, checked with the real npm, yarn 1, yarn 4, pnpm and Gradle** (`scripts/fix-tools-check.sh`, run on
+  Linux and Windows by a workflow). A version is written as the project wrote it: npm no longer turns an exact version
+  into `^`; yarn 1 keeps `^` and `~`; pnpm and yarn 4, which resolve no range offline, pin the version and say so. On
+  Windows a `^` going through `npm.cmd` or `yarn.cmd` is kept. Gradle's and npm's caches are found where
+  `GRADLE_USER_HOME` and `npm_config_cache` put them.
+
 ## 1.2 — 2026-11-21
 
 - **Everything from the command line too**: the window's filters (`--min-severity`, `--ecosystem`, `--hide-approximate`,
