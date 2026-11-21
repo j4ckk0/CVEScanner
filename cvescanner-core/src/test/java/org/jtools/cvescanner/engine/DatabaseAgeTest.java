@@ -75,4 +75,40 @@ class DatabaseAgeTest {
         assertTrue(warnings(81).isEmpty(), "81 days is not more than 81");
         assertTrue(warnings(0).isEmpty(), "0: never");
     }
+
+    /** A copy of the sample NVD feed, its timestamp changed. */
+    private Path nvdFeed(String name, String timestamp) throws IOException {
+        Path sample = Path.of("..", "samples", "db", "nvdcve-2.0-2024.json.zip");
+        String feed;
+        try (var in = new java.util.zip.ZipInputStream(Files.newInputStream(sample))) {
+            in.getNextEntry();
+            feed = new String(in.readAllBytes(), StandardCharsets.UTF_8).replace("2026-11-21T00:00:00.000", timestamp);
+        }
+        Path zip = dir.resolve(name);
+        try (var out = new ZipOutputStream(Files.newOutputStream(zip))) {
+            out.putNextEntry(new ZipEntry(name.replace(".zip", "")));
+            out.write(feed.getBytes(StandardCharsets.UTF_8));
+            out.closeEntry();
+        }
+        return zip;
+    }
+
+    private List<Phrase> nvdWarnings(Path... feeds) throws IOException {
+        Path project = Files.createDirectories(dir.resolve("c"));
+        Files.writeString(project.resolve("cots.csv"), "GDAL,3.4.1\n");
+        var r = Engine.scan(project, List.of(feeds), new ScanOptions(null, ScanMode.SOURCES, 30, TODAY),
+                new ScanListener() { public void status(String m) { } });
+        return r.warnings().stream().filter(w -> w.key().equals("warning.dbOld")).toList();
+    }
+
+    @Test
+    void theNvdFeedsAreAsOldAsTheirNewestRecordTakenTogether() throws IOException {
+        Path old2003 = nvdFeed("nvdcve-2.0-2003.json.zip", "2026-09-01T00:00:00.000");
+        Path fresh = nvdFeed("nvdcve-2.0-2026.json.zip", "2026-11-20T00:00:00.000");
+        assertTrue(nvdWarnings(old2003, fresh).isEmpty(), "an old year that has not changed: the feeds are fresh");
+        Path old2026 = nvdFeed("nvdcve-2.0-2026.json.zip", "2026-10-01T00:00:00.000");
+        assertEquals(List.of(Phrase.of("warning.dbOld", Phrase.of("database.nvdFeeds", 2), "2026-10-01", 51L, 30)),
+                nvdWarnings(old2003, old2026), "all old: said once, for the feeds");
+        assertEquals("nvdcve-2.0-2003.json.zip", nvdWarnings(old2003).getFirst().arguments().getFirst(), "one feed alone: by its name");
+    }
 }

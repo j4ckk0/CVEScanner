@@ -99,6 +99,8 @@ public final class VulnDb {
         public final Map<String, Phrase> sources = new LinkedHashMap<>();
         /** Each database file's newest record, when its records are dated: how old the data is, not the file. */
         public final Map<String, LocalDate> newest = new LinkedHashMap<>();
+        /** The NVD feeds among them: one database split by year, whose old years change seldom. */
+        public final Set<String> nvdFeeds = new LinkedHashSet<>();
 
         /** The NVD rules of a COTS component's product. */
         public List<NvdFeed.Rule> nvdFor(Dependency d) {
@@ -204,6 +206,7 @@ public final class VulnDb {
             int used = counts.osvUsed + counts.cveUsed + counts.nvdUsed;
             LocalDate newest = date(counts.newest);
             if (newest != null) index.newest.put(name, newest);
+            if (counts.nvd > 0) index.nvdFeeds.add(name);
             index.sources.put(name, newest == null ? Phrase.of("database.description", kind, records, used, fileDate)
                     : Phrase.of("database.descriptionNewest", kind, records, used, fileDate, newest.toString()));
         }

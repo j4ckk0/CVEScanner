@@ -103,7 +103,8 @@ window, or name them with `--db`.
 When several are loaded, a CVE already covered by an advisory is reported once. To update, download fresh files and
 delete the old ones; each report says which files it used and **the date of each one's newest record**, which is how
 old its data is (a file copied yesterday may hold last year's). A scan warns of a database whose newest record is more
-than 30 days old, in the window's status line and in the reports: `--db-max-age DAYS` on the command line, *View ▸
+than 30 days old (NVD's year feeds taken together: a fresh 2003 feed may not have changed for weeks), in the
+window's status line and in the reports: `--db-max-age DAYS` on the command line, *View ▸
 Database age…* in the window, change the limit (0: never).
 
 ## Components off-the-shelf

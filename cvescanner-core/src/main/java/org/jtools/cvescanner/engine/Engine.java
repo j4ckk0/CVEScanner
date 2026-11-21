@@ -23,6 +23,7 @@ package org.jtools.cvescanner.engine;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -103,10 +104,17 @@ public final class Engine {
                 throw new IOException(I18n.text("error.noDatabase"));
             index = VulnDb.load(dbFiles, wanted, l);
         }
-        index.newest.forEach((file, newest) -> {
+        // how old each database is: the NVD feeds as one, by their newest record (a fresh 2003 feed may not have changed for weeks)
+        var ages = new LinkedHashMap<Object, LocalDate>();
+        for (var e : index.newest.entrySet()) {
+            if (index.nvdFeeds.contains(e.getKey()) && index.nvdFeeds.size() > 1)
+                ages.merge(Phrase.of("database.nvdFeeds", index.nvdFeeds.size()), e.getValue(), (a, b) -> a.isAfter(b) ? a : b);
+            else ages.put(e.getKey(), e.getValue());
+        }
+        ages.forEach((database, newest) -> {
             long days = ChronoUnit.DAYS.between(newest, options.today());
             if (options.dbMaxAgeDays() > 0 && days > options.dbMaxAgeDays())
-                l.warn(Phrase.of("warning.dbOld", file, newest.toString(), days, options.dbMaxAgeDays()));
+                l.warn(Phrase.of("warning.dbOld", database, newest.toString(), days, options.dbMaxAgeDays()));
         });
 
         l.status(I18n.text("status.matching", col.deps.size()));
