@@ -3,7 +3,7 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
-## 1.2 — not released yet
+## 1.2 — 2026-11-21
 
 - **Everything from the command line too**: the window's filters (`--min-severity`, `--ecosystem`, `--hide-approximate`,
   `--hide-name-matches`, `--search`), applied to the reports, the counts and `--fail-on`; and its *Apply fixes*
