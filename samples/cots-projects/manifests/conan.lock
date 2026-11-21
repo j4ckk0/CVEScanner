@@ -1,0 +1,8 @@
+{
+  "version": "0.5",
+  "requires": [
+    "openssl/1.1.1k#a1b2c3%1650000000.0"
+  ],
+  "build_requires": [],
+  "python_requires": []
+}

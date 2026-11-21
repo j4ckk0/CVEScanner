@@ -1,0 +1,6 @@
+[requires]
+libcurl/7.79.1
+zlib/[>=1.2.11 <2]
+
+[generators]
+CMakeDeps

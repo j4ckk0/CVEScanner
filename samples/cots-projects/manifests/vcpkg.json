@@ -1,0 +1,21 @@
+{
+  "name": "sample",
+  "version": "1.0",
+  "builtin-baseline": "0123456789abcdef",
+  "dependencies": [
+    "libxml2",
+    {
+      "name": "sqlite3",
+      "version>=": "3.36.0"
+    },
+    {
+      "name": "gdal"
+    }
+  ],
+  "overrides": [
+    {
+      "name": "gdal",
+      "version": "3.4.1#2"
+    }
+  ]
+}

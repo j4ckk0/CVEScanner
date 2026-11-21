@@ -225,6 +225,32 @@ write(os.path.join(out, "cots-projects/sbom/app.spdx.json"), json.dumps({
                            "referenceLocator": "pkg:npm/lodash@4.17.15"}]},
         {"SPDXID": "SPDXRef-3", "name": "something", "versionInfo": "NOASSERTION"},
     ]}, indent=2))
+records.append(nvd("CVE-2024-1009", [cpe("haxx", "libcurl", versionStartIncluding="7.73.0", versionEndExcluding="7.80.0")],
+                   v31=("CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N", 7.5)))
+records.append(nvd("CVE-2024-1010", [cpe("sqlite", "sqlite", versionEndExcluding="3.37.0")],
+                   v31=("CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H", 5.5)))
+records.append(nvd("CVE-2024-1011", [cpe("libtiff", "libtiff", "4.3.0")],
+                   v31=("CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H", 5.5)))
+write(os.path.join(out, "cots-projects/manifests/libtiff-4.pc"), """prefix=/usr
+libdir=${prefix}/lib
+Name: libtiff
+Description: Tag Image File Format (TIFF) library.
+Version: 4.3.0
+Libs: -L${libdir} -ltiff
+""")
+write(os.path.join(out, "cots-projects/manifests/vcpkg.json"), json.dumps({
+    "name": "sample", "version": "1.0", "builtin-baseline": "0123456789abcdef",
+    "dependencies": ["libxml2", {"name": "sqlite3", "version>=": "3.36.0"}, {"name": "gdal"}],
+    "overrides": [{"name": "gdal", "version": "3.4.1#2"}]}, indent=2))
+write(os.path.join(out, "cots-projects/manifests/conanfile.txt"), """[requires]
+libcurl/7.79.1
+zlib/[>=1.2.11 <2]
+
+[generators]
+CMakeDeps
+""")
+write(os.path.join(out, "cots-projects/manifests/conan.lock"), json.dumps({
+    "version": "0.5", "requires": ["openssl/1.1.1k#a1b2c3%1650000000.0"], "build_requires": [], "python_requires": []}, indent=2))
 feed = {"resultsPerPage": len(records), "startIndex": 0, "totalResults": len(records), "format": "NVD_CVE",
         "version": "2.0", "timestamp": "2026-11-21T00:00:00.000", "vulnerabilities": records}
 with zipfile.ZipFile(os.path.join(out, "db/nvdcve-2.0-2024.json.zip"), "w", zipfile.ZIP_DEFLATED) as z:

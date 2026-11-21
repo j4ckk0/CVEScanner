@@ -1,8 +1,8 @@
 {
-  "generated": "2026-11-21 08:13 UTC",
+  "generated": "2026-11-21 08:15 UTC",
   "scanned_directory": "/home/j4ckk0/Developpement/github/CVEScanner/samples/cots-projects",
   "databases": {
-    "nvdcve-2.0-2024.json.zip": "NVD CVE feed (JSON 2.0), 8 records (7 relevant), file dated 2026-11-21 08:11 UTC"
+    "nvdcve-2.0-2024.json.zip": "NVD CVE feed (JSON 2.0), 11 records (10 relevant), file dated 2026-11-21 08:14 UTC"
   },
   "scoring": {
     "preferred_cvss_version": "4.0",
@@ -70,6 +70,32 @@
       "base_severity": "HIGH",
       "cvss_version": "3.1",
       "base_score": 7.5,
+      "base_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "COTS",
+      "package": "haxx:libcurl",
+      "version": "7.79.1",
+      "approximate": false,
+      "scope": "conan",
+      "file": "manifests/conanfile.txt",
+      "id": "CVE-2024-1009",
+      "cves": [
+        "CVE-2024-1009"
+      ],
+      "aliases": [],
+      "match": "CPE",
+      "match_note": "NVD lists this vendor and product as affected (cpe:2.3:a:haxx:libcurl:*:*:*:*:*:*:*:*).",
+      "fixed_in": "7.80.0",
+      "summary": "Test NVD description.",
+      "published": "2024-05-01T10:00:00.000",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1009"
+    },
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": "3.1",
+      "base_score": 7.5,
       "base_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
       "env_score": null,
       "env_vector": null,
@@ -79,6 +105,32 @@
       "approximate": false,
       "scope": "inventory",
       "file": "inventory/cots.csv",
+      "id": "CVE-2024-1003",
+      "cves": [
+        "CVE-2024-1003"
+      ],
+      "aliases": [],
+      "match": "CPE",
+      "match_note": "NVD lists this vendor and product as affected (cpe:2.3:a:openssl:openssl:*:*:*:*:*:*:*:*).",
+      "fixed_in": "1.1.1l",
+      "summary": "Test NVD description.",
+      "published": "2024-05-01T10:00:00.000",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1003"
+    },
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": "3.1",
+      "base_score": 7.5,
+      "base_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "COTS",
+      "package": "openssl:openssl",
+      "version": "1.1.1k",
+      "approximate": false,
+      "scope": "conan",
+      "file": "manifests/conan.lock",
       "id": "CVE-2024-1003",
       "cves": [
         "CVE-2024-1003"
@@ -105,6 +157,32 @@
       "approximate": false,
       "scope": "inventory",
       "file": "inventory/cots.csv",
+      "id": "CVE-2024-1001",
+      "cves": [
+        "CVE-2024-1001"
+      ],
+      "aliases": [],
+      "match": "CPE",
+      "match_note": "NVD lists this vendor and product as affected (cpe:2.3:a:osgeo:gdal:*:*:*:*:*:*:*:*).",
+      "fixed_in": "3.4.2",
+      "summary": "Heap overflow in GDAL's reader.",
+      "published": "2024-05-01T10:00:00.000",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1001"
+    },
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": "3.1",
+      "base_score": 8.8,
+      "base_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "COTS",
+      "package": "osgeo:gdal",
+      "version": "3.4.1",
+      "approximate": false,
+      "scope": "vcpkg",
+      "file": "manifests/vcpkg.json",
       "id": "CVE-2024-1001",
       "cves": [
         "CVE-2024-1001"
@@ -168,6 +246,58 @@
       "summary": "Test NVD description.",
       "published": "2024-05-01T10:00:00.000",
       "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1008"
+    },
+    {
+      "severity": "MEDIUM",
+      "base_severity": "MEDIUM",
+      "cvss_version": "3.1",
+      "base_score": 5.5,
+      "base_vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "COTS",
+      "package": "libtiff:libtiff",
+      "version": "4.3.0",
+      "approximate": false,
+      "scope": "pkg-config",
+      "file": "manifests/libtiff-4.pc",
+      "id": "CVE-2024-1011",
+      "cves": [
+        "CVE-2024-1011"
+      ],
+      "aliases": [],
+      "match": "CPE",
+      "match_note": "NVD lists this vendor and product as affected (cpe:2.3:a:libtiff:libtiff:4.3.0:*:*:*:*:*:*:*).",
+      "fixed_in": "",
+      "summary": "Test NVD description.",
+      "published": "2024-05-01T10:00:00.000",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1011"
+    },
+    {
+      "severity": "MEDIUM",
+      "base_severity": "MEDIUM",
+      "cvss_version": "3.1",
+      "base_score": 5.5,
+      "base_vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "COTS",
+      "package": "sqlite:sqlite",
+      "version": "3.36.0",
+      "approximate": true,
+      "scope": "vcpkg",
+      "file": "manifests/vcpkg.json",
+      "id": "CVE-2024-1010",
+      "cves": [
+        "CVE-2024-1010"
+      ],
+      "aliases": [],
+      "match": "CPE",
+      "match_note": "NVD lists this vendor and product as affected (cpe:2.3:a:sqlite:sqlite:*:*:*:*:*:*:*:*).",
+      "fixed_in": "3.37.0",
+      "summary": "Test NVD description.",
+      "published": "2024-05-01T10:00:00.000",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1010"
     }
   ],
   "unresolved_dependencies": [
@@ -191,6 +321,20 @@
       "declared": "",
       "file": "sbom/bom.cdx.json",
       "reason": "no version given"
+    },
+    {
+      "ecosystem": "COTS",
+      "name": "xmlsoft:libxml2",
+      "declared": "",
+      "file": "manifests/vcpkg.json",
+      "reason": "version set by the vcpkg baseline"
+    },
+    {
+      "ecosystem": "COTS",
+      "name": "zlib:zlib",
+      "declared": "[>=1.2.11 <2]",
+      "file": "manifests/conanfile.txt",
+      "reason": "version range"
     }
   ]
 }
