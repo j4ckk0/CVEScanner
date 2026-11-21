@@ -56,8 +56,10 @@ public final class Cli {
      * Scans, writes the reports in the language in use, says the counts; 0, 1 on an error, 2 past --fail-on, 3 when a
      * fix confirmed by --yes could not be applied. The findings the ignore file sets aside, and those the filters drop,
      * are out of the counts and of --fail-on. With --apply-fixes and --yes, the reports are those of a new scan.
+     * --ignore-add, --ignore-remove and --ignore-list edit or list the ignore file instead, and scan nothing.
      */
     public static int run(Options o) {
+        if (o.ignoreEdit()) return CliIgnore.run(o, System.out, System.err);
         I18nLanguage language = I18n.language();
         ScanListener l = new ScanListener() {
             public void status(String m) { System.err.println("==> " + m.replace("…", "...")); }

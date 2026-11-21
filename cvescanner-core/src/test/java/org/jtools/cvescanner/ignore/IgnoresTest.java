@@ -22,6 +22,7 @@ package org.jtools.cvescanner.ignore;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -35,6 +36,8 @@ import java.util.List;
 import org.jtools.cvescanner.cvss.Rating;
 import org.jtools.cvescanner.cvss.Score;
 import org.jtools.cvescanner.cvss.Severity;
+import org.jtools.cvescanner.i18n.I18n;
+import org.jtools.cvescanner.i18n.I18nLanguage;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.Finding;
@@ -151,5 +154,17 @@ class IgnoresTest {
         assertSame(Ignores.NONE, Ignores.load(dir, Ignores.DISABLED, warnings::add));
         assertThrows(IOException.class, () -> Ignores.load(dir, dir.resolve("missing.csv"), warnings::add));
         assertTrue(warnings.isEmpty(), warnings.toString());
+    }
+
+    @Test
+    void anEntrysLastDayIsEmptyForEverOrADateToComeAnythingElseIsRefusedSayingWhy() {
+        I18n.use(I18nLanguage.ENGLISH);
+        assertNull(IgnoreRule.until("  ", TODAY));
+        assertEquals(TODAY, IgnoreRule.until("2026-11-21", TODAY));
+        assertEquals(LocalDate.of(2027, 6, 30), IgnoreRule.until(" 2027-06-30 ", TODAY));
+        var notADate = assertThrows(IllegalArgumentException.class, () -> IgnoreRule.until("30/06/2027", TODAY));
+        assertTrue(notADate.getMessage().contains("30/06/2027"), notADate.getMessage());
+        var past = assertThrows(IllegalArgumentException.class, () -> IgnoreRule.until("2026-11-20", TODAY));
+        assertTrue(past.getMessage().contains("past"), past.getMessage());
     }
 }

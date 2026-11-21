@@ -25,7 +25,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Optional;
@@ -116,7 +115,7 @@ final class IgnoreDialog {
             LocalDate date = null;
             if (problem == null) {
                 try {
-                    date = until(until.getText(), LocalDate.now());
+                    date = IgnoreRule.until(until.getText(), LocalDate.now());
                 } catch (IllegalArgumentException e) {
                     problem = e.getMessage();
                 }
@@ -129,22 +128,5 @@ final class IgnoreDialog {
     private static IgnoreRule.Scope scope(Map<IgnoreRule.Scope, JRadioButton> scopes) {
         return scopes.entrySet().stream().filter(e -> e.getValue().isSelected()).map(Map.Entry::getKey).findFirst()
                 .orElse(IgnoreRule.Scope.VERSION);
-    }
-
-    /**
-     * The last day an entry applies: none when the text is empty; today or later, written yyyy-MM-dd. Throws
-     * IllegalArgumentException, saying why, otherwise.
-     */
-    static LocalDate until(String text, LocalDate today) {
-        String s = text.strip();
-        if (s.isEmpty()) return null;
-        LocalDate date;
-        try {
-            date = LocalDate.parse(s);
-        } catch (DateTimeParseException _) {
-            throw new IllegalArgumentException(I18n.text("ignore.dialog.until.notADate", s));
-        }
-        if (date.isBefore(today)) throw new IllegalArgumentException(I18n.text("ignore.dialog.until.past", s));
-        return date;
     }
 }

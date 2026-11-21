@@ -24,6 +24,7 @@ package org.jtools.cvescanner.cli;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -35,6 +36,7 @@ import org.jtools.cvescanner.cvss.Requirement;
 import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
+import org.jtools.cvescanner.ignore.IgnoreRule;
 import org.jtools.cvescanner.ignore.Ignores;
 import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.FindingFilter;
@@ -71,6 +73,12 @@ public final class Options {
     public boolean applyFixes, yes, allowMajor;
     /** --fix-packages: the packages to fix, the others left; empty for every one the report keeps. */
     public final Set<String> fixPackages = new LinkedHashSet<>();
+    /** --ignore-add ID, --ignore-remove ID, --ignore-list: the ignore file edited or listed, no scan run. */
+    public String ignoreAdd, ignoreRemove;
+    public boolean ignoreList;
+    /** The entry's --package, --version, --reason, --until; null when not given. */
+    public String ignorePackage, ignoreVersion, ignoreReason;
+    public LocalDate ignoreUntil;
 
     public static Options parse(String[] args) {
         var o = new Options();
@@ -118,6 +126,13 @@ public final class Options {
                 case "--fix-packages" -> {
                     for (String name : value(args, ++i, a).split(",")) if (!name.isBlank()) o.fixPackages.add(name.strip());
                 }
+                case "--ignore-add" -> o.ignoreAdd = value(args, ++i, a);
+                case "--ignore-remove" -> o.ignoreRemove = value(args, ++i, a);
+                case "--ignore-list" -> o.ignoreList = true;
+                case "--package" -> o.ignorePackage = value(args, ++i, a);
+                case "--version" -> o.ignoreVersion = value(args, ++i, a);
+                case "--reason" -> o.ignoreReason = value(args, ++i, a);
+                case "--until" -> o.ignoreUntil = IgnoreRule.until(value(args, ++i, a), LocalDate.now());
                 case "--cve-only" -> o.cveOnly = true;
                 case "--no-gui" -> o.noGui = true;
                 case "--fail-on" -> o.failOn = Severity.parseThreshold(value(args, ++i, a));
@@ -131,6 +146,14 @@ public final class Options {
             }
         }
         if (o.noIgnore && o.ignoreFile != null) throw new IllegalArgumentException(I18n.text("option.ignoreBoth"));
+        long edits = (o.ignoreAdd != null ? 1 : 0) + (o.ignoreRemove != null ? 1 : 0) + (o.ignoreList ? 1 : 0);
+        if (edits > 1 || (edits == 1 && o.noIgnore)) throw new IllegalArgumentException(I18n.text("option.ignoreEdit"));
+        if (o.ignoreAdd != null && (o.ignoreReason == null || o.ignoreReason.isBlank()))
+            throw new IllegalArgumentException(I18n.text("option.ignoreReason"));
+        boolean entryFields = o.ignorePackage != null || o.ignoreVersion != null;
+        if ((o.ignoreAdd == null && (o.ignoreReason != null || o.ignoreUntil != null))
+                || (o.ignoreAdd == null && o.ignoreRemove == null && entryFields))
+            throw new IllegalArgumentException(I18n.text("option.ignoreFields"));
         if (!o.applyFixes && (o.yes || o.allowMajor || !o.fixPackages.isEmpty()))
             throw new IllegalArgumentException(I18n.text("option.fixNeedsApply"));
         o.environment = reach == null && cr == null && ir == null && ar == null ? preset
@@ -163,6 +186,11 @@ public final class Options {
     /** The findings the reports keep, the counts and --fail-on count: the window's filters, as the options set them. */
     public FindingFilter filter() {
         return new FindingFilter(minSeverity, ecosystems, cveOnly, hideApproximate, hideNameMatches, searchWords);
+    }
+
+    /** Whether the ignore file is to be edited or listed (--ignore-add, --ignore-remove, --ignore-list) rather than a scan run. */
+    public boolean ignoreEdit() {
+        return ignoreAdd != null || ignoreRemove != null || ignoreList;
     }
 
     public ScanMode mode() {

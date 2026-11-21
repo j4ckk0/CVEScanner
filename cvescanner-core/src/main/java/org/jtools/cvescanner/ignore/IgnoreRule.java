@@ -21,7 +21,9 @@ package org.jtools.cvescanner.ignore;
  */
 
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Objects;
+import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.model.Finding;
 
 /**
@@ -59,6 +61,23 @@ public record IgnoreRule(String id, String pkg, String version, LocalDate until,
     public boolean sameEntry(IgnoreRule other) {
         return id.equalsIgnoreCase(other.id) && pkg.equalsIgnoreCase(other.pkg) && version.equals(other.version)
                 && Objects.equals(until, other.until) && reason.equals(other.reason);
+    }
+
+    /**
+     * The last day an entry applies, as the window and the command line take it: none when the text is empty; today or
+     * later, written yyyy-MM-dd. Throws IllegalArgumentException, saying why, otherwise.
+     */
+    public static LocalDate until(String text, LocalDate today) {
+        String s = Objects.requireNonNullElse(text, "").strip();
+        if (s.isEmpty()) return null;
+        LocalDate date;
+        try {
+            date = LocalDate.parse(s);
+        } catch (DateTimeParseException _) {
+            throw new IllegalArgumentException(I18n.text("ignore.until.notADate", s));
+        }
+        if (date.isBefore(today)) throw new IllegalArgumentException(I18n.text("ignore.until.past", s));
+        return date;
     }
 
     /**

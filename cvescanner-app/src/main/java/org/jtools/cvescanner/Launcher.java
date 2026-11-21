@@ -83,7 +83,7 @@ public final class Launcher {
             System.out.println(Options.usage());
             return;
         }
-        if (opts.noGui || GraphicsEnvironment.isHeadless()) {
+        if (opts.noGui || opts.ignoreEdit() || GraphicsEnvironment.isHeadless()) {
             System.exit(Cli.run(opts));
         }
         SwingUtilities.invokeLater(() -> {
