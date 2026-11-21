@@ -39,11 +39,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 /**
- * The scan of the samples gives what the prototype gave (the jar of the Claude-web session, SESSION_HANDOFF.md §8):
- * each case of golden/ holds the arguments it ran with (args.txt, the databases — and a folder to scan other than
- * samples/projects, -d — relative to samples/), its exit code
- * and its three reports. What differs from one run to the next is set aside: the time, the folder scanned, the
- * databases' file dates. The JSON is compared as values, the order of an object's keys aside.
+ * The scan of the samples gives the reports kept in golden/: the prototype's for the first cases, this project's
+ * for the components off-the-shelf and the ignore file. Each case holds the arguments it ran with (args.txt, the
+ * databases — and a folder to scan other than samples/projects, -d — relative to samples/), its exit code and its
+ * three reports. What differs from one run to the next is set aside: the time, the folder scanned, the databases'
+ * file dates. The JSON is compared as values, the order of an object's keys aside.
  */
 class GoldenTest {
 

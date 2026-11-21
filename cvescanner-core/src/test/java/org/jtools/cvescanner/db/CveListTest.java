@@ -32,7 +32,7 @@ import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.MatchBasis;
 import org.junit.jupiter.api.Test;
 
-/** A CVE JSON 5 record's rules (handoff §5.3): which dependency they name, and which versions they affect. */
+/** A CVE JSON 5 record's rules: which dependency they name, and which versions they affect. */
 class CveListTest {
 
     /** The rules of a record whose cna.affected is the JSON given, in the state given. */

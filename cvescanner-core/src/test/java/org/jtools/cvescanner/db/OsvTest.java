@@ -27,10 +27,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import java.util.Map;
 import org.jtools.cvescanner.json.Json;
-import org.junit.jupiter.api.Test;
 import org.jtools.cvescanner.model.Ecosystem;
+import org.junit.jupiter.api.Test;
 
-/** An OSV record's affected ranges (handoff §5.2): its events walked in version order, several intervals, fixes. */
+/** An OSV record's affected ranges: its events walked in version order, several intervals, fixes. */
 class OsvTest {
 
     private static List<Object> events(String json) {
