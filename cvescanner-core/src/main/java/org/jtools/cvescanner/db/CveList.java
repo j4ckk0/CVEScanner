@@ -98,7 +98,7 @@ public final class CveList {
         return out;
     }
 
-    private static String firstSentence(String s) {
+    static String firstSentence(String s) {
         s = s.replaceAll("\\s+", " ").strip();
         int dot = s.indexOf(". ");
         if (dot > 0 && dot < 200) return s.substring(0, dot + 1);

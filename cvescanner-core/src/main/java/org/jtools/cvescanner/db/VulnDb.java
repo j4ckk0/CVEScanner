@@ -25,6 +25,7 @@ import java.io.BufferedInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -59,24 +60,42 @@ public final class VulnDb {
     private static final Pattern OSV_NAME = Pattern.compile("\"name\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
     private static final Pattern CVE_NAME = Pattern.compile("\"(?:product|packageName)\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
 
-    public record Wanted(Map<String, Set<String>> byEcosystem, Set<String> allNames, Set<String> cveKeys) {
+    /** What the scan looks for: packages by ecosystem, the CVE List's keys, and the products of the COTS components. */
+    public record Wanted(Map<String, Set<String>> byEcosystem, Set<String> allNames, Set<String> cveKeys,
+                         Set<String> cotsProducts) {
         public static Wanted of(List<Dependency> deps) {
             var by = new HashMap<String, Set<String>>();
             var all = new HashSet<String>();
             var keys = new HashSet<String>();
+            var products = new HashSet<String>();
             for (var d : deps) {
                 by.computeIfAbsent(d.ecosystem(), _ -> new HashSet<>()).add(d.name());
                 all.add(d.name());
                 keys.addAll(CveList.keysFor(d));
+                if (d.ecosystem().equals(COTS)) products.add(product(d));
             }
-            return new Wanted(by, all, keys);
+            return new Wanted(by, all, keys, products);
         }
+    }
+
+    /** The ecosystem of the components off-the-shelf: their name vendor:product, or a product alone. */
+    public static final String COTS = "COTS";
+
+    /** A COTS component's product, in lower case: "gdal" for "osgeo:gdal" and for "gdal". */
+    public static String product(Dependency d) {
+        return d.name().substring(d.name().indexOf(':') + 1).toLowerCase(Locale.ROOT);
     }
 
     public static final class Index {
         final Map<String, Map<String, List<Osv.Match>>> osv = new HashMap<>();
         final Map<String, List<CveList.Rule>> cve = new HashMap<>();
+        final Map<String, List<NvdFeed.Rule>> nvd = new HashMap<>();
         public final Map<String, Phrase> sources = new LinkedHashMap<>();
+
+        /** The NVD rules of a COTS component's product. */
+        public List<NvdFeed.Rule> nvdFor(Dependency d) {
+            return d.ecosystem().equals(COTS) ? nvd.getOrDefault(product(d), List.of()) : List.of();
+        }
 
         public List<Osv.Match> osvFor(Dependency d) {
             return osv.getOrDefault(d.ecosystem(), Map.of()).getOrDefault(d.name(), List.of());
@@ -89,9 +108,9 @@ public final class VulnDb {
         }
     }
 
-    private static final class Counts { int osv, cve, osvUsed, cveUsed, entries; }
+    private static final class Counts { int osv, cve, nvd, osvUsed, cveUsed, nvdUsed, entries; }
 
-    private interface EntryHandler { void accept(byte[] data) throws IOException; }
+    private interface EntryHandler { void accept(InputStream entry) throws IOException; }
 
     private static final class CountingInputStream extends FilterInputStream {
         long count;
@@ -129,23 +148,40 @@ public final class VulnDb {
             l.status(I18n.text("status.reading", file.getFileName()));
             l.progress(0);
             try (var in = new CountingInputStream(new BufferedInputStream(Files.newInputStream(file), 1 << 16))) {
-                readZip(in, data -> {
-                    accept(data, wanted, index, counts);
+                Runnable onEntry = () -> {
                     if (++counts.entries % 500 == 0) {
                         l.progress((double) in.count / size);
                         l.status(I18n.text("status.readingCount", file.getFileName(), counts.entries));
+                    }
+                };
+                readZip(in, entry -> {
+                    // an NVD feed is one JSON file of the whole year: read as a stream, a record at a time
+                    var head = new BufferedInputStream(entry, 1 << 16);
+                    head.mark(4096);
+                    String start = new String(head.readNBytes(2048), UTF_8);
+                    head.reset();
+                    if (start.contains("\"NVD_CVE\"")) {
+                        var used = new HashSet<String>();
+                        counts.nvd += NvdFeed.read(new InputStreamReader(head, UTF_8), wanted.cotsProducts(),
+                                rule -> index.nvd.computeIfAbsent(rule.product(), _ -> new ArrayList<>()).add(rule), used, onEntry);
+                        counts.nvdUsed += used.size();
+                    } else {
+                        accept(head.readAllBytes(), wanted, index, counts);
+                        onEntry.run();
                     }
                 }, 0);
             } catch (ZipException e) {
                 throw new IOException(I18n.text("error.notZip", file.getFileName(), e.getMessage()), e);
             }
-            Phrase kind = Phrase.of(counts.osv > 0 && counts.cve > 0 ? "database.kind.both"
+            Phrase kind = Phrase.of(counts.nvd > 0 ? "database.kind.nvd"
+                    : counts.osv > 0 && counts.cve > 0 ? "database.kind.both"
                     : counts.cve > 0 ? "database.kind.cve" : "database.kind.osv");
-            total += counts.osv + counts.cve;
-            if (counts.osv + counts.cve == 0)
+            int records = counts.osv + counts.cve + counts.nvd;
+            total += records;
+            if (records == 0)
                 l.warn(Phrase.of("warning.noRecords", file.getFileName().toString()));
             index.sources.put(file.getFileName().toString(), Phrase.of("database.description",
-                    kind, counts.osv + counts.cve, counts.osvUsed + counts.cveUsed,
+                    kind, records, counts.osvUsed + counts.cveUsed + counts.nvdUsed,
                     Engine.STAMP.format(Files.getLastModifiedTime(file).toInstant())));
         }
         if (total == 0)
@@ -163,7 +199,7 @@ public final class VulnDb {
                     @Override public void close() { /* keep the outer zip open */ }
                 }, handler, depth + 1);
             } else if (name.endsWith(".json")) {
-                handler.accept(zis.readAllBytes());
+                handler.accept(zis);
             }
         }
     }

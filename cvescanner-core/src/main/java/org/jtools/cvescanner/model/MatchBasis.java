@@ -26,7 +26,11 @@ import org.jtools.cvescanner.i18n.I18nLanguage;
 
 /** How a finding was matched to the dependency. */
 public enum MatchBasis {
-    ADVISORY, CVE_PACKAGE, CVE_NAME;
+    /**
+     * An advisory naming the package; a CVE record naming it, or only its name; NVD naming a component's vendor and
+     * product (CPE), or only its product, its vendor unknown (CPE_PRODUCT, to check).
+     */
+    ADVISORY, CVE_PACKAGE, CVE_NAME, CPE, CPE_PRODUCT;
 
     /** How it is shown in the language in use: "Advisory", "CVE name match ⚠". */
     public String label() { return label(I18n.language()); }
