@@ -55,19 +55,25 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public final class Reports {
     private Reports() {}
 
+    /** The CycloneDX SBOM's file name: .cdx.json, as the tools that read one look for it. */
+    public static final String SBOM = "bom.cdx.json";
+
     /**
-     * Writes report.md, in this language, and findings.csv and findings.json, in English whatever the language: their
-     * readers are programs. The findings reported are the split's active ones; those it sets aside have a section of
-     * their own in report.md and findings.json, and are not in findings.csv. Returns the paths written.
+     * Writes report.md, in this language, and findings.csv, findings.json and bom.cdx.json (CycloneDX), in English
+     * whatever the language: their readers are programs. The findings reported are the split's active ones; those it
+     * sets aside have a section of their own in report.md and findings.json, are analysed "not_affected" in the SBOM,
+     * and are not in findings.csv. Returns the paths written.
      */
     public static List<Path> writeAll(ScanResult r, Ignores.Split split, Path outDir, List<Phrase> filters,
                                Environment env, boolean preferV4, I18nLanguage language) throws IOException {
         Files.createDirectories(outDir);
-        Path md = outDir.resolve("report.md"), csv = outDir.resolve("findings.csv"), json = outDir.resolve("findings.json");
+        Path md = outDir.resolve("report.md"), csv = outDir.resolve("findings.csv"), json = outDir.resolve("findings.json"),
+                bom = outDir.resolve(SBOM);
         Files.writeString(md, markdown(r, split, filters, env, preferV4, language), UTF_8);
         Files.writeString(csv, csv(split.active(), env), UTF_8);
         Files.writeString(json, json(r, split, env, preferV4), UTF_8);
-        return List.of(md, csv, json);
+        Files.writeString(bom, CycloneDx.bom(r, split, env), UTF_8);
+        return List.of(md, csv, json, bom);
     }
 
     /**

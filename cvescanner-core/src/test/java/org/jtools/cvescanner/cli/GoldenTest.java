@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.jtools.cvescanner.json.Json;
+import org.jtools.cvescanner.report.Reports;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -85,6 +86,8 @@ class GoldenTest {
         assertEquals(read(golden, "findings.csv"), read(out, "findings.csv"), "findings.csv");
         assertEquals(markdown(read(golden, "report.md")), markdown(read(out, "report.md")), "report.md");
         assertEquals(json(read(golden, "findings.json")), json(read(out, "findings.json")), "findings.json");
+        if (Files.exists(golden.resolve(Reports.SBOM)))
+            assertEquals(bom(read(golden, Reports.SBOM)), bom(read(out, Reports.SBOM)), Reports.SBOM);
     }
 
     private static String read(Path dir, String file) {
@@ -105,6 +108,16 @@ class GoldenTest {
         return undated(report)
                 .replaceAll("(\\*\\*Generated:\\*\\* ).*", "$1<time>")
                 .replaceAll("(\\*\\*Scanned directory:\\*\\* ).*", "$1<dir>");
+    }
+
+    /** The SBOM without what differs between runs: its time, and the program's version (none when run from the classes). */
+    private static Object bom(String text) {
+        Map<String, Object> root = new HashMap<>(Json.obj(Json.parse(text)));
+        Map<String, Object> metadata = new HashMap<>(Json.obj(root.get("metadata")));
+        metadata.remove("timestamp");
+        metadata.remove("tools");
+        root.put("metadata", metadata);
+        return root;
     }
 
     private static Object json(String text) {

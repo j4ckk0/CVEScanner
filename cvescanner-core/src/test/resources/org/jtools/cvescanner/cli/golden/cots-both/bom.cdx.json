@@ -1,0 +1,1202 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:8e2f2bda-e301-3b8e-8a6e-cc16e0fe8b8e",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-11-21T20:16:23Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "CVEScanner",
+          "version": "1.2"
+        }
+      ]
+    },
+    "component": {
+      "type": "application",
+      "bom-ref": "scanned",
+      "name": "cots-projects"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/gdal@3.4.1",
+      "group": "osgeo",
+      "name": "gdal",
+      "version": "3.4.1",
+      "purl": "pkg:generic/gdal@3.4.1",
+      "cpe": "cpe:2.3:a:osgeo:gdal:3.4.1:*:*:*:*:*:*:*",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "COTS"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "inventory"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "inventory/cots.csv"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "manifests/vcpkg.json"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "binaries/gdal304.dll"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/ffmpeg@4.4.2",
+      "group": "ffmpeg",
+      "name": "ffmpeg",
+      "version": "4.4.2",
+      "purl": "pkg:generic/ffmpeg@4.4.2",
+      "cpe": "cpe:2.3:a:ffmpeg:ffmpeg:4.4.2:*:*:*:*:*:*:*",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "COTS"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "inventory"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "inventory/cots.csv"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "sbom/app.spdx.json"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "binaries/ffmpeg-4.4.2.exe"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/libfoo@1.0",
+      "group": "acme",
+      "name": "libfoo",
+      "version": "1.0",
+      "purl": "pkg:generic/libfoo@1.0",
+      "cpe": "cpe:2.3:a:acme:libfoo:1.0:*:*:*:*:*:*:*",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "COTS"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "inventory"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "inventory/cots.csv"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/openssl@1.1.1k",
+      "group": "openssl",
+      "name": "openssl",
+      "version": "1.1.1k",
+      "purl": "pkg:generic/openssl@1.1.1k",
+      "cpe": "cpe:2.3:a:openssl:openssl:1.1.1k:*:*:*:*:*:*:*",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "COTS"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "inventory"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "inventory/cots.csv"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "manifests/conan.lock"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/libbar@2.0",
+      "name": "libbar",
+      "version": "2.0",
+      "purl": "pkg:generic/libbar@2.0",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "COTS"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "inventory"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "inventory/cots.csv"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/lodash@4.17.15",
+      "name": "lodash",
+      "version": "4.17.15",
+      "purl": "pkg:npm/lodash@4.17.15",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "npm"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "sbom"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "sbom/app.spdx.json"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1",
+      "group": "org.apache.logging.log4j",
+      "name": "log4j-core",
+      "version": "2.14.1",
+      "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "Maven"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "sbom"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "sbom/bom.cdx.json"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40scope/core@1.0.0",
+      "group": "@scope",
+      "name": "core",
+      "version": "1.0.0",
+      "purl": "pkg:npm/%40scope/core@1.0.0",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "npm"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "sbom"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "sbom/bom.cdx.json"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/libpng@1.6.37",
+      "group": "libpng",
+      "name": "libpng",
+      "version": "1.6.37",
+      "purl": "pkg:generic/libpng@1.6.37",
+      "cpe": "cpe:2.3:a:libpng:libpng:1.6.37:*:*:*:*:*:*:*",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "COTS"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "sbom"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "sbom/bom.cdx.json"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/zlib@1.2.11",
+      "group": "zlib",
+      "name": "zlib",
+      "version": "1.2.11",
+      "purl": "pkg:generic/zlib@1.2.11",
+      "cpe": "cpe:2.3:a:zlib:zlib:1.2.11:*:*:*:*:*:*:*",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "COTS"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "sbom"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "sbom/bom.cdx.json"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/libtiff@4.3.0",
+      "group": "libtiff",
+      "name": "libtiff",
+      "version": "4.3.0",
+      "purl": "pkg:generic/libtiff@4.3.0",
+      "cpe": "cpe:2.3:a:libtiff:libtiff:4.3.0:*:*:*:*:*:*:*",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "COTS"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "pkg-config"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "manifests/libtiff-4.pc"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/sqlite@3.36.0",
+      "group": "sqlite",
+      "name": "sqlite",
+      "version": "3.36.0",
+      "purl": "pkg:generic/sqlite@3.36.0",
+      "cpe": "cpe:2.3:a:sqlite:sqlite:3.36.0:*:*:*:*:*:*:*",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "COTS"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "vcpkg"
+        },
+        {
+          "name": "cvescanner:approximate",
+          "value": "true"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "manifests/vcpkg.json"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/libcurl@7.79.1",
+      "group": "haxx",
+      "name": "libcurl",
+      "version": "7.79.1",
+      "purl": "pkg:generic/libcurl@7.79.1",
+      "cpe": "cpe:2.3:a:haxx:libcurl:7.79.1:*:*:*:*:*:*:*",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "COTS"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "conan"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "manifests/conanfile.txt"
+        }
+      ]
+    }
+  ],
+  "vulnerabilities": [
+    {
+      "id": "CVE-2024-1002",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1002"
+      },
+      "ratings": [
+        {
+          "score": 8.7,
+          "severity": "high",
+          "method": "CVSSv4",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N"
+        },
+        {
+          "score": 7.4,
+          "severity": "high",
+          "method": "CVSSv4",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N/CR:M/IR:M/AR:M/MAV:A",
+          "justification": "environmental score: Internal network service"
+        }
+      ],
+      "description": "Test NVD description.",
+      "advisories": [
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1002"
+        }
+      ],
+      "published": "2024-05-01T10:00:00.000Z",
+      "affects": [
+        {
+          "ref": "pkg:generic/ffmpeg@4.4.2"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "CPE"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "binaries/ffmpeg-4.4.2.exe"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2024-1002",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1002"
+      },
+      "ratings": [
+        {
+          "score": 8.7,
+          "severity": "high",
+          "method": "CVSSv4",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N"
+        },
+        {
+          "score": 7.4,
+          "severity": "high",
+          "method": "CVSSv4",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N/CR:M/IR:M/AR:M/MAV:A",
+          "justification": "environmental score: Internal network service"
+        }
+      ],
+      "description": "Test NVD description.",
+      "advisories": [
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1002"
+        }
+      ],
+      "published": "2024-05-01T10:00:00.000Z",
+      "affects": [
+        {
+          "ref": "pkg:generic/ffmpeg@4.4.2"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "CPE"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "inventory/cots.csv"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2024-1002",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1002"
+      },
+      "ratings": [
+        {
+          "score": 8.7,
+          "severity": "high",
+          "method": "CVSSv4",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N"
+        },
+        {
+          "score": 7.4,
+          "severity": "high",
+          "method": "CVSSv4",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N/CR:M/IR:M/AR:M/MAV:A",
+          "justification": "environmental score: Internal network service"
+        }
+      ],
+      "description": "Test NVD description.",
+      "advisories": [
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1002"
+        }
+      ],
+      "published": "2024-05-01T10:00:00.000Z",
+      "affects": [
+        {
+          "ref": "pkg:generic/ffmpeg@4.4.2"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "CPE"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "sbom/app.spdx.json"
+        }
+      ]
+    },
+    {
+      "id": "GHSA-35jh-r3h4-6jhm",
+      "source": {
+        "name": "GitHub",
+        "url": "https://github.com/advisories/GHSA-35jh-r3h4-6jhm"
+      },
+      "references": [
+        {
+          "id": "CVE-2021-23337",
+          "source": {
+            "name": "NVD",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-23337"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 8.6,
+          "severity": "high",
+          "method": "CVSSv4",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N"
+        },
+        {
+          "score": 7.2,
+          "severity": "high",
+          "method": "CVSSv4",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N/CR:M/IR:M/AR:M/MAV:A",
+          "justification": "environmental score: Internal network service"
+        }
+      ],
+      "description": "Test vuln in lodash",
+      "recommendation": "Upgrade to 4.17.21",
+      "advisories": [
+        {
+          "url": "https://osv.dev/vulnerability/GHSA-35jh-r3h4-6jhm"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:npm/lodash@4.17.15"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "ADVISORY"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "sbom/app.spdx.json"
+        }
+      ]
+    },
+    {
+      "id": "GHSA-jfh8-c2jp-5v3q",
+      "source": {
+        "name": "GitHub",
+        "url": "https://github.com/advisories/GHSA-jfh8-c2jp-5v3q"
+      },
+      "references": [
+        {
+          "id": "CVE-2021-44228",
+          "source": {
+            "name": "NVD",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-44228"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 10.0,
+          "severity": "critical",
+          "method": "CVSSv4",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H"
+        },
+        {
+          "score": 8.9,
+          "severity": "high",
+          "method": "CVSSv4",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H/CR:M/IR:M/AR:M/MAV:A",
+          "justification": "environmental score: Internal network service"
+        }
+      ],
+      "description": "Test vuln in org.apache.logging.log4j:log4j-core",
+      "recommendation": "Upgrade to 2.15.0",
+      "advisories": [
+        {
+          "url": "https://osv.dev/vulnerability/GHSA-jfh8-c2jp-5v3q"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "ADVISORY"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "sbom/bom.cdx.json"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2024-1001",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1001"
+      },
+      "ratings": [
+        {
+          "score": 8.8,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H"
+        },
+        {
+          "score": 8.0,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H/CR:M/IR:M/AR:M/MAV:A",
+          "justification": "environmental score: Internal network service"
+        }
+      ],
+      "description": "Heap overflow in GDAL's reader.",
+      "recommendation": "Upgrade to 3.4.2",
+      "advisories": [
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1001"
+        }
+      ],
+      "published": "2024-05-01T10:00:00.000Z",
+      "affects": [
+        {
+          "ref": "pkg:generic/gdal@3.4.1"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "CPE"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "binaries/gdal304.dll"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2024-1001",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1001"
+      },
+      "ratings": [
+        {
+          "score": 8.8,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H"
+        },
+        {
+          "score": 8.0,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H/CR:M/IR:M/AR:M/MAV:A",
+          "justification": "environmental score: Internal network service"
+        }
+      ],
+      "description": "Heap overflow in GDAL's reader.",
+      "recommendation": "Upgrade to 3.4.2",
+      "advisories": [
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1001"
+        }
+      ],
+      "published": "2024-05-01T10:00:00.000Z",
+      "affects": [
+        {
+          "ref": "pkg:generic/gdal@3.4.1"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "CPE"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "inventory/cots.csv"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2024-1001",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1001"
+      },
+      "ratings": [
+        {
+          "score": 8.8,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H"
+        },
+        {
+          "score": 8.0,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H/CR:M/IR:M/AR:M/MAV:A",
+          "justification": "environmental score: Internal network service"
+        }
+      ],
+      "description": "Heap overflow in GDAL's reader.",
+      "recommendation": "Upgrade to 3.4.2",
+      "advisories": [
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1001"
+        }
+      ],
+      "published": "2024-05-01T10:00:00.000Z",
+      "affects": [
+        {
+          "ref": "pkg:generic/gdal@3.4.1"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "CPE"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "manifests/vcpkg.json"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2024-2001",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-2001"
+      },
+      "ratings": [
+        {
+          "score": 8.1,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:H"
+        },
+        {
+          "score": 7.3,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:H/CR:M/IR:M/AR:M/MAV:A",
+          "justification": "environmental score: Internal network service"
+        }
+      ],
+      "description": "GDAL out-of-bounds read",
+      "recommendation": "Upgrade to 3.5.0",
+      "advisories": [
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2024-2001"
+        }
+      ],
+      "published": "2022-10-13T00:00:00.000Z",
+      "affects": [
+        {
+          "ref": "pkg:generic/gdal@3.4.1"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "CVE_PACKAGE"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "binaries/gdal304.dll"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2024-2001",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-2001"
+      },
+      "ratings": [
+        {
+          "score": 8.1,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:H"
+        },
+        {
+          "score": 7.3,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:H/CR:M/IR:M/AR:M/MAV:A",
+          "justification": "environmental score: Internal network service"
+        }
+      ],
+      "description": "GDAL out-of-bounds read",
+      "recommendation": "Upgrade to 3.5.0",
+      "advisories": [
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2024-2001"
+        }
+      ],
+      "published": "2022-10-13T00:00:00.000Z",
+      "affects": [
+        {
+          "ref": "pkg:generic/gdal@3.4.1"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "CVE_PACKAGE"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "inventory/cots.csv"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2024-2001",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-2001"
+      },
+      "ratings": [
+        {
+          "score": 8.1,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:H"
+        },
+        {
+          "score": 7.3,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:H/CR:M/IR:M/AR:M/MAV:A",
+          "justification": "environmental score: Internal network service"
+        }
+      ],
+      "description": "GDAL out-of-bounds read",
+      "recommendation": "Upgrade to 3.5.0",
+      "advisories": [
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2024-2001"
+        }
+      ],
+      "published": "2022-10-13T00:00:00.000Z",
+      "affects": [
+        {
+          "ref": "pkg:generic/gdal@3.4.1"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "CVE_PACKAGE"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "manifests/vcpkg.json"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2024-1009",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1009"
+      },
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "score": 6.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N/CR:M/IR:M/AR:M/MAV:A",
+          "justification": "environmental score: Internal network service"
+        }
+      ],
+      "description": "Test NVD description.",
+      "recommendation": "Upgrade to 7.80.0",
+      "advisories": [
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1009"
+        }
+      ],
+      "published": "2024-05-01T10:00:00.000Z",
+      "affects": [
+        {
+          "ref": "pkg:generic/libcurl@7.79.1"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "CPE"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "manifests/conanfile.txt"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2024-1006",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1006"
+      },
+      "ratings": [
+        {
+          "score": 4.4,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N"
+        },
+        {
+          "score": 4.4,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N/CR:M/IR:M/AR:M",
+          "justification": "environmental score: Internal network service"
+        }
+      ],
+      "description": "Test NVD description.",
+      "recommendation": "Upgrade to 3.0",
+      "advisories": [
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1006"
+        }
+      ],
+      "published": "2024-05-01T10:00:00.000Z",
+      "affects": [
+        {
+          "ref": "pkg:generic/libbar@2.0"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "CPE_PRODUCT"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "inventory/cots.csv"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2024-1008",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1008"
+      },
+      "ratings": [
+        {
+          "score": 6.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        },
+        {
+          "score": 5.7,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H/CR:M/IR:M/AR:M/MAV:A",
+          "justification": "environmental score: Internal network service"
+        }
+      ],
+      "description": "Test NVD description.",
+      "recommendation": "Upgrade to 1.6.38",
+      "advisories": [
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1008"
+        }
+      ],
+      "published": "2024-05-01T10:00:00.000Z",
+      "affects": [
+        {
+          "ref": "pkg:generic/libpng@1.6.37"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "CPE"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "sbom/bom.cdx.json"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2024-1011",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1011"
+      },
+      "ratings": [
+        {
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        },
+        {
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H/CR:M/IR:M/AR:M",
+          "justification": "environmental score: Internal network service"
+        }
+      ],
+      "description": "Test NVD description.",
+      "advisories": [
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1011"
+        }
+      ],
+      "published": "2024-05-01T10:00:00.000Z",
+      "affects": [
+        {
+          "ref": "pkg:generic/libtiff@4.3.0"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "CPE"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "manifests/libtiff-4.pc"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2024-1003",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1003"
+      },
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "score": 6.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H/CR:M/IR:M/AR:M/MAV:A",
+          "justification": "environmental score: Internal network service"
+        }
+      ],
+      "description": "Test NVD description.",
+      "recommendation": "Upgrade to 1.1.1l",
+      "advisories": [
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1003"
+        }
+      ],
+      "published": "2024-05-01T10:00:00.000Z",
+      "affects": [
+        {
+          "ref": "pkg:generic/openssl@1.1.1k"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "CPE"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "inventory/cots.csv"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2024-1003",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1003"
+      },
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "score": 6.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H/CR:M/IR:M/AR:M/MAV:A",
+          "justification": "environmental score: Internal network service"
+        }
+      ],
+      "description": "Test NVD description.",
+      "recommendation": "Upgrade to 1.1.1l",
+      "advisories": [
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1003"
+        }
+      ],
+      "published": "2024-05-01T10:00:00.000Z",
+      "affects": [
+        {
+          "ref": "pkg:generic/openssl@1.1.1k"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "CPE"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "manifests/conan.lock"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2024-1010",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1010"
+      },
+      "ratings": [
+        {
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        },
+        {
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H/CR:M/IR:M/AR:M",
+          "justification": "environmental score: Internal network service"
+        }
+      ],
+      "description": "Test NVD description.",
+      "recommendation": "Upgrade to 3.37.0",
+      "advisories": [
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1010"
+        }
+      ],
+      "published": "2024-05-01T10:00:00.000Z",
+      "affects": [
+        {
+          "ref": "pkg:generic/sqlite@3.36.0"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "CPE"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "manifests/vcpkg.json"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2024-2002",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-2002"
+      },
+      "ratings": [
+        {
+          "severity": "unknown",
+          "method": "other"
+        }
+      ],
+      "description": "Test description.",
+      "recommendation": "Upgrade to 2.5",
+      "advisories": [
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2024-2002"
+        }
+      ],
+      "published": "2022-10-13T00:00:00.000Z",
+      "affects": [
+        {
+          "ref": "pkg:generic/libbar@2.0"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "CVE_NAME"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "inventory/cots.csv"
+        }
+      ]
+    }
+  ]
+}
