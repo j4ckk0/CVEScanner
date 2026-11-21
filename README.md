@@ -23,6 +23,8 @@ speaks French and English.
 to install, a Java runtime is inside: unpack it anywhere, drop a database zip into its `database` folder, and start
 `CVEScanner.exe` or `cvescanner.bat` (Windows), `cvescanner.sh` (Linux). Its `examples` folder is there to scan first.
 
+![The examples scanned for an internet-facing environment: 668 findings, Log4Shell selected with its scores and fix](docs/images/findings.png)
+
 | | |
 |---|---|
 | You scan projects | [**The databases**](#the-databases), then [**The window**](#the-window) or [**The command line**](#the-command-line) |
@@ -110,6 +112,10 @@ findings the ignore file sets aside (see [Ignoring findings](#ignoring-findings)
 copies the advisory's link, the CVEs, the package's coordinates; a right-click also ignores a finding. **Export…**
 writes the three reports for the rows shown. *View ▸ Look* offers FlatLaf's looks, light and dark; the language is
 on the right of the menus. The choices are kept in `cvescanner.properties`, beside the program.
+
+![Packages to upgrade: one row per package version, the version that fixes its findings](docs/images/packages.png)
+
+![The components off-the-shelf of the examples (FFmpeg, curl, OpenSSL…) matched against NVD, in a dark look](docs/images/cots-dark.png)
 
 ## The command line
 
