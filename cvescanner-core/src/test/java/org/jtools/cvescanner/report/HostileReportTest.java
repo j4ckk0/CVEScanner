@@ -82,7 +82,7 @@ class HostileReportTest {
     @Test
     void theMarkdownHoldsNoTagNoLinkNoCellOfTheData() {
         Finding f = hostile();
-        String md = Reports.markdown(result(f), Ignores.Split.none(List.of(f)), null, Environment.NONE, true, I18nLanguage.ENGLISH);
+        String md = Reports.markdown(result(f), Ignores.Split.none(List.of(f)), List.of(), Environment.NONE, true, I18nLanguage.ENGLISH);
         // in a code span HTML is shown as it is; elsewhere every < is escaped
         String outsideCode = md.replaceAll("`[^`\n]*`", "");
         assertFalse(outsideCode.matches("(?s).*(?<!\\\\)<.*"), "a tag outside a code span: " + md);
@@ -103,7 +103,7 @@ class HostileReportTest {
         var split = ignores.split(List.of(f), LocalDate.of(2026, 1, 1));
         assertTrue(split.active().isEmpty() && split.ignored().size() == 1 && split.expired().size() == 1
                 && split.unused().size() == 1, split.toString());
-        String md = Reports.markdown(result(f), split, null, Environment.NONE, true, I18nLanguage.ENGLISH);
+        String md = Reports.markdown(result(f), split, List.of(), Environment.NONE, true, I18nLanguage.ENGLISH);
         String outsideCode = md.replaceAll("`[^`\n]*`", "");
         assertFalse(outsideCode.matches("(?s).*(?<!\\\\)<.*"), "a tag outside a code span: " + md);
         assertFalse(outsideCode.matches("(?s).*(?<!\\\\)\\]\\(javascript:.*"), "a link of the data: " + md);

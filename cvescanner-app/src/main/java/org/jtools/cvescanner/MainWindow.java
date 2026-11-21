@@ -48,6 +48,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.time.LocalDate;
 import java.util.function.Consumer;
@@ -101,7 +102,7 @@ import org.jtools.cvescanner.ignore.IgnoredFinding;
 import org.jtools.cvescanner.ignore.Ignores;
 import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.Finding;
-import org.jtools.cvescanner.model.MatchBasis;
+import org.jtools.cvescanner.model.FindingFilter;
 import org.jtools.cvescanner.model.PackageSummary;
 import org.jtools.cvescanner.model.ScanListener;
 import org.jtools.cvescanner.model.ScanMode;
@@ -613,13 +614,15 @@ final class MainWindow extends JFrame {
     }
 
     private boolean passesFacets(Finding f) {
+        return facets().test(f);
+    }
+
+    /** The filters chosen, the command line's own rule (FindingFilter); the search is the table's, over its columns. */
+    private FindingFilter facets() {
         var min = severityCombo.getSelectedItem() instanceof Choice<?> choice ? (Severity) choice.value() : null;
-        if (min != null && f.severity().compareTo(min) < 0) return false;
         Ecosystem ecosystem = ecosystemShown();
-        if (ecosystem != null && f.ecosystem() != ecosystem) return false;
-        if (cveOnlyBox.isSelected() && f.cves().isEmpty()) return false;
-        if (hideNameMatchBox.isSelected() && f.basis() == MatchBasis.CVE_NAME) return false;
-        return !(hideApproxBox.isSelected() && f.approximate());
+        return new FindingFilter(min, ecosystem == null ? Set.of() : Set.of(ecosystem), cveOnlyBox.isSelected(),
+                hideApproxBox.isSelected(), hideNameMatchBox.isSelected(), List.of());
     }
 
     private static <M extends ListTableModel<?>> boolean matchesSearch(RowFilter.Entry<? extends M, ? extends Integer> e,
@@ -900,7 +903,7 @@ final class MainWindow extends JFrame {
         boolean filtered = visible.size() != tables.findingsModel.getRowCount();
         try {
             var written = Reports.writeAll(result, split.withActive(visible), chooser.getSelectedFile().toPath(),
-                    filtered ? Phrase.of("export.filter", visible.size(), tables.findingsModel.getRowCount()) : null,
+                    filtered ? List.of(Phrase.of("export.filter", visible.size(), tables.findingsModel.getRowCount())) : List.of(),
                     environmentBar.environment(), environmentBar.preferV4(), I18n.language());
             // the folder is shown, to copy: the program starts no other one, a file manager no more than a browser
             String folder = chooser.getSelectedFile().getAbsolutePath();

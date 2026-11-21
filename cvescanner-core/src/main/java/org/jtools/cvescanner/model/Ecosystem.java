@@ -51,6 +51,12 @@ public enum Ecosystem {
         return id;
     }
 
+    /** The ecosystem a person names, whatever the case: "maven", "PyPI"; null for one CVEScanner does not know. */
+    public static Ecosystem named(String name) {
+        for (Ecosystem e : values()) if (e.id.equalsIgnoreCase(name.strip())) return e;
+        return null;
+    }
+
     /** The ecosystem of this name, as an OSV advisory writes it; null for one CVEScanner does not check. */
     public static Ecosystem of(String id) {
         for (Ecosystem e : values()) if (e.id.equals(id)) return e;

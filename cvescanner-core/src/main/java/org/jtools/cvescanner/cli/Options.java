@@ -25,8 +25,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.cvss.Reach;
 import org.jtools.cvescanner.cvss.Requirement;
@@ -34,6 +36,8 @@ import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
 import org.jtools.cvescanner.ignore.Ignores;
+import org.jtools.cvescanner.model.Ecosystem;
+import org.jtools.cvescanner.model.FindingFilter;
 import org.jtools.cvescanner.model.ScanMode;
 
 public final class Options {
@@ -58,6 +62,15 @@ public final class Options {
     public boolean noIgnore;
     /** --installed: an installed product, read from what it ships, rather than source projects. */
     public boolean installed;
+    /** The report's filters, the window's own: --min-severity, --ecosystem, --hide-approximate, --hide-name-matches, --search. */
+    public Severity minSeverity;
+    public final Set<Ecosystem> ecosystems = new LinkedHashSet<>();
+    public boolean hideApproximate, hideNameMatches;
+    public final List<String> searchWords = new ArrayList<>();
+    /** --apply-fixes: the fixes planned and said; applied with --yes, a major version change only with --allow-major. */
+    public boolean applyFixes, yes, allowMajor;
+    /** --fix-packages: the packages to fix, the others left; empty for every one the report keeps. */
+    public final Set<String> fixPackages = new LinkedHashSet<>();
 
     public static Options parse(String[] args) {
         var o = new Options();
@@ -85,6 +98,26 @@ public final class Options {
                 case "--ignore" -> o.ignoreFile = Path.of(value(args, ++i, a));
                 case "--no-ignore" -> o.noIgnore = true;
                 case "--installed" -> o.installed = true;
+                case "--min-severity" -> {
+                    o.minSeverity = Severity.fromRating(value(args, ++i, a));
+                    if (o.minSeverity == Severity.UNKNOWN) throw new IllegalArgumentException(I18n.text("option.minSeverity"));
+                }
+                case "--ecosystem" -> {
+                    for (String name : value(args, ++i, a).split(",")) {
+                        Ecosystem e = Ecosystem.named(name);
+                        if (e == null) throw new IllegalArgumentException(I18n.text("option.ecosystem", name.strip()));
+                        o.ecosystems.add(e);
+                    }
+                }
+                case "--hide-approximate" -> o.hideApproximate = true;
+                case "--hide-name-matches" -> o.hideNameMatches = true;
+                case "--search" -> o.searchWords.addAll(List.of(value(args, ++i, a).strip().split("\\s+")));
+                case "--apply-fixes" -> o.applyFixes = true;
+                case "--yes" -> o.yes = true;
+                case "--allow-major" -> o.allowMajor = true;
+                case "--fix-packages" -> {
+                    for (String name : value(args, ++i, a).split(",")) if (!name.isBlank()) o.fixPackages.add(name.strip());
+                }
                 case "--cve-only" -> o.cveOnly = true;
                 case "--no-gui" -> o.noGui = true;
                 case "--fail-on" -> o.failOn = Severity.parseThreshold(value(args, ++i, a));
@@ -98,6 +131,8 @@ public final class Options {
             }
         }
         if (o.noIgnore && o.ignoreFile != null) throw new IllegalArgumentException(I18n.text("option.ignoreBoth"));
+        if (!o.applyFixes && (o.yes || o.allowMajor || !o.fixPackages.isEmpty()))
+            throw new IllegalArgumentException(I18n.text("option.fixNeedsApply"));
         o.environment = reach == null && cr == null && ir == null && ar == null ? preset
                 : Environment.of(reach != null ? reach : preset.reach(), cr != null ? cr : preset.confidentiality(),
                                  ir != null ? ir : preset.integrity(), ar != null ? ar : preset.availability());
@@ -123,6 +158,11 @@ public final class Options {
             }
         }
         return null;
+    }
+
+    /** The findings the reports keep, the counts and --fail-on count: the window's filters, as the options set them. */
+    public FindingFilter filter() {
+        return new FindingFilter(minSeverity, ecosystems, cveOnly, hideApproximate, hideNameMatches, searchWords);
     }
 
     public ScanMode mode() {

@@ -1,0 +1,1 @@
+--db db/advisory-database-main.zip --min-severity HIGH --ecosystem npm --hide-approximate --search lod

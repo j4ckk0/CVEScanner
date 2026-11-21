@@ -5,6 +5,10 @@ checksums.
 
 ## 1.2 — not released yet
 
+- **Everything from the command line too**: the window's filters (`--min-severity`, `--ecosystem`, `--hide-approximate`,
+  `--hide-name-matches`, `--search`), applied to the reports, the counts and `--fail-on`; and its *Apply fixes*
+  (`--apply-fixes`, a dry run until `--yes`, `--allow-major`, `--fix-packages`), exit code 3 when a confirmed fix
+  could not be applied. The window and the command line filter by one same rule.
 - **Installed products**: *Installed product* in the window, `--installed` on the command line, scans what an
   installation ships rather than source projects: each jar's Maven coordinates (`pom.properties`), the jars inside fat
   jars, WARs and EARs (`app.war!/WEB-INF/lib/x.jar`), the installed `node_modules`, the Python packages of a

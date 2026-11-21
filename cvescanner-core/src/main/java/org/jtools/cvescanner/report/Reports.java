@@ -60,11 +60,11 @@ public final class Reports {
      * readers are programs. The findings reported are the split's active ones; those it sets aside have a section of
      * their own in report.md and findings.json, and are not in findings.csv. Returns the paths written.
      */
-    public static List<Path> writeAll(ScanResult r, Ignores.Split split, Path outDir, Phrase filterNote,
+    public static List<Path> writeAll(ScanResult r, Ignores.Split split, Path outDir, List<Phrase> filters,
                                Environment env, boolean preferV4, I18nLanguage language) throws IOException {
         Files.createDirectories(outDir);
         Path md = outDir.resolve("report.md"), csv = outDir.resolve("findings.csv"), json = outDir.resolve("findings.json");
-        Files.writeString(md, markdown(r, split, filterNote, env, preferV4, language), UTF_8);
+        Files.writeString(md, markdown(r, split, filters, env, preferV4, language), UTF_8);
         Files.writeString(csv, csv(split.active(), env), UTF_8);
         Files.writeString(json, json(r, split, env, preferV4), UTF_8);
         return List.of(md, csv, json);
@@ -116,7 +116,7 @@ public final class Reports {
         return s.label(language).toUpperCase(language.locale());
     }
 
-    static String markdown(ScanResult r, Ignores.Split split, Phrase filterNote, Environment env, boolean preferV4,
+    static String markdown(ScanResult r, Ignores.Split split, List<Phrase> filters, Environment env, boolean preferV4,
                            I18nLanguage language) {
         var findings = split.active();
         var sb = new StringBuilder();
@@ -138,7 +138,8 @@ public final class Reports {
         if (split.ignores().read())
             sb.append("- **").append(I18n.text(language, "markdown.ignoreFile")).append(":** `").append(code(split.ignores().shown()))
                     .append("` (").append(I18n.text(language, "markdown.ignoreFile.entries", split.ignores().rules().size())).append(")\n");
-        if (filterNote != null) sb.append("- **").append(I18n.text(language, "markdown.filter")).append(":** ").append(md(filterNote.text(language))).append('\n');
+        if (!filters.isEmpty()) sb.append("- **").append(I18n.text(language, "markdown.filter")).append(":** ")
+                .append(md(String.join("; ", filters.stream().map(f -> f.text(language)).toList()))).append('\n');
         sb.append("\n## ").append(I18n.text(language, "markdown.summary")).append("\n\n").append(I18n.text(language, "markdown.summary.header")).append("\n|---|---|\n");
         for (var s : List.of(Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM, Severity.LOW, Severity.UNKNOWN))
             sb.append("| ").append(severity(s, language)).append(" | ").append(counts.get(s)).append(" |\n");

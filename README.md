@@ -172,8 +172,11 @@ cvescanner-cli.bat --no-gui -d C:\src\my-app --fail-on HIGH               (Windo
 | `--fail-on LEVEL` | exit code 2 when a finding is at or above `LOW`, `MEDIUM`, `HIGH` or `CRITICAL` |
 | `--ignore FILE`, `--no-ignore` | the ignore file to read (default: the folder's `cvescanner-ignore.csv`, if any); none |
 | `--installed` | scan an installed product from what it ships, rather than source projects (see [Installed products](#installed-products)) |
+| `--min-severity LEVEL`, `--ecosystem LIST`, `--hide-approximate`, `--hide-name-matches`, `--search "WORDS"` | the window's filters: the reports, the counts and `--fail-on` keep only what they keep, and `report.md` says them |
+| `--apply-fixes` [`--yes`] [`--allow-major`] [`--fix-packages LIST`] | the window's *Apply fixes* (see [Applying fixes](#applying-fixes)): the plan of each package the report keeps is said, and nothing changes without `--yes`; then the folder is scanned again before the reports are written |
 
-Exit codes: `0`, `1` on an error, `2` past `--fail-on`. Without a display the program goes to the command line by itself.
+Exit codes: `0`, `1` on an error, `2` past `--fail-on`, `3` when a fix confirmed by `--yes` could not be applied.
+Without a display the program goes to the command line by itself.
 
 ## Ignoring findings
 
@@ -209,7 +212,9 @@ findings aside (it names none, or a line above sets them aside first) — an ent
 
 ## Applying fixes
 
-In **Packages to upgrade**, tick the package versions to upgrade (each row shows the version that fixes all its
+On the command line, `--apply-fixes` says the same plans for every package the report keeps (`--fix-packages` names
+some), `--yes` applies them and `--allow-major` lets a major version change through. In the window, in **Packages to
+upgrade**, tick the package versions to upgrade (each row shows the version that fixes all its
 findings), then **Apply fixes… (n)**. CVEScanner first shows, for each, the exact command it would run, or why it will
 not, and applies only what you confirm; then it shows what each tool said and scans the folder again.
 

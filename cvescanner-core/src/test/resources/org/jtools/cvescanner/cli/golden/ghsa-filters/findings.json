@@ -1,0 +1,96 @@
+{
+  "generated": "2026-11-21 12:17 UTC",
+  "scanned_directory": "/home/j4ckk0/Developpement/github/CVEScanner/samples/projects",
+  "databases": {
+    "advisory-database-main.zip": "OSV / GitHub advisories, 12 records (12 relevant), file dated 2026-11-21 05:55 UTC"
+  },
+  "scoring": {
+    "preferred_cvss_version": "4.0",
+    "environment": "Not applied (base score)",
+    "reach": "UNRESTRICTED",
+    "confidentiality_requirement": "X",
+    "integrity_requirement": "X",
+    "availability_requirement": "X"
+  },
+  "findings": [
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": "4.0",
+      "base_score": 8.6,
+      "base_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "npm",
+      "package": "lodash",
+      "version": "4.17.15",
+      "approximate": false,
+      "scope": "direct",
+      "file": "npm-lock/package-lock.json",
+      "id": "GHSA-35jh-r3h4-6jhm",
+      "cves": [
+        "CVE-2021-23337"
+      ],
+      "aliases": [
+        "CVE-2021-23337"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "4.17.21",
+      "summary": "Test vuln in lodash",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-35jh-r3h4-6jhm"
+    },
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": "4.0",
+      "base_score": 8.6,
+      "base_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "npm",
+      "package": "lodash",
+      "version": "4.17.20",
+      "approximate": false,
+      "scope": "direct",
+      "file": "yarn/yarn.lock",
+      "id": "GHSA-35jh-r3h4-6jhm",
+      "cves": [
+        "CVE-2021-23337"
+      ],
+      "aliases": [
+        "CVE-2021-23337"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "4.17.21",
+      "summary": "Test vuln in lodash",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-35jh-r3h4-6jhm"
+    }
+  ],
+  "unresolved_dependencies": [
+    {
+      "ecosystem": "Maven",
+      "name": "org.springframework:spring-core",
+      "declared": "",
+      "file": "maven/child/pom.xml",
+      "reason": "version managed outside this repo (external parent/BOM)"
+    },
+    {
+      "ecosystem": "Maven",
+      "name": "org.foo:bar",
+      "declared": "1.+",
+      "file": "gradle/build.gradle",
+      "reason": "dynamic version"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "left",
+      "declared": "git+https://x/y.git",
+      "file": "npm-nolock/package.json",
+      "reason": "non-registry source"
+    }
+  ]
+}

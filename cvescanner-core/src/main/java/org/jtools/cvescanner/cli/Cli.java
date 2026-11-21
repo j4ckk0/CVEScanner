@@ -31,8 +31,10 @@ import org.jtools.cvescanner.engine.Engine;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
 import org.jtools.cvescanner.i18n.Phrase;
+import org.jtools.cvescanner.ignore.Ignores;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.ScanListener;
+import org.jtools.cvescanner.model.ScanResult;
 import org.jtools.cvescanner.model.Scoring;
 import org.jtools.cvescanner.report.Reports;
 
@@ -40,8 +42,20 @@ public final class Cli {
     private Cli() {}
 
     /**
-     * Scans, writes the reports in the language in use, says the counts; 0, 1 on an error, 2 past --fail-on. The findings
-     * the ignore file sets aside are out of the counts and of --fail-on.
+     * The findings scored, those the ignore file sets aside apart, then those the filters keep. Set apart before the
+     * filters, so that an entry naming a finding a filter drops is not said to set none aside.
+     */
+    private static Ignores.Split split(Options o, ScanResult r, ScanListener l) {
+        var scored = Scoring.applyAll(r.findings(), o.environment, o.preferV4);
+        var split = r.ignores().split(scored, LocalDate.now());
+        split.warnings().forEach(l::warn);
+        return o.filter().active() ? split.filter(o.filter()::test) : split;
+    }
+
+    /**
+     * Scans, writes the reports in the language in use, says the counts; 0, 1 on an error, 2 past --fail-on, 3 when a
+     * fix confirmed by --yes could not be applied. The findings the ignore file sets aside, and those the filters drop,
+     * are out of the counts and of --fail-on. With --apply-fixes and --yes, the reports are those of a new scan.
      */
     public static int run(Options o) {
         I18nLanguage language = I18n.language();
@@ -52,14 +66,17 @@ public final class Cli {
         try {
             if (!Files.isDirectory(o.scanDir)) throw new IOException(I18n.text("error.scanDirMissing", o.scanDir));
             var r = Engine.scan(o.scanDir, o.dbFiles, o.ignoreChoice(), o.mode(), l);
-            var scored = Scoring.applyAll(r.findings(), o.environment, o.preferV4);
-            // set apart before --cve-only, so that an entry naming a finding without a CVE is not said to set none aside
-            var split = r.ignores().split(scored, LocalDate.now());
-            split.warnings().forEach(l::warn);
-            if (o.cveOnly) split = split.filter(f -> !f.cves().isEmpty());
+            var split = split(o, r, l);
+            CliFixes.Result fixes = null;
+            if (o.applyFixes) {
+                fixes = CliFixes.run(o, r.root(), split.active(), System.out);
+                if (fixes.applied() > 0) {   // the reports say the projects as they are now
+                    r = Engine.scan(o.scanDir, o.dbFiles, o.ignoreChoice(), o.mode(), l);
+                    split = split(o, r, l);
+                }
+            }
             var findings = split.active();
-            var written = Reports.writeAll(r, split, o.outDir, o.cveOnly ? Phrase.of("filter.cveOnly") : null,
-                    o.environment, o.preferV4, language);
+            var written = Reports.writeAll(r, split, o.outDir, o.filter().describe(), o.environment, o.preferV4, language);
             var counts = Finding.countBySeverity(findings);
             System.out.println("\n" + "=".repeat(60) + "\n " + I18n.text("cli.complete") + "\n" + "=".repeat(60));
             System.out.printf("  %-11s: %s%n", I18n.text("cli.scoring"), Reports.scoringText(o.preferV4, language));
@@ -76,7 +93,7 @@ public final class Cli {
                 System.out.println("\n" + I18n.text("cli.fail", o.failOn.label(language).toUpperCase(language.locale())));
                 return 2;
             }
-            return 0;
+            return fixes != null && fixes.failed() > 0 ? 3 : 0;
         } catch (IOException e) {
             System.err.println(I18n.text("cli.error", e.getMessage().replace("\n\n", " ")));
             return 1;
