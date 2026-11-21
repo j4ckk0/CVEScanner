@@ -68,7 +68,7 @@ class GoldenTest {
         String[] given = Files.readString(golden.resolve("args.txt")).trim().split("\\s+");
         for (int i = 0; i < given.length; i++) {
             args.add(given[i]);
-            if ((given[i].equals("--db") || given[i].equals("-d")) && i + 1 < given.length) {
+            if ((given[i].equals("--db") || given[i].equals("-d") || given[i].equals("--ignore")) && i + 1 < given.length) {
                 args.add(SAMPLES.resolve(given[++i]).toString());
             }
         }
@@ -89,8 +89,10 @@ class GoldenTest {
         }
     }
 
+    /** Without what differs between runs: the databases' file dates, where the samples are (an ignore file's path). */
     private static String undated(String text) {
-        return text.replaceAll("file dated [0-9-]+ [0-9:]+ UTC", "file dated <date>");
+        return text.replaceAll("file dated [0-9-]+ [0-9:]+ UTC", "file dated <date>")
+                .replace(SAMPLES.toString().replace('\\', '/'), "<samples>");
     }
 
     private static String markdown(String report) {
@@ -106,6 +108,7 @@ class GoldenTest {
         Map<String, Object> databases = new HashMap<>();
         Json.obj(root.get("databases")).forEach((file, desc) -> databases.put(file, undated((String) desc)));
         root.put("databases", databases);
+        if (root.get("ignore_file") instanceof String file) root.put("ignore_file", undated(file));
         return root;
     }
 }

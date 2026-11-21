@@ -39,6 +39,7 @@ import org.jtools.cvescanner.db.Osv;
 import org.jtools.cvescanner.db.VulnDb;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.Phrase;
+import org.jtools.cvescanner.ignore.Ignores;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
@@ -54,10 +55,16 @@ public final class Engine {
 
     private Engine() {}
 
-    /**
-     * @param dbFiles the database zips the user gave: the only source of vulnerability data, the program fetching none
-     */
+    /** A scan reading the folder's own ignore file, if it has one. */
     public static ScanResult scan(Path dir, List<Path> dbFiles, ScanListener listener) throws IOException {
+        return scan(dir, dbFiles, null, listener);
+    }
+
+    /**
+     * @param dbFiles    the database zips the user gave: the only source of vulnerability data, the program fetching none
+     * @param ignoreFile the ignore file: null for the folder's own cvescanner-ignore.csv, if any; Ignores.DISABLED for none
+     */
+    public static ScanResult scan(Path dir, List<Path> dbFiles, Path ignoreFile, ScanListener listener) throws IOException {
         Path root = dir.toAbsolutePath().normalize();
         var warnings = new ArrayList<Phrase>();
         ScanListener l = new ScanListener() {
@@ -66,6 +73,7 @@ public final class Engine {
             public void warn(Phrase m) { warnings.add(m); listener.warn(m); }
         };
 
+        var ignores = Ignores.load(root, ignoreFile, l::warn);   // first: a file named that is not there stops the scan now
         l.status(I18n.text("status.lookingFor", root));
         l.progress(-1);
         var files = ProjectFiles.find(root);
@@ -141,6 +149,6 @@ public final class Engine {
         if (manifests > 0) counts.put("files.manifests", manifests);
         if (!files.binaries.isEmpty()) counts.put("files.binaries", files.binaries.size());
         return new ScanResult(root, List.copyOf(findings), List.copyOf(col.deps), List.copyOf(col.unresolved),
-                index.sources, counts, List.copyOf(warnings));
+                index.sources, counts, List.copyOf(warnings), ignores);
     }
 }

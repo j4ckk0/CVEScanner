@@ -107,6 +107,7 @@ import org.jtools.cvescanner.engine.ScanListener;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
 import org.jtools.cvescanner.i18n.Phrase;
+import org.jtools.cvescanner.ignore.Ignores;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
 import org.jtools.cvescanner.model.PackageSummary;
@@ -976,7 +977,7 @@ final class MainWindow extends JFrame {
                 .mapToObj(i -> findingsModel.row(findingsTable.convertRowIndexToModel(i))).toList();
         boolean filtered = visible.size() != findingsModel.getRowCount();
         try {
-            var written = Reports.writeAll(result, visible, chooser.getSelectedFile().toPath(),
+            var written = Reports.writeAll(result, Ignores.Split.none(visible), chooser.getSelectedFile().toPath(),
                     filtered ? Phrase.of("export.filter", visible.size(), findingsModel.getRowCount()) : null,
                     environment, preferV4, I18n.language());
             // the folder is shown, to copy: the program starts no other one, a file manager no more than a browser

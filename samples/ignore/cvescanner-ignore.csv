@@ -1,0 +1,9 @@
+# the sample's reviewed findings
+id,package,version,until,reason
+CVE-2021-44228,,,,"Not exposed: JNDI lookups disabled, see SEC-12"
+GHSA-xvch-5gv4-984h,minimist,1.2.5,2999-12-31,Development tool only
+cve-2021-23337,lodash,4.17.15,,Upgrade planned
+CVE-2020-36518,,,2020-01-01,Accepted for the 2019 release
+CVE-2099-0001,,,,Names nothing
+,axios,,,no id
+CVE-2022-1471,,,soon,not a date

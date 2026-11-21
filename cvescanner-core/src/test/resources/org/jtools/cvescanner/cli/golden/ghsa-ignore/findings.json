@@ -1,0 +1,411 @@
+{
+  "generated": "2026-11-21 08:59 UTC",
+  "scanned_directory": "<samples>/projects",
+  "databases": {
+    "advisory-database-main.zip": "OSV / GitHub advisories, 12 records (12 relevant), file dated 2026-11-21 05:55 UTC"
+  },
+  "scoring": {
+    "preferred_cvss_version": "4.0",
+    "environment": "Not applied (base score)",
+    "reach": "UNRESTRICTED",
+    "confidentiality_requirement": "X",
+    "integrity_requirement": "X",
+    "availability_requirement": "X"
+  },
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "base_severity": "CRITICAL",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "Maven",
+      "package": "org.apache.commons:commons-text",
+      "version": "1.9",
+      "approximate": false,
+      "scope": "catalog:commons-text",
+      "file": "gradle/gradle/libs.versions.toml",
+      "id": "GHSA-599f-7c49-w659",
+      "cves": [
+        "CVE-2022-42889"
+      ],
+      "aliases": [
+        "CVE-2022-42889"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "1.10.0",
+      "summary": "Test vuln in org.apache.commons:commons-text",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-599f-7c49-w659"
+    },
+    {
+      "severity": "CRITICAL",
+      "base_severity": "CRITICAL",
+      "cvss_version": "3.1",
+      "base_score": 9.8,
+      "base_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "Maven",
+      "package": "org.yaml:snakeyaml",
+      "version": "1.33",
+      "approximate": false,
+      "scope": "implementation",
+      "file": "gradle/build.gradle",
+      "id": "GHSA-mjmj-j48q-9wg2",
+      "cves": [
+        "CVE-2022-1471"
+      ],
+      "aliases": [
+        "CVE-2022-1471"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "2.0",
+      "summary": "Test vuln in org.yaml:snakeyaml",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-mjmj-j48q-9wg2"
+    },
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "npm",
+      "package": "axios",
+      "version": "0.21.0",
+      "approximate": true,
+      "scope": "dependencies",
+      "file": "npm-nolock/package.json",
+      "id": "GHSA-cph5-m8f7-6c5x",
+      "cves": [
+        "CVE-2021-3749"
+      ],
+      "aliases": [
+        "CVE-2021-3749"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "0.21.2",
+      "summary": "Test vuln in axios",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-cph5-m8f7-6c5x"
+    },
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "Maven",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.8",
+      "approximate": false,
+      "scope": "compile",
+      "file": "maven/child/pom.xml",
+      "id": "GHSA-57j2-w4cx-62h2",
+      "cves": [
+        "CVE-2020-36518"
+      ],
+      "aliases": [
+        "CVE-2020-36518"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "2.9.10.7",
+      "summary": "Test vuln in com.fasterxml.jackson.core:jackson-databind",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-57j2-w4cx-62h2"
+    },
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "Maven",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.8",
+      "approximate": false,
+      "scope": "dependencyManagement",
+      "file": "maven/pom.xml",
+      "id": "GHSA-57j2-w4cx-62h2",
+      "cves": [
+        "CVE-2020-36518"
+      ],
+      "aliases": [
+        "CVE-2020-36518"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "2.9.10.7",
+      "summary": "Test vuln in com.fasterxml.jackson.core:jackson-databind",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-57j2-w4cx-62h2"
+    },
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "Maven",
+      "package": "com.google.guava:guava",
+      "version": "31.1-jre",
+      "approximate": false,
+      "scope": "implementation",
+      "file": "gradle/build.gradle",
+      "id": "GHSA-7g45-4rm6-3mm3",
+      "cves": [
+        "CVE-2023-2976"
+      ],
+      "aliases": [
+        "CVE-2023-2976"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "32.0.0-jre",
+      "summary": "Test vuln in com.google.guava:guava",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-7g45-4rm6-3mm3"
+    },
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": "4.0",
+      "base_score": 8.6,
+      "base_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "npm",
+      "package": "lodash",
+      "version": "4.17.20",
+      "approximate": false,
+      "scope": "direct",
+      "file": "yarn/yarn.lock",
+      "id": "GHSA-35jh-r3h4-6jhm",
+      "cves": [
+        "CVE-2021-23337"
+      ],
+      "aliases": [
+        "CVE-2021-23337"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "4.17.21",
+      "summary": "Test vuln in lodash",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-35jh-r3h4-6jhm"
+    },
+    {
+      "severity": "LOW",
+      "base_severity": "LOW",
+      "cvss_version": "4.0",
+      "base_score": 2.3,
+      "base_vector": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:P/VC:L/VI:L/VA:N/SC:L/SI:L/SA:N",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "npm",
+      "package": "jquery",
+      "version": "3.4.0",
+      "approximate": true,
+      "scope": "devDependencies",
+      "file": "npm-nolock/package.json",
+      "id": "GHSA-gxr4-xjj5-5px2",
+      "cves": [
+        "CVE-2020-11022"
+      ],
+      "aliases": [
+        "CVE-2020-11022"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "3.5.0",
+      "summary": "Test vuln in jquery",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-gxr4-xjj5-5px2"
+    }
+  ],
+  "unresolved_dependencies": [
+    {
+      "ecosystem": "Maven",
+      "name": "org.springframework:spring-core",
+      "declared": "",
+      "file": "maven/child/pom.xml",
+      "reason": "version managed outside this repo (external parent/BOM)"
+    },
+    {
+      "ecosystem": "Maven",
+      "name": "org.foo:bar",
+      "declared": "1.+",
+      "file": "gradle/build.gradle",
+      "reason": "dynamic version"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "left",
+      "declared": "git+https://x/y.git",
+      "file": "npm-nolock/package.json",
+      "reason": "non-registry source"
+    }
+  ],
+  "ignore_file": "<samples>/ignore/cvescanner-ignore.csv",
+  "ignored_findings": [
+    {
+      "severity": "CRITICAL",
+      "base_severity": "CRITICAL",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "npm",
+      "package": "minimist",
+      "version": "1.2.5",
+      "approximate": false,
+      "scope": "transitive (dev)",
+      "file": "npm-lock/package-lock.json",
+      "id": "GHSA-xvch-5gv4-984h",
+      "cves": [
+        "CVE-2021-44906"
+      ],
+      "aliases": [
+        "CVE-2021-44906"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "1.2.6",
+      "summary": "Test vuln in minimist",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-xvch-5gv4-984h",
+      "ignore_reason": "Development tool only",
+      "ignore_until": "2999-12-31",
+      "ignore_line": 4
+    },
+    {
+      "severity": "CRITICAL",
+      "base_severity": "CRITICAL",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "npm",
+      "package": "minimist",
+      "version": "1.2.5",
+      "approximate": false,
+      "scope": "direct",
+      "file": "yarn/yarn.lock",
+      "id": "GHSA-xvch-5gv4-984h",
+      "cves": [
+        "CVE-2021-44906"
+      ],
+      "aliases": [
+        "CVE-2021-44906"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "1.2.6",
+      "summary": "Test vuln in minimist",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-xvch-5gv4-984h",
+      "ignore_reason": "Development tool only",
+      "ignore_until": "2999-12-31",
+      "ignore_line": 4
+    },
+    {
+      "severity": "CRITICAL",
+      "base_severity": "CRITICAL",
+      "cvss_version": "4.0",
+      "base_score": 10.0,
+      "base_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "Maven",
+      "package": "org.apache.logging.log4j:log4j-core",
+      "version": "2.14.1",
+      "approximate": false,
+      "scope": "compile",
+      "file": "maven/child/pom.xml",
+      "id": "GHSA-jfh8-c2jp-5v3q",
+      "cves": [
+        "CVE-2021-44228"
+      ],
+      "aliases": [
+        "CVE-2021-44228"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "2.15.0",
+      "summary": "Test vuln in org.apache.logging.log4j:log4j-core",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-jfh8-c2jp-5v3q",
+      "ignore_reason": "Not exposed: JNDI lookups disabled, see SEC-12",
+      "ignore_until": null,
+      "ignore_line": 3
+    },
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": "4.0",
+      "base_score": 8.6,
+      "base_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "npm",
+      "package": "lodash",
+      "version": "4.17.15",
+      "approximate": false,
+      "scope": "direct",
+      "file": "npm-lock/package-lock.json",
+      "id": "GHSA-35jh-r3h4-6jhm",
+      "cves": [
+        "CVE-2021-23337"
+      ],
+      "aliases": [
+        "CVE-2021-23337"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "4.17.21",
+      "summary": "Test vuln in lodash",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-35jh-r3h4-6jhm",
+      "ignore_reason": "Upgrade planned",
+      "ignore_until": null,
+      "ignore_line": 5
+    }
+  ],
+  "ignore_expired": [
+    {
+      "line": 6,
+      "id": "CVE-2020-36518",
+      "package": "",
+      "version": "",
+      "until": "2020-01-01",
+      "reason": "Accepted for the 2019 release"
+    }
+  ],
+  "ignore_unused": [
+    {
+      "line": 7,
+      "id": "CVE-2099-0001",
+      "package": "",
+      "version": "",
+      "until": null,
+      "reason": "Names nothing"
+    }
+  ]
+}

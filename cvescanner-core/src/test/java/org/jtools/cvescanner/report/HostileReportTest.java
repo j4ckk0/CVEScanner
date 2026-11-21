@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import org.jtools.cvescanner.cvss.Environment;
@@ -31,6 +32,8 @@ import org.jtools.cvescanner.cvss.Rating;
 import org.jtools.cvescanner.cvss.Score;
 import org.jtools.cvescanner.i18n.I18nLanguage;
 import org.jtools.cvescanner.i18n.Phrase;
+import org.jtools.cvescanner.ignore.IgnoreRule;
+import org.jtools.cvescanner.ignore.Ignores;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
 import org.jtools.cvescanner.model.ScanResult;
@@ -59,7 +62,7 @@ class HostileReportTest {
     private static ScanResult result(Finding f) {
         return new ScanResult(Path.of("/scan"), List.of(f), List.of(),
                 List.of(new Unresolved("npm", "left`" + TAGS, "git+" + TAGS, "package.json", Phrase.of("reason.unpinned", TAGS))),
-                Map.of("db" + TAGS + ".zip", Phrase.of("database.kind.osv")), Map.of(), List.of());
+                Map.of("db" + TAGS + ".zip", Phrase.of("database.kind.osv")), Map.of(), List.of(), Ignores.NONE);
     }
 
     @Test
@@ -77,7 +80,7 @@ class HostileReportTest {
     @Test
     void theMarkdownHoldsNoTagNoLinkNoCellOfTheData() {
         Finding f = hostile();
-        String md = Reports.markdown(result(f), List.of(f), null, Environment.NONE, true, I18nLanguage.ENGLISH);
+        String md = Reports.markdown(result(f), Ignores.Split.none(List.of(f)), null, Environment.NONE, true, I18nLanguage.ENGLISH);
         // in a code span HTML is shown as it is; elsewhere every < is escaped
         String outsideCode = md.replaceAll("`[^`\n]*`", "");
         assertFalse(outsideCode.matches("(?s).*(?<!\\\\)<.*"), "a tag outside a code span: " + md);
@@ -86,5 +89,22 @@ class HostileReportTest {
         assertTrue(md.contains("\\[click\\]"), md);
         assertTrue(md.contains("\\| cell"), md);
         assertTrue(md.contains("GHSA-x)\\](javascript:alert(1))"), "the unsafe address is text, not a link: " + md);
+    }
+
+    @Test
+    void theIgnoredSectionHoldsNoTagNoLinkOfTheIgnoreFile() {
+        Finding f = hostile();
+        var ignores = new Ignores(Path.of("/scan/ignore.csv"), "ignore" + TAGS + ".csv", List.of(
+                new IgnoreRule("CVE-1" + TAGS, "", "", null, "reason " + TAGS, 2),
+                new IgnoreRule("CVE-2" + TAGS, "pkg" + TAGS, "1" + TAGS, LocalDate.of(2020, 1, 1), TAGS, 3),
+                new IgnoreRule("CVE-3" + TAGS, "pkg`" + TAGS, "2" + TAGS, null, TAGS, 4)), true);
+        var split = ignores.split(List.of(f), LocalDate.of(2026, 1, 1));
+        assertTrue(split.active().isEmpty() && split.ignored().size() == 1 && split.expired().size() == 1
+                && split.unused().size() == 1, split.toString());
+        String md = Reports.markdown(result(f), split, null, Environment.NONE, true, I18nLanguage.ENGLISH);
+        String outsideCode = md.replaceAll("`[^`\n]*`", "");
+        assertFalse(outsideCode.matches("(?s).*(?<!\\\\)<.*"), "a tag outside a code span: " + md);
+        assertFalse(outsideCode.matches("(?s).*(?<!\\\\)\\]\\(javascript:.*"), "a link of the data: " + md);
+        assertTrue(md.contains("reason \\<img"), md);
     }
 }

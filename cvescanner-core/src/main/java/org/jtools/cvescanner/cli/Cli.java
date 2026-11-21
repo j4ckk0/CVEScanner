@@ -24,6 +24,7 @@ package org.jtools.cvescanner.cli;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.List;
 import org.jtools.cvescanner.cvss.Scoring;
 import org.jtools.cvescanner.engine.Engine;
@@ -38,7 +39,10 @@ import org.jtools.cvescanner.report.Reports;
 public final class Cli {
     private Cli() {}
 
-    /** Scans, writes the reports in the language in use, says the counts; 0, 1 on an error, 2 past --fail-on. */
+    /**
+     * Scans, writes the reports in the language in use, says the counts; 0, 1 on an error, 2 past --fail-on. The findings
+     * the ignore file sets aside are out of the counts and of --fail-on.
+     */
     public static int run(Options o) {
         I18nLanguage language = I18n.language();
         ScanListener l = new ScanListener() {
@@ -47,10 +51,14 @@ public final class Cli {
         };
         try {
             if (!Files.isDirectory(o.scanDir)) throw new IOException(I18n.text("error.scanDirMissing", o.scanDir));
-            var r = Engine.scan(o.scanDir, o.dbFiles, l);
+            var r = Engine.scan(o.scanDir, o.dbFiles, o.ignoreChoice(), l);
             var scored = Scoring.applyAll(r.findings(), o.environment, o.preferV4);
-            var findings = o.cveOnly ? scored.stream().filter(f -> !f.cves().isEmpty()).toList() : scored;
-            var written = Reports.writeAll(r, findings, o.outDir, o.cveOnly ? Phrase.of("filter.cveOnly") : null,
+            // set apart before --cve-only, so that an entry naming a finding without a CVE is not said to name none
+            var split = r.ignores().split(scored, LocalDate.now());
+            split.warnings().forEach(l::warn);
+            if (o.cveOnly) split = split.filter(f -> !f.cves().isEmpty());
+            var findings = split.active();
+            var written = Reports.writeAll(r, split, o.outDir, o.cveOnly ? Phrase.of("filter.cveOnly") : null,
                     o.environment, o.preferV4, language);
             var counts = Reports.counts(findings);
             System.out.println("\n" + "=".repeat(60) + "\n " + I18n.text("cli.complete") + "\n" + "=".repeat(60));
@@ -58,8 +66,11 @@ public final class Cli {
             System.out.printf("  %-11s: %s%n%n", I18n.text("cli.environment"), o.environment.describe(language));
             for (var s : List.of(Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM, Severity.LOW, Severity.UNKNOWN))
                 System.out.printf("  %-9s %d%n", s.label(language).toUpperCase(language.locale()), counts.get(s));
-            System.out.printf("  %-9s %s%n%n", I18n.text("cli.total"),
+            System.out.printf("  %-9s %s%n", I18n.text("cli.total"),
                     I18n.text("cli.total.detail", findings.size(), findings.stream().map(Finding::id).distinct().count()));
+            if (r.ignores().read())
+                System.out.printf("  %-9s %s%n", I18n.text("cli.ignored"), I18n.text("cli.ignored.detail", split.ignored().size(), r.ignores().shown()));
+            System.out.println();
             for (Path p : written) System.out.println("  " + p.toAbsolutePath());
             if (o.failOn != null && findings.stream().anyMatch(f -> f.severity().compareTo(o.failOn) >= 0)) {
                 System.out.println("\n" + I18n.text("cli.fail", o.failOn.label(language).toUpperCase(language.locale())));

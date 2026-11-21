@@ -32,6 +32,7 @@ import org.jtools.cvescanner.cvss.Reach;
 import org.jtools.cvescanner.cvss.Requirement;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
+import org.jtools.cvescanner.ignore.Ignores;
 import org.jtools.cvescanner.model.Severity;
 
 public final class Options {
@@ -50,6 +51,10 @@ public final class Options {
     public Environment environment = Environment.NONE;
     public boolean environmentGiven;
     public boolean preferV4 = true, cvssGiven;
+    /** The ignore file --ignore names; null for the folder's own. */
+    public Path ignoreFile;
+    /** --no-ignore: every finding reported, the folder's ignore file left unread. */
+    public boolean noIgnore;
 
     public static Options parse(String[] args) {
         var o = new Options();
@@ -74,6 +79,8 @@ public final class Options {
                     o.preferV4 = v.equals("4");
                     o.cvssGiven = true;
                 }
+                case "--ignore" -> o.ignoreFile = Path.of(value(args, ++i, a));
+                case "--no-ignore" -> o.noIgnore = true;
                 case "--cve-only" -> o.cveOnly = true;
                 case "--no-gui" -> o.noGui = true;
                 case "--fail-on" -> o.failOn = Severity.parseThreshold(value(args, ++i, a));
@@ -86,6 +93,7 @@ public final class Options {
                 }
             }
         }
+        if (o.noIgnore && o.ignoreFile != null) throw new IllegalArgumentException(I18n.text("option.ignoreBoth"));
         o.environment = reach == null && cr == null && ir == null && ar == null ? preset
                 : Environment.of(reach != null ? reach : preset.reach(), cr != null ? cr : preset.confidentiality(),
                                  ir != null ? ir : preset.integrity(), ar != null ? ar : preset.availability());
@@ -111,6 +119,11 @@ public final class Options {
             }
         }
         return null;
+    }
+
+    /** The ignore file for Engine.scan: the one named, none (--no-ignore), or null for the folder's own. */
+    public Path ignoreChoice() {
+        return noIgnore ? Ignores.DISABLED : ignoreFile;
     }
 
     private static I18nLanguage language(String code) {

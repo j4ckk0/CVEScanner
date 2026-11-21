@@ -45,6 +45,9 @@ import org.jtools.cvescanner.engine.Engine;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
 import org.jtools.cvescanner.i18n.Phrase;
+import org.jtools.cvescanner.ignore.IgnoreRule;
+import org.jtools.cvescanner.ignore.IgnoredFinding;
+import org.jtools.cvescanner.ignore.Ignores;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.PackageSummary;
@@ -98,15 +101,16 @@ public final class Reports {
 
     /**
      * Writes report.md, in this language, and findings.csv and findings.json, in English whatever the language: their
-     * readers are programs. Returns the paths written.
+     * readers are programs. The findings reported are the split's active ones; those it sets aside have a section of
+     * their own in report.md and findings.json, and are not in findings.csv. Returns the paths written.
      */
-    public static List<Path> writeAll(ScanResult r, List<Finding> findings, Path outDir, Phrase filterNote,
+    public static List<Path> writeAll(ScanResult r, Ignores.Split split, Path outDir, Phrase filterNote,
                                Environment env, boolean preferV4, I18nLanguage language) throws IOException {
         Files.createDirectories(outDir);
         Path md = outDir.resolve("report.md"), csv = outDir.resolve("findings.csv"), json = outDir.resolve("findings.json");
-        Files.writeString(md, markdown(r, findings, filterNote, env, preferV4, language), UTF_8);
-        Files.writeString(csv, csv(findings, env), UTF_8);
-        Files.writeString(json, json(r, findings, env, preferV4), UTF_8);
+        Files.writeString(md, markdown(r, split, filterNote, env, preferV4, language), UTF_8);
+        Files.writeString(csv, csv(split.active(), env), UTF_8);
+        Files.writeString(json, json(r, split, env, preferV4), UTF_8);
         return List.of(md, csv, json);
     }
 
@@ -156,8 +160,9 @@ public final class Reports {
         return s.label(language).toUpperCase(language.locale());
     }
 
-    static String markdown(ScanResult r, List<Finding> findings, Phrase filterNote, Environment env, boolean preferV4,
+    static String markdown(ScanResult r, Ignores.Split split, Phrase filterNote, Environment env, boolean preferV4,
                            I18nLanguage language) {
+        var findings = split.active();
         var sb = new StringBuilder();
         var counts = counts(findings);
         sb.append("# ").append(I18n.text(language, "markdown.title")).append("\n\n");
@@ -172,6 +177,9 @@ public final class Reports {
         sb.append("- **").append(I18n.text(language, "markdown.scoring")).append(":** ").append(scoringText(preferV4, language)).append('\n');
         sb.append("- **").append(I18n.text(language, "markdown.environment")).append(":** ").append(env.describe(language))
                 .append(env.active() ? I18n.text(language, "markdown.environment.severity") : "").append('\n');
+        if (split.ignores().read())
+            sb.append("- **").append(I18n.text(language, "markdown.ignoreFile")).append(":** `").append(code(split.ignores().shown()))
+                    .append("` (").append(I18n.text(language, "markdown.ignoreFile.entries", split.ignores().rules().size())).append(")\n");
         if (filterNote != null) sb.append("- **").append(I18n.text(language, "markdown.filter")).append(":** ").append(md(filterNote.text(language))).append('\n');
         sb.append("\n## ").append(I18n.text(language, "markdown.summary")).append("\n\n").append(I18n.text(language, "markdown.summary.header")).append("\n|---|---|\n");
         for (var s : List.of(Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM, Severity.LOW, Severity.UNKNOWN))
@@ -214,12 +222,50 @@ public final class Reports {
                             u.declared().isEmpty() ? "—" : md(u.declared()), md(u.reason().text(language)))));
             sb.append('\n');
         }
+        if (split.ignores().read()) ignored(sb, split, language);
         sb.append("## ").append(I18n.text(language, "markdown.notes")).append("\n\n").append(I18n.text(language, "markdown.notes.text")).append('\n');
         // how components off-the-shelf are found and matched: said when the report holds some
         if (findings.stream().anyMatch(f -> f.ecosystem().equals(VulnDb.COTS))
                 || r.unresolved().stream().anyMatch(u -> u.ecosystem().equals(VulnDb.COTS)))
             sb.append(I18n.text(language, "markdown.notes.cots")).append('\n');
         return sb.toString();
+    }
+
+    /** The findings the ignore file sets aside, why and until when; its entries that expired, and those that name none. */
+    private static void ignored(StringBuilder sb, Ignores.Split split, I18nLanguage language) {
+        sb.append("## ").append(I18n.text(language, "markdown.ignored", split.ignored().size())).append("\n\n");
+        if (split.ignored().isEmpty()) {
+            sb.append(I18n.text(language, "markdown.ignored.none")).append("\n\n");
+        } else {
+            sb.append(I18n.text(language, "markdown.ignored.intro")).append("\n\n");
+            sb.append(I18n.text(language, "markdown.ignored.header")).append("\n|---|---|---|---|---|---|---|---|---|\n");
+            split.ignored().stream().sorted(Comparator.comparing(IgnoredFinding::finding, Finding.ORDER)).forEach(i -> {
+                var f = i.finding();
+                sb.append("| %s | `%s` | %s | %s | %s | %s | %s | %s | %s |\n".formatted(severity(f.severity(), language), code(f.pkg()),
+                        md(f.version()), link(f.id(), f.url()), f.cves().isEmpty() ? "—" : md(f.cveText()),
+                        i.rule().until() == null ? "—" : i.rule().until(), i.rule().reason().isEmpty() ? "—" : md(i.rule().reason()),
+                        md(f.file()), I18n.text(language, "markdown.ignored.line", i.rule().line())));
+            });
+            sb.append('\n');
+        }
+        if (!split.expired().isEmpty()) {
+            sb.append(I18n.text(language, "markdown.ignored.expired")).append("\n\n");
+            split.expired().forEach(rule -> sb.append("- ").append(entry(rule, language)).append(" — ")
+                    .append(I18n.text(language, "markdown.ignored.expiredOn", rule.until().toString())).append('\n'));
+            sb.append('\n');
+        }
+        if (!split.unused().isEmpty()) {
+            sb.append(I18n.text(language, "markdown.ignored.unused")).append("\n\n");
+            split.unused().forEach(rule -> sb.append("- ").append(entry(rule, language)).append('\n'));
+            sb.append('\n');
+        }
+    }
+
+    /** An entry of the ignore file, said: "line 4: `CVE-2020-36518`, `lodash` 4.17.15". */
+    private static String entry(IgnoreRule rule, I18nLanguage language) {
+        String what = "`" + code(rule.id()) + "`" + (rule.pkg().isEmpty() ? "" : ", `" + code(rule.pkg()) + "`")
+                + (rule.version().isEmpty() ? "" : " " + md(rule.version()));
+        return I18n.text(language, "markdown.ignored.line", rule.line()) + ": " + what;
     }
 
     /**
@@ -244,7 +290,8 @@ public final class Reports {
         return sb.toString();
     }
 
-    static String json(ScanResult r, List<Finding> findings, Environment env, boolean preferV4) {
+    static String json(ScanResult r, Ignores.Split split, Environment env, boolean preferV4) {
+        var findings = split.active();
         var root = new LinkedHashMap<String, Object>();
         root.put("generated", Engine.STAMP.format(Instant.now()));
         root.put("scanned_directory", r.root().toString());
@@ -259,32 +306,7 @@ public final class Reports {
         scoring.put("integrity_requirement", env.integrity().code);
         scoring.put("availability_requirement", env.availability().code);
         root.put("scoring", scoring);
-        root.put("findings", findings.stream().map(f -> {
-            var m = new LinkedHashMap<String, Object>();
-            m.put("severity", f.severity().name());
-            m.put("base_severity", f.score().baseSeverity().name());
-            m.put("cvss_version", f.score().version());
-            m.put("base_score", f.cvss());
-            m.put("base_vector", f.score().baseVector());
-            m.put("env_score", f.envScore());
-            m.put("env_vector", f.score().envVector());
-            m.put("ecosystem", f.ecosystem());
-            m.put("package", f.pkg());
-            m.put("version", f.version());
-            m.put("approximate", f.approximate());
-            m.put("scope", f.scope());
-            m.put("file", f.file());
-            m.put("id", f.id());
-            m.put("cves", f.cves());
-            m.put("aliases", f.aliases());
-            m.put("match", f.basis().name());
-            m.put("match_note", f.basisNote().text(I18nLanguage.ENGLISH));
-            m.put("fixed_in", f.fixedIn());
-            m.put("summary", f.summary());
-            m.put("published", f.published());
-            m.put("url", f.url());
-            return m;
-        }).toList());
+        root.put("findings", findings.stream().map(Reports::json).toList());
         // in a fixed order, as every other object of the file: two scans of the same projects write the same JSON
         root.put("unresolved_dependencies", r.unresolved().stream().map(u -> {
             var m = new LinkedHashMap<String, Object>();
@@ -295,6 +317,57 @@ public final class Reports {
             m.put("reason", u.reason().text(I18nLanguage.ENGLISH));
             return m;
         }).toList());
+        // the ignore file's, when there is one: what it sets aside, its entries expired and those naming nothing
+        if (split.ignores().read()) {
+            root.put("ignore_file", split.ignores().shown());
+            root.put("ignored_findings", split.ignored().stream().map(i -> {
+                var m = json(i.finding());
+                m.put("ignore_reason", i.rule().reason());
+                m.put("ignore_until", i.rule().until() == null ? null : i.rule().until().toString());
+                m.put("ignore_line", i.rule().line());
+                return m;
+            }).toList());
+            root.put("ignore_expired", split.expired().stream().map(Reports::json).toList());
+            root.put("ignore_unused", split.unused().stream().map(Reports::json).toList());
+        }
         return Json.write(root);
+    }
+
+    private static Map<String, Object> json(IgnoreRule rule) {
+        var m = new LinkedHashMap<String, Object>();
+        m.put("line", rule.line());
+        m.put("id", rule.id());
+        m.put("package", rule.pkg());
+        m.put("version", rule.version());
+        m.put("until", rule.until() == null ? null : rule.until().toString());
+        m.put("reason", rule.reason());
+        return m;
+    }
+
+    private static Map<String, Object> json(Finding f) {
+        var m = new LinkedHashMap<String, Object>();
+        m.put("severity", f.severity().name());
+        m.put("base_severity", f.score().baseSeverity().name());
+        m.put("cvss_version", f.score().version());
+        m.put("base_score", f.cvss());
+        m.put("base_vector", f.score().baseVector());
+        m.put("env_score", f.envScore());
+        m.put("env_vector", f.score().envVector());
+        m.put("ecosystem", f.ecosystem());
+        m.put("package", f.pkg());
+        m.put("version", f.version());
+        m.put("approximate", f.approximate());
+        m.put("scope", f.scope());
+        m.put("file", f.file());
+        m.put("id", f.id());
+        m.put("cves", f.cves());
+        m.put("aliases", f.aliases());
+        m.put("match", f.basis().name());
+        m.put("match_note", f.basisNote().text(I18nLanguage.ENGLISH));
+        m.put("fixed_in", f.fixedIn());
+        m.put("summary", f.summary());
+        m.put("published", f.published());
+        m.put("url", f.url());
+        return m;
     }
 }

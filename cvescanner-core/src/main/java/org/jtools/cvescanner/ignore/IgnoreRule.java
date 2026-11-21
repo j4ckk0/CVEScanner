@@ -1,0 +1,73 @@
+package org.jtools.cvescanner.ignore;
+
+/*-
+ * #%L
+ * CVEScanner
+ * %%
+ * Copyright (C) 2026 jtools.org
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+
+import java.time.LocalDate;
+import java.util.Objects;
+import org.jtools.cvescanner.model.Finding;
+
+/**
+ * One line of an ignore file: the findings of this vulnerability, for this package and this version, are set aside, for
+ * this reason, up to this day. An empty package or version is any; no date is for ever. The id is an advisory's, a CVE,
+ * or an alias: a CVE sets aside the GitHub or OSV advisory that names it as well as the CVE record.
+ *
+ * @param line the line of the file it was read from, 0 for an entry not read from a file
+ */
+public record IgnoreRule(String id, String pkg, String version, LocalDate until, String reason, int line) {
+
+    /** What an entry made from a finding covers: its version of its package, every version of it, every package. */
+    public enum Scope { VERSION, PACKAGE, EVERYWHERE }
+
+    public IgnoreRule {
+        id = Objects.requireNonNullElse(id, "").strip();
+        pkg = Objects.requireNonNullElse(pkg, "").strip();
+        version = Objects.requireNonNullElse(version, "").strip();
+        reason = Objects.requireNonNullElse(reason, "").strip();
+    }
+
+    /** Whether it names this finding: its id, one of its CVEs or aliases, and its package and version when it gives them. */
+    public boolean matches(Finding f) {
+        boolean named = id.equalsIgnoreCase(f.id()) || f.cves().stream().anyMatch(id::equalsIgnoreCase)
+                || f.aliases().stream().anyMatch(id::equalsIgnoreCase);
+        return named && (pkg.isEmpty() || pkg.equalsIgnoreCase(f.pkg())) && (version.isEmpty() || version.equals(f.version()));
+    }
+
+    /** Past its last day: it sets nothing aside any more. */
+    public boolean expired(LocalDate today) {
+        return until != null && today.isAfter(until);
+    }
+
+    /** The same entry, wherever it is in its file. */
+    public boolean sameEntry(IgnoreRule other) {
+        return id.equalsIgnoreCase(other.id) && pkg.equalsIgnoreCase(other.pkg) && version.equals(other.version)
+                && Objects.equals(until, other.until) && reason.equals(other.reason);
+    }
+
+    /**
+     * The entry that sets this finding aside, at this scope. It names the finding by its first CVE when it has one: a
+     * CVE is the same in every database, so the entry still applies once the scan uses another one.
+     */
+    public static IgnoreRule forFinding(Finding f, Scope scope, String reason, LocalDate until) {
+        String id = f.cves().isEmpty() ? f.id() : f.cves().getFirst();
+        return new IgnoreRule(id, scope == Scope.EVERYWHERE ? "" : f.pkg(), scope == Scope.VERSION ? f.version() : "",
+                until, reason, 0);
+    }
+}

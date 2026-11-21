@@ -166,6 +166,20 @@ with zipfile.ZipFile(os.path.join(out, "db/2026-11-19_all_CVEs_at_midnight.zip.z
     z.writestr("cves.zip", inner.getvalue())
 
 # ---------------------------------------------------------------------------------------------------------------------
+# An ignore file for the sample projects (golden case ghsa-ignore): for ever, one version, expired, naming nothing, and
+# two lines left out (no id, no date)
+write("ignore/cvescanner-ignore.csv", """# the sample's reviewed findings
+id,package,version,until,reason
+CVE-2021-44228,,,,"Not exposed: JNDI lookups disabled, see SEC-12"
+GHSA-xvch-5gv4-984h,minimist,1.2.5,2999-12-31,Development tool only
+cve-2021-23337,lodash,4.17.15,,Upgrade planned
+CVE-2020-36518,,,2020-01-01,Accepted for the 2019 release
+CVE-2099-0001,,,,Names nothing
+,axios,,,no id
+CVE-2022-1471,,,soon,not a date
+""")
+
+# ---------------------------------------------------------------------------------------------------------------------
 # Components off-the-shelf: a project naming them, a mock NVD feed (JSON 2.0, one file for the year), a mock CVE List
 write(os.path.join(out, "cots-projects/inventory/cots.csv"), """# the sample's components off-the-shelf: name,version[,vendor][,cpe]
 name,version,vendor,cpe
