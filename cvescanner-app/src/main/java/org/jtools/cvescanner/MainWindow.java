@@ -48,7 +48,6 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.time.LocalDate;
 import java.util.function.Consumer;
@@ -80,13 +79,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
-import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
-import javax.swing.RowSorter;
-import javax.swing.SortOrder;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
@@ -96,8 +91,6 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableRowSorter;
 import org.jtools.cvescanner.cli.Options;
 import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.engine.Engine;
@@ -114,7 +107,6 @@ import org.jtools.cvescanner.model.ScanResult;
 import org.jtools.cvescanner.model.Scoring;
 import org.jtools.cvescanner.model.Unresolved;
 import org.jtools.cvescanner.report.Reports;
-import org.jtools.cvescanner.version.Versions;
 
 /**
  * The window: the folder and the databases to scan, the ignore file to read, the environment to score for, the
@@ -123,52 +115,10 @@ import org.jtools.cvescanner.version.Versions;
  */
 final class MainWindow extends JFrame {
 
-    private static final List<Column<Finding>> FINDING_COLUMNS = List.of(
-            new Column<Finding>("column.severity", Severity.class, 175, Finding::severity),
-            new Column<Finding>("column.base", Double.class, 95, Finding::cvss),
-            new Column<Finding>("column.env", Double.class, 140, Finding::envScore),
-            new Column<Finding>("column.cvss", String.class, 95, f -> Objects.requireNonNullElse(f.score().version(), "")),
-            new Column<Finding>("column.ecosystem", String.class, 100, Finding::ecosystem),
-            new Column<Finding>("column.package", String.class, 320, Finding::pkg),
-            new Column<Finding>("column.version", String.class, 95, Finding::displayVersion),
-            new Column<Finding>("column.fixedIn", String.class, 95, f -> f.fixedIn().isEmpty() ? "—" : f.fixedIn()),
-            new Column<Finding>("column.cve", String.class, 130, Finding::cveText),
-            new Column<Finding>("column.advisory", String.class, 150, Finding::id),
-            new Column<Finding>("column.match", String.class, 125, f -> f.basis().label()),
-            new Column<Finding>("column.scope", String.class, 160, Finding::scope),
-            new Column<Finding>("column.file", String.class, 220, Finding::file),
-            new Column<Finding>("column.published", String.class, 85, Finding::publishedDate),
-            new Column<Finding>("column.summary", String.class, 380, Finding::summary));
-    private static final List<Column<PackageSummary>> PACKAGE_COLUMNS = List.of(
-            new Column<PackageSummary>("column.worst", Severity.class, 110, PackageSummary::worst),
-            new Column<PackageSummary>("column.ecosystem", String.class, 75, PackageSummary::ecosystem),
-            new Column<PackageSummary>("column.package", String.class, 300, PackageSummary::pkg),
-            new Column<PackageSummary>("column.current", String.class, 100, PackageSummary::displayVersion),
-            new Column<PackageSummary>("column.upgradeTo", String.class, 160, p -> p.upgradeTo()),
-            new Column<PackageSummary>("column.vulnerabilities", Integer.class, 95, PackageSummary::vulnerabilities),
-            new Column<PackageSummary>("column.advisories", String.class, 260, PackageSummary::advisories),
-            new Column<PackageSummary>("column.foundIn", String.class, 330, PackageSummary::files));
-    private static final List<Column<IgnoredFinding>> IGNORED_COLUMNS = List.of(
-            new Column<IgnoredFinding>("column.severity", Severity.class, 175, i -> i.finding().severity()),
-            new Column<IgnoredFinding>("column.env", Double.class, 140, i -> i.finding().envScore()),
-            new Column<IgnoredFinding>("column.ecosystem", String.class, 100, i -> i.finding().ecosystem()),
-            new Column<IgnoredFinding>("column.package", String.class, 300, i -> i.finding().pkg()),
-            new Column<IgnoredFinding>("column.version", String.class, 95, i -> i.finding().displayVersion()),
-            new Column<IgnoredFinding>("column.cve", String.class, 130, i -> i.finding().cveText()),
-            new Column<IgnoredFinding>("column.advisory", String.class, 150, i -> i.finding().id()),
-            new Column<IgnoredFinding>("column.until", String.class, 110, i -> i.rule().until() == null ? "—" : i.rule().until().toString()),
-            new Column<IgnoredFinding>("column.reason", String.class, 330, i -> i.rule().reason()),
-            new Column<IgnoredFinding>("column.file", String.class, 220, i -> i.finding().file()));
-    private static final List<Column<Unresolved>> UNRESOLVED_COLUMNS = List.of(
-            new Column<Unresolved>("column.ecosystem", String.class, 75, Unresolved::ecosystem),
-            new Column<Unresolved>("column.package", String.class, 300, Unresolved::name),
-            new Column<Unresolved>("column.declared", String.class, 160, Unresolved::declared),
-            new Column<Unresolved>("column.reason", String.class, 330, u -> u.reason().text()),
-            new Column<Unresolved>("column.file", String.class, 300, Unresolved::file));
-
     private final Options opts;
     private final Settings settings;
     private final I18nLabels labels = new I18nLabels();
+    private final FindingTables tables = new FindingTables(labels);
     private final I18nLanguageBox languageBox = new I18nLanguageBox(labels);
     /** The look items of View ▸ Look, each holding its look's class under LOOK_CLASS. */
     private final List<JRadioButtonMenuItem> lookItems = new ArrayList<>();
@@ -193,18 +143,6 @@ final class MainWindow extends JFrame {
     private final Map<Severity, JLabel> chips = new EnumMap<>(Severity.class);
     private final JLabel showingLabel = new JLabel(" ");
 
-    private final ListTableModel<Finding> findingsModel = new ListTableModel<>(FINDING_COLUMNS);
-    private final ListTableModel<PackageSummary> packagesModel = new ListTableModel<>(PACKAGE_COLUMNS);
-    private final ListTableModel<Unresolved> unresolvedModel = new ListTableModel<>(UNRESOLVED_COLUMNS);
-    private final ListTableModel<IgnoredFinding> ignoredModel = new ListTableModel<>(IGNORED_COLUMNS);
-    private final JTable findingsTable = new ScrollingTable(findingsModel);
-    private final JTable packagesTable = new ScrollingTable(packagesModel);
-    private final JTable unresolvedTable = new ScrollingTable(unresolvedModel);
-    private final JTable ignoredTable = new ScrollingTable(ignoredModel);
-    private final TableRowSorter<ListTableModel<Finding>> findingsSorter = new TableRowSorter<>(findingsModel);
-    private final TableRowSorter<ListTableModel<PackageSummary>> packagesSorter = new TableRowSorter<>(packagesModel);
-    private final TableRowSorter<ListTableModel<Unresolved>> unresolvedSorter = new TableRowSorter<>(unresolvedModel);
-    private final TableRowSorter<ListTableModel<IgnoredFinding>> ignoredSorter = new TableRowSorter<>(ignoredModel);
     private final JTabbedPane tabs = new JTabbedPane();
     private final JEditorPane detailPane = new JEditorPane("text/html", "");
     private final JLabel statusLabel = Gui.noHtml(new JLabel(" "));
@@ -259,11 +197,11 @@ final class MainWindow extends JFrame {
             @Override public void componentResized(ComponentEvent e) { north.revalidate(); }
         });
 
-        configureTables();
-        tabs.addTab("", new JScrollPane(findingsTable));
-        tabs.addTab("", new JScrollPane(packagesTable));
-        tabs.addTab("", new JScrollPane(unresolvedTable));
-        tabs.addTab("", new JScrollPane(ignoredTable));
+        wireTables();
+        tabs.addTab("", new JScrollPane(tables.findingsTable));
+        tabs.addTab("", new JScrollPane(tables.packagesTable));
+        tabs.addTab("", new JScrollPane(tables.unresolvedTable));
+        tabs.addTab("", new JScrollPane(tables.ignoredTable));
         tabs.addChangeListener(_ -> showSelected());
 
         detailPane.setEditable(false);
@@ -306,7 +244,7 @@ final class MainWindow extends JFrame {
         labels.on(this::updateSeverityHeader);
         labels.on(() -> List.of(severityCombo, ecosystemCombo)
                 .forEach(Component::repaint));
-        labels.on(() -> List.of(findingsTable, packagesTable, unresolvedTable, ignoredTable).forEach(Component::repaint));
+        labels.on(() -> List.of(tables.findingsTable, tables.packagesTable, tables.unresolvedTable, tables.ignoredTable).forEach(Component::repaint));
         setSize(1480, 940);
         setMinimumSize(new Dimension(1000, 640));
         setLocationRelativeTo(null);
@@ -498,23 +436,23 @@ final class MainWindow extends JFrame {
 
     /** The severity column says it is the environmental severity when an environment applies. */
     private void updateSeverityHeader() {
-        var header = findingsTable.getColumnModel().getColumn(findingsTable.convertColumnIndexToView(0));
+        var header = tables.findingsTable.getColumnModel().getColumn(tables.findingsTable.convertColumnIndexToView(0));
         header.setHeaderValue(I18n.text(environmentBar.environment().active() ? "column.envSeverity" : "column.severity"));
-        findingsTable.getTableHeader().repaint();
+        tables.findingsTable.getTableHeader().repaint();
     }
 
     /** Recomputes every finding's scores for the current environment (no rescan needed). */
     private void rescore() {
         if (result == null) return;
-        var selected = selectedFinding();
+        var selected = tables.selectedFinding();
         refreshFindings();
         if (selected != null) {
-            for (int i = 0; i < findingsTable.getRowCount(); i++) {
-                var f = findingsModel.row(findingsTable.convertRowIndexToModel(i));
+            for (int i = 0; i < tables.findingsTable.getRowCount(); i++) {
+                var f = tables.findingsModel.row(tables.findingsTable.convertRowIndexToModel(i));
                 if (f.id().equals(selected.id()) && f.file().equals(selected.file()) && f.scope().equals(selected.scope())
                         && f.pkg().equals(selected.pkg())) {
-                    findingsTable.setRowSelectionInterval(i, i);
-                    findingsTable.scrollRectToVisible(findingsTable.getCellRect(i, 0, true));
+                    tables.findingsTable.setRowSelectionInterval(i, i);
+                    tables.findingsTable.scrollRectToVisible(tables.findingsTable.getCellRect(i, 0, true));
                     break;
                 }
             }
@@ -547,124 +485,54 @@ final class MainWindow extends JFrame {
         return p;
     }
 
-    private void configureTables() {
-        Comparator<String> version = (a, b) -> Versions.compareMaven(a.replace(" ≈", "").replace("—", ""),
-                b.replace(" ≈", "").replace("—", ""));
-        setup(findingsTable, findingsSorter, FINDING_COLUMNS);
-        findingsSorter.setComparator(column(FINDING_COLUMNS, "column.version"), version);
-        findingsSorter.setComparator(column(FINDING_COLUMNS, "column.fixedIn"), version);
-        findingsSorter.setSortKeys(List.of(new RowSorter.SortKey(0, SortOrder.DESCENDING),
-                new RowSorter.SortKey(column(FINDING_COLUMNS, "column.env"), SortOrder.DESCENDING),
-                new RowSorter.SortKey(column(FINDING_COLUMNS, "column.base"), SortOrder.DESCENDING)));
-        setup(packagesTable, packagesSorter, PACKAGE_COLUMNS);
-        packagesSorter.setComparator(column(PACKAGE_COLUMNS, "column.current"), version);
-        packagesSorter.setSortKeys(List.of(new RowSorter.SortKey(0, SortOrder.DESCENDING),
-                new RowSorter.SortKey(column(PACKAGE_COLUMNS, "column.vulnerabilities"), SortOrder.DESCENDING)));
-        setup(unresolvedTable, unresolvedSorter, UNRESOLVED_COLUMNS);
-        setup(ignoredTable, ignoredSorter, IGNORED_COLUMNS);
-        ignoredSorter.setComparator(column(IGNORED_COLUMNS, "column.version"), version);
-        ignoredSorter.setSortKeys(List.of(new RowSorter.SortKey(0, SortOrder.DESCENDING),
-                new RowSorter.SortKey(column(IGNORED_COLUMNS, "column.env"), SortOrder.DESCENDING)));
-
-        var cvss = new DefaultTableCellRenderer() {
-            @Override
-            protected void setValue(Object v) { setText(v instanceof Double d ? Gui.score(d) : ""); }
-        };
-        cvss.setHorizontalAlignment(SwingConstants.RIGHT);
-        findingsTable.getColumnModel().getColumn(column(FINDING_COLUMNS, "column.base")).setCellRenderer(cvss);
-        var envRenderer = new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable t, Object v, boolean sel, boolean focus, int row, int col) {
-                super.getTableCellRendererComponent(t, v, sel, focus, row, col);
-                setText(v instanceof Double d ? Gui.score(d) : "");
-                setFont(getFont().deriveFont(Font.BOLD));
-                if (!sel && v instanceof Double d) setForeground(SeverityColors.of(Severity.fromScore(d)));
-                return this;
-            }
-        };
-        envRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
-        findingsTable.getColumnModel().getColumn(column(FINDING_COLUMNS, "column.env")).setCellRenderer(envRenderer);
-        ignoredTable.getColumnModel().getColumn(column(IGNORED_COLUMNS, "column.env")).setCellRenderer(envRenderer);
-        labels.tip(findingsTable.getTableHeader(), "column.header.tip");
-
-        findingsTable.getSelectionModel().addListSelectionListener(e -> {
+    /** What a click, a double-click, a right-click does in the tables. */
+    private void wireTables() {
+        tables.findingsTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) showSelected();
         });
-        findingsTable.addMouseListener(new MouseAdapter() {
+        tables.findingsTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                int row = findingsTable.rowAtPoint(e.getPoint());
-                if (SwingUtilities.isRightMouseButton(e) && row >= 0) findingsTable.setRowSelectionInterval(row, row);
+                int row = tables.findingsTable.rowAtPoint(e.getPoint());
+                if (SwingUtilities.isRightMouseButton(e) && row >= 0) tables.findingsTable.setRowSelectionInterval(row, row);
             }
 
             @Override
             public void mouseClicked(MouseEvent e) {
-                var f = selectedFinding();
+                var f = tables.selectedFinding();
                 if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e) && f != null) copyLink(f.url());
             }
         });
-        findingsTable.setComponentPopupMenu(findingsMenu());
+        tables.findingsTable.setComponentPopupMenu(findingsMenu());
 
-        ignoredTable.getSelectionModel().addListSelectionListener(e -> {
+        tables.ignoredTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) showSelected();
         });
-        ignoredTable.addMouseListener(new MouseAdapter() {
+        tables.ignoredTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                int row = ignoredTable.rowAtPoint(e.getPoint());
-                if (SwingUtilities.isRightMouseButton(e) && row >= 0) ignoredTable.setRowSelectionInterval(row, row);
+                int row = tables.ignoredTable.rowAtPoint(e.getPoint());
+                if (SwingUtilities.isRightMouseButton(e) && row >= 0) tables.ignoredTable.setRowSelectionInterval(row, row);
             }
 
             @Override
             public void mouseClicked(MouseEvent e) {
-                var i = selectedIgnored();
+                var i = tables.selectedIgnored();
                 if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e) && i != null) copyLink(i.finding().url());
             }
         });
-        ignoredTable.setComponentPopupMenu(ignoredMenu());
+        tables.ignoredTable.setComponentPopupMenu(ignoredMenu());
 
-        packagesTable.addMouseListener(new MouseAdapter() {     // double-click a package: show its findings
+        tables.packagesTable.addMouseListener(new MouseAdapter() {     // double-click a package: show its findings
             @Override
             public void mouseClicked(MouseEvent e) {
-                int row = packagesTable.getSelectedRow();
+                int row = tables.packagesTable.getSelectedRow();
                 if (e.getClickCount() == 2 && row >= 0) {
-                    searchField.setText(packagesModel.row(packagesTable.convertRowIndexToModel(row)).pkg());
+                    searchField.setText(tables.packagesModel.row(tables.packagesTable.convertRowIndexToModel(row)).pkg());
                     tabs.setSelectedIndex(0);
                 }
             }
         });
-        labels.tip(packagesTable, "packages.tip");
-    }
-
-    private static <T> int column(List<Column<T>> columns, String key) {
-        for (int i = 0; i < columns.size(); i++) if (columns.get(i).key().equals(key)) return i;
-        throw new IllegalArgumentException(key);
-    }
-
-    private <T> void setup(JTable table, TableRowSorter<ListTableModel<T>> sorter, List<Column<T>> columns) {
-        table.setRowSorter(sorter);
-        table.setRowHeight(30);
-        table.setAutoCreateRowSorter(false);
-        table.setFillsViewportHeight(true);
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
-        table.setDefaultRenderer(Severity.class, new SeverityRenderer());
-        table.setDefaultRenderer(String.class, new TextRenderer());
-        table.getTableHeader().setReorderingAllowed(true);
-        for (int c = 0; c < columns.size(); c++) {
-            var col = table.getColumnModel().getColumn(c);
-            col.setPreferredWidth(columns.get(c).width());
-            if (columns.get(c).width() <= 175) col.setMinWidth(columns.get(c).width());   // keep short columns readable
-        }
-        // the headers in the language in use: each column by its model index, wherever it was dragged
-        labels.on(() -> {
-            for (int c = 0; c < table.getColumnCount(); c++) {
-                var col = table.getColumnModel().getColumn(c);
-                col.setHeaderValue(I18n.text(columns.get(col.getModelIndex()).key()));
-            }
-            table.getTableHeader().repaint();
-        });
-        sorter.setSortsOnUpdates(true);
     }
 
     private JPopupMenu findingsMenu() {
@@ -687,14 +555,14 @@ final class MainWindow extends JFrame {
         var menu = new JPopupMenu();
         var stop = labels.text(new JMenuItem(), "menu.ignored.stop");
         stop.addActionListener(_ -> {
-            var i = selectedIgnored();
+            var i = tables.selectedIgnored();
             if (i != null) ignoreActions.stopIgnoring(i);
         });
         menu.add(stop);
         menu.addSeparator();
         var link = labels.text(new JMenuItem(), "menu.finding.copyAdvisoryLink");
         link.addActionListener(_ -> {
-            var i = selectedIgnored();
+            var i = tables.selectedIgnored();
             if (i != null) copyLink(i.finding().url());
         });
         menu.add(link);
@@ -704,7 +572,7 @@ final class MainWindow extends JFrame {
     private JMenuItem item(String key, Consumer<Finding> action) {
         var item = labels.text(new JMenuItem(), key);
         item.addActionListener(_ -> {
-            var f = selectedFinding();
+            var f = tables.selectedFinding();
             if (f != null) action.accept(f);
         });
         return item;
@@ -740,7 +608,7 @@ final class MainWindow extends JFrame {
 
     private void applyFilters() {
         var terms = searchTerms();
-        findingsSorter.setRowFilter(new RowFilter<>() {
+        tables.findingsSorter.setRowFilter(new RowFilter<>() {
             @Override
             public boolean include(Entry<? extends ListTableModel<Finding>, ? extends Integer> e) {
                 var f = e.getModel().row(e.getIdentifier());
@@ -748,14 +616,14 @@ final class MainWindow extends JFrame {
             }
         });
         // the package view is rebuilt from the findings that pass the facet filters, then searched
-        packagesModel.setRows(PackageSummary.of(findingsModel.rows().stream().filter(this::passesFacets).toList()));
-        packagesSorter.setRowFilter(new RowFilter<>() {
+        tables.packagesModel.setRows(PackageSummary.of(tables.findingsModel.rows().stream().filter(this::passesFacets).toList()));
+        tables.packagesSorter.setRowFilter(new RowFilter<>() {
             @Override
             public boolean include(Entry<? extends ListTableModel<PackageSummary>, ? extends Integer> e) {
                 return matchesSearch(e, terms, "");
             }
         });
-        unresolvedSorter.setRowFilter(new RowFilter<>() {
+        tables.unresolvedSorter.setRowFilter(new RowFilter<>() {
             @Override
             public boolean include(Entry<? extends ListTableModel<Unresolved>, ? extends Integer> e) {
                 var u = e.getModel().row(e.getIdentifier());
@@ -764,7 +632,7 @@ final class MainWindow extends JFrame {
                 return matchesSearch(e, terms, "");
             }
         });
-        ignoredSorter.setRowFilter(new RowFilter<>() {
+        tables.ignoredSorter.setRowFilter(new RowFilter<>() {
             @Override
             public boolean include(Entry<? extends ListTableModel<IgnoredFinding>, ? extends Integer> e) {
                 var i = e.getModel().row(e.getIdentifier());
@@ -774,18 +642,18 @@ final class MainWindow extends JFrame {
             }
         });
         updateCounts();
-        int shown = findingsTable.getRowCount();
-        if (findingsTable.getSelectedRow() < 0 && shown > 0) findingsTable.setRowSelectionInterval(0, 0);
+        int shown = tables.findingsTable.getRowCount();
+        if (tables.findingsTable.getSelectedRow() < 0 && shown > 0) tables.findingsTable.setRowSelectionInterval(0, 0);
         else if (shown == 0) showDetails(null);
     }
 
     /** The tabs' titles and the line saying how many findings are shown. */
     private void updateCounts() {
-        int shown = findingsTable.getRowCount(), total = findingsModel.getRowCount();
+        int shown = tables.findingsTable.getRowCount(), total = tables.findingsModel.getRowCount();
         tabs.setTitleAt(0, shown == total ? I18n.text("tab.findings", total) : I18n.text("tab.findings.filtered", shown, total));
-        tabs.setTitleAt(1, I18n.text("tab.packages", packagesTable.getRowCount()));
-        tabs.setTitleAt(2, I18n.text("tab.unresolved", unresolvedTable.getRowCount()));
-        tabs.setTitleAt(3, I18n.text("tab.ignored", ignoredTable.getRowCount()));
+        tabs.setTitleAt(1, I18n.text("tab.packages", tables.packagesTable.getRowCount()));
+        tabs.setTitleAt(2, I18n.text("tab.unresolved", tables.unresolvedTable.getRowCount()));
+        tabs.setTitleAt(3, I18n.text("tab.ignored", tables.ignoredTable.getRowCount()));
         showingLabel.setText(result == null ? " " : shown == total ? I18n.text("showing.all", total)
                 : I18n.text("showing.some", shown, total));
     }
@@ -800,7 +668,7 @@ final class MainWindow extends JFrame {
     }
 
     private void updateChips() {
-        var counts = Finding.countBySeverity(findingsModel.rows());
+        var counts = Finding.countBySeverity(tables.findingsModel.rows());
         chips.forEach((s, chip) -> chip.setText(s.label() + "  " + counts.get(s)));
     }
 
@@ -902,9 +770,9 @@ final class MainWindow extends JFrame {
     private void showResult(ScanResult r) {
         result = r;
         ignoreActions.scanned(r.ignores());
-        findingsTable.clearSelection();
-        ignoredTable.clearSelection();
-        unresolvedModel.setRows(r.unresolved());
+        tables.findingsTable.clearSelection();
+        tables.ignoredTable.clearSelection();
+        tables.unresolvedModel.setRows(r.unresolved());
         refreshFindings();
         exportButton.setEnabled(true);
         int files = r.fileCounts().values().stream().mapToInt(Integer::intValue).sum();
@@ -927,23 +795,13 @@ final class MainWindow extends JFrame {
         return result != null;
     }
 
-    private Finding selectedFinding() {
-        int row = findingsTable.getSelectedRow();
-        return row < 0 ? null : findingsModel.row(findingsTable.convertRowIndexToModel(row));
-    }
-
-    private IgnoredFinding selectedIgnored() {
-        int row = ignoredTable.getSelectedRow();
-        return row < 0 ? null : ignoredModel.row(ignoredTable.convertRowIndexToModel(row));
-    }
-
     /** The details of the finding selected in the findings' table; in the Ignored tab, of the one set aside there. */
     private void showSelected() {
         if (tabs.getSelectedIndex() != 3) {
-            showDetails(selectedFinding());
+            showDetails(tables.selectedFinding());
             return;
         }
-        var i = selectedIgnored();
+        var i = tables.selectedIgnored();
         detailPane.setText(i == null ? FindingDetails.placeholder(result != null)
                 : FindingDetails.page(i.finding(), environmentBar.environment(), i.rule(), ignoreActions.ignores().shown()));
         detailPane.setCaretPosition(0);
@@ -959,8 +817,8 @@ final class MainWindow extends JFrame {
     private void refreshFindings() {
         if (result == null) return;
         split = ignoreActions.ignores().split(Scoring.applyAll(result.findings(), environmentBar.environment(), environmentBar.preferV4()), LocalDate.now());
-        findingsModel.setRows(split.active());
-        ignoredModel.setRows(split.ignored());
+        tables.findingsModel.setRows(split.active());
+        tables.ignoredModel.setRows(split.ignored());
         updateChips();
         applyFilters();
     }
@@ -984,13 +842,13 @@ final class MainWindow extends JFrame {
 
     /** Ignore… on a finding; once the entry is written, the row now in its place is selected. */
     private void ignore(Finding f) {
-        int row = findingsTable.getSelectedRow();
+        int row = tables.findingsTable.getSelectedRow();
         if (!ignoreActions.ignore(f)) return;
-        int rows = findingsTable.getRowCount();
+        int rows = tables.findingsTable.getRowCount();
         if (rows > 0) {
             int next = Math.min(Math.max(row, 0), rows - 1);
-            findingsTable.setRowSelectionInterval(next, next);
-            findingsTable.scrollRectToVisible(findingsTable.getCellRect(next, 0, true));
+            tables.findingsTable.setRowSelectionInterval(next, next);
+            tables.findingsTable.scrollRectToVisible(tables.findingsTable.getCellRect(next, 0, true));
         }
     }
 
@@ -999,15 +857,15 @@ final class MainWindow extends JFrame {
         if (result == null) return;
         var chooser = new JFileChooser(opts.outDir.toAbsolutePath().toFile());
         chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        chooser.setDialogTitle(I18n.text("export.chooser.title", findingsTable.getRowCount()));
+        chooser.setDialogTitle(I18n.text("export.chooser.title", tables.findingsTable.getRowCount()));
         chooser.setApproveButtonText(I18n.text("export.chooser.approve"));
         if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
-        var visible = IntStream.range(0, findingsTable.getRowCount())
-                .mapToObj(i -> findingsModel.row(findingsTable.convertRowIndexToModel(i))).toList();
-        boolean filtered = visible.size() != findingsModel.getRowCount();
+        var visible = IntStream.range(0, tables.findingsTable.getRowCount())
+                .mapToObj(i -> tables.findingsModel.row(tables.findingsTable.convertRowIndexToModel(i))).toList();
+        boolean filtered = visible.size() != tables.findingsModel.getRowCount();
         try {
             var written = Reports.writeAll(result, split.withActive(visible), chooser.getSelectedFile().toPath(),
-                    filtered ? Phrase.of("export.filter", visible.size(), findingsModel.getRowCount()) : null,
+                    filtered ? Phrase.of("export.filter", visible.size(), tables.findingsModel.getRowCount()) : null,
                     environmentBar.environment(), environmentBar.preferV4(), I18n.language());
             // the folder is shown, to copy: the program starts no other one, a file manager no more than a browser
             String folder = chooser.getSelectedFile().getAbsolutePath();
