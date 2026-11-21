@@ -24,23 +24,17 @@ package org.jtools.cvescanner.engine;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import org.jtools.cvescanner.cots.BinaryReader;
 import org.jtools.cvescanner.cots.InventoryReader;
 import org.jtools.cvescanner.cots.ManifestReader;
 import org.jtools.cvescanner.cots.SbomReader;
-import org.jtools.cvescanner.db.CveList;
-import org.jtools.cvescanner.db.NvdFeed;
-import org.jtools.cvescanner.db.Osv;
 import org.jtools.cvescanner.db.VulnDb;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.ignore.Ignores;
-import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Finding;
-import org.jtools.cvescanner.model.MatchBasis;
 import org.jtools.cvescanner.model.ScanListener;
 import org.jtools.cvescanner.model.ScanResult;
 import org.jtools.cvescanner.project.DependencyCollector;
@@ -95,44 +89,7 @@ public final class Engine {
         l.status(I18n.text("status.matching", col.deps.size()));
         l.progress(-1);
         var findings = new ArrayList<Finding>();
-        var seen = new HashSet<List<String>>();
-        for (var d : col.deps) {
-            var coveredCves = new HashSet<String>();
-            for (var m : index.osvFor(d)) {
-                var key = List.of(d.file(), d.scope(), d.ecosystem().id(), d.name(), d.version(), Json.str(m.vuln(), "id"));
-                if (seen.contains(key) || !Osv.isAffected(d.ecosystem(), d.version(), m.affected())) continue;
-                seen.add(key);
-                var f = Osv.toFinding(d, m);
-                findings.add(f);
-                coveredCves.add(f.id());
-                coveredCves.addAll(f.cves());
-            }
-            // NVD's CPEs, for a component off-the-shelf: by vendor and product rather than by product alone
-            var bestNvd = new LinkedHashMap<String, Finding>();
-            for (var rule : index.nvdFor(d)) {
-                String id = rule.info().id();
-                if (coveredCves.contains(id)) continue;
-                var basis = NvdFeed.basis(d, rule);
-                if (basis == null || !NvdFeed.affected(d.version(), rule)) continue;
-                var previous = bestNvd.get(id);
-                if (previous == null || (previous.basis() == MatchBasis.CPE_PRODUCT && basis == MatchBasis.CPE))
-                    bestNvd.put(id, NvdFeed.toFinding(d, rule, basis));
-            }
-            findings.addAll(bestNvd.values());
-            coveredCves.addAll(bestNvd.keySet());
-            // CVE List records: skip CVEs already reported by an advisory or NVD, prefer package matches over name matches
-            var best = new LinkedHashMap<String, Finding>();
-            for (var rule : index.cveFor(d)) {
-                String id = rule.info().id();
-                if (coveredCves.contains(id)) continue;
-                var basis = CveList.basis(d, rule);
-                if (basis == null || !CveList.affected(d.ecosystem(), d.version(), rule)) continue;
-                var previous = best.get(id);
-                if (previous == null || (previous.basis() == MatchBasis.CVE_NAME && basis == MatchBasis.CVE_PACKAGE))
-                    best.put(id, CveList.toFinding(d, rule, basis));
-            }
-            findings.addAll(best.values());
-        }
+        for (var d : col.deps) findings.addAll(Matcher.findings(d, index));
         findings.sort(Finding.ORDER);
         var counts = new LinkedHashMap<String, Integer>();
         counts.put("files.pom", files.poms.size());
