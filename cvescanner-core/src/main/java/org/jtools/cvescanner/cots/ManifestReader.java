@@ -30,7 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.json.Json;
-import org.jtools.cvescanner.project.Collector;
+import org.jtools.cvescanner.project.DependencyCollector;
 import org.jtools.cvescanner.project.ProjectFiles;
 
 /**
@@ -48,7 +48,7 @@ public final class ManifestReader {
     private ManifestReader() {
     }
 
-    public static void scan(List<Path> pkgConfigs, List<Path> vcpkgManifests, List<Path> conanFiles, Collector col,
+    public static void scan(List<Path> pkgConfigs, List<Path> vcpkgManifests, List<Path> conanFiles, DependencyCollector col,
                             Consumer<Phrase> warn) {
         for (Path file : pkgConfigs) read(file, col, warn, ManifestReader::pkgConfig);
         for (Path file : vcpkgManifests) read(file, col, warn, ManifestReader::vcpkg);
@@ -56,10 +56,10 @@ public final class ManifestReader {
     }
 
     private interface Reader {
-        void read(String text, Path file, Collector col);
+        void read(String text, Path file, DependencyCollector col);
     }
 
-    private static void read(Path file, Collector col, Consumer<Phrase> warn, Reader reader) {
+    private static void read(Path file, DependencyCollector col, Consumer<Phrase> warn, Reader reader) {
         try {
             reader.read(ProjectFiles.readText(file), file, col);
         } catch (IOException | RuntimeException e) {
@@ -68,7 +68,7 @@ public final class ManifestReader {
     }
 
     /** A pkg-config file: its Name when a known one (else the file's), its Version. */
-    private static void pkgConfig(String text, Path file, Collector col) {
+    private static void pkgConfig(String text, Path file, DependencyCollector col) {
         String name = null, version = null;
         for (String line : text.lines().toList()) {
             if (line.startsWith("Name:")) name = line.substring(5).strip();
@@ -80,7 +80,7 @@ public final class ManifestReader {
     }
 
     /** A vcpkg manifest: each dependency, its version from an override, else its minimum ("version>="), else none. */
-    private static void vcpkg(String text, Path file, Collector col) {
+    private static void vcpkg(String text, Path file, DependencyCollector col) {
         var root = Json.obj(Json.parse(text));
         Map<String, String> overrides = new LinkedHashMap<>();
         for (Object o : Json.arr(root.get("overrides"))) {
@@ -99,7 +99,7 @@ public final class ManifestReader {
     }
 
     /** Conan: a lockfile's references, or a conanfile's requirements. */
-    private static void conan(String text, Path file, Collector col) {
+    private static void conan(String text, Path file, DependencyCollector col) {
         String name = file.getFileName().toString();
         if (name.equals("conan.lock")) {
             var root = Json.obj(Json.parse(text));
@@ -124,7 +124,7 @@ public final class ManifestReader {
         }
     }
 
-    private static void conanRef(String ref, Path file, Collector col) {
+    private static void conanRef(String ref, Path file, DependencyCollector col) {
         Matcher m = CONAN_REF.matcher(ref);
         if (!m.lookingAt()) return;
         String version = m.group(2);
@@ -133,7 +133,7 @@ public final class ManifestReader {
         else col.add("COTS", id, version, file, "conan", false);
     }
 
-    private static void add(Collector col, Path file, String id, String version, String scope, boolean approximate, Phrase whyNone) {
+    private static void add(DependencyCollector col, Path file, String id, String version, String scope, boolean approximate, Phrase whyNone) {
         if (version == null || version.isBlank()) col.miss("COTS", id, "", file, whyNone);
         else col.add("COTS", id, version.strip(), file, scope, approximate);
     }

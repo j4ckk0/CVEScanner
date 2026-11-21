@@ -30,13 +30,13 @@ import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.model.Dependency;
 import org.jtools.cvescanner.model.Unresolved;
 
-public final class Collector {
+public final class DependencyCollector {
     final Path root;
     public final List<Dependency> deps = new ArrayList<>();
     public final List<Unresolved> unresolved = new ArrayList<>();
     private final Set<List<Object>> seen = new HashSet<>();
 
-    public Collector(Path root) { this.root = root; }
+    public DependencyCollector(Path root) { this.root = root; }
 
     public String rel(Path p) { return root.relativize(p.toAbsolutePath().normalize()).toString().replace('\\', '/'); }
 

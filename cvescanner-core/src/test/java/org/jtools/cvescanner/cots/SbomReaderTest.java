@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import org.jtools.cvescanner.project.Collector;
+import org.jtools.cvescanner.project.DependencyCollector;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -42,7 +42,7 @@ class SbomReaderTest {
     private Set<String> read(String fileName, String json, List<String> warnings) throws Exception {
         Path file = dir.resolve(fileName);
         Files.writeString(file, json);
-        var col = new Collector(dir);
+        var col = new DependencyCollector(dir);
         SbomReader.scan(List.of(file), col, w -> warnings.add(w.text()));
         var found = new TreeSet<String>();
         col.deps.forEach(d -> found.add(d.ecosystem() + " " + d.name() + " " + d.version() + " " + d.scope()));

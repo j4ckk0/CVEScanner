@@ -44,10 +44,10 @@ import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
 import org.jtools.cvescanner.model.ScanResult;
-import org.jtools.cvescanner.project.Collector;
-import org.jtools.cvescanner.project.GradleScanner;
-import org.jtools.cvescanner.project.MavenScanner;
-import org.jtools.cvescanner.project.NpmScanner;
+import org.jtools.cvescanner.project.DependencyCollector;
+import org.jtools.cvescanner.project.GradleReader;
+import org.jtools.cvescanner.project.MavenReader;
+import org.jtools.cvescanner.project.NpmReader;
 import org.jtools.cvescanner.project.ProjectFiles;
 
 public final class Engine {
@@ -77,11 +77,11 @@ public final class Engine {
         l.status(I18n.text("status.lookingFor", root));
         l.progress(-1);
         var files = ProjectFiles.find(root);
-        var col = new Collector(root);
-        MavenScanner.scan(files.poms, col, l::warn);
-        GradleScanner.scan(files.gradle, files.gradleProps, col);
-        GradleScanner.scanCatalogs(files.catalogs, col);
-        NpmScanner.scan(files.packageJsons, root, col, l::warn);
+        var col = new DependencyCollector(root);
+        MavenReader.scan(files.poms, col, l::warn);
+        GradleReader.scan(files.gradle, files.gradleProps, col);
+        GradleReader.scanCatalogs(files.catalogs, col);
+        NpmReader.scan(files.packageJsons, root, col, l::warn);
         InventoryReader.scan(files.cotsInventories, col, l::warn);
         SbomReader.scan(files.sboms, col, l::warn);
         ManifestReader.scan(files.pkgConfigs, files.vcpkgManifests, files.conanFiles, col, l::warn);

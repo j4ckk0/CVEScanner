@@ -65,7 +65,7 @@ class NoNetworkTest {
 
     /**
      * Classes elsewhere that reach the network, hand over to a program that may, or make an XML parser — which fetches
-     * the DTDs and entities a document names unless told not to: MavenScanner.pomParser makes the program's only one.
+     * the DTDs and entities a document names unless told not to: MavenReader.pomParser makes the program's only one.
      */
     private static final List<Pattern> FORBIDDEN_CLASSES = Stream.of(
                     "java/awt/Desktop",                        // browse() and mail() start the browser and the mail client
@@ -103,7 +103,7 @@ class NoNetworkTest {
 
     private static final String RESOLVER = "org/jtools/cvescanner/NoNetworkResolver";
 
-    private static final String MAVEN_SCANNER = "org/jtools/cvescanner/project/MavenScanner";
+    private static final String MAVEN_READER = "org/jtools/cvescanner/project/MavenReader";
 
     private static final List<Exemption> EXEMPTIONS = List.of(
             // refuses every name lookup: names the types it implements (the longest first: each is removed in turn)
@@ -117,7 +117,7 @@ class NoNetworkTest {
             // the module's descriptor: names the resolver's service, which it provides
             new Exemption("module-info", List.of("java/net/spi/InetAddressResolverProvider"), List.of()),
             // makes the program's only XML parser, for the pom.xml files, set to fetch nothing (PomParserTest)
-            new Exemption(MAVEN_SCANNER, List.of("javax/xml/parsers/DocumentBuilderFactory"), List.of()));
+            new Exemption(MAVEN_READER, List.of("javax/xml/parsers/DocumentBuilderFactory"), List.of()));
 
     @Test
     void noClassOfTheProgramReachesTheNetwork() throws IOException, URISyntaxException {
@@ -229,9 +229,9 @@ class NoNetworkTest {
         String asResolver = String.join("\n", networkUses(RESOLVER + ".class", ClassFileNames.read(OFFENDER)));
         assertTrue(asResolver.contains("java/net/Socket"), asResolver);
 
-        String asMavenScanner = String.join("\n", networkUses(MAVEN_SCANNER + ".class", ClassFileNames.read(OFFENDER)));
-        assertTrue(asMavenScanner.contains("java/net/Socket"), asMavenScanner);
-        assertTrue(asMavenScanner.contains("calls javax/xml/stream/XMLInputFactory.newInstance"), asMavenScanner);
+        String asMavenReader = String.join("\n", networkUses(MAVEN_READER + ".class", ClassFileNames.read(OFFENDER)));
+        assertTrue(asMavenReader.contains("java/net/Socket"), asMavenReader);
+        assertTrue(asMavenReader.contains("calls javax/xml/stream/XMLInputFactory.newInstance"), asMavenReader);
     }
 
     private static final Path OFFENDER =

@@ -28,7 +28,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jtools.cvescanner.i18n.Phrase;
-import org.jtools.cvescanner.project.Collector;
+import org.jtools.cvescanner.project.DependencyCollector;
 
 /**
  * The components off-the-shelf a project carries as binaries: a Windows DLL or EXE named by its version resource
@@ -48,7 +48,7 @@ public final class BinaryReader {
     private BinaryReader() {
     }
 
-    public static void scan(List<Path> binaries, Collector col) {
+    public static void scan(List<Path> binaries, DependencyCollector col) {
         Set<String> seen = new HashSet<>();   // product, version, folder: once each
         for (Path file : binaries) {
             String fileName = file.getFileName().toString();

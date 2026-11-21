@@ -38,7 +38,7 @@ import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.version.Versions;
 
-public final class NpmScanner {
+public final class NpmReader {
     private static final List<String> LOCKFILES = List.of("package-lock.json", "npm-shrinkwrap.json", "yarn.lock", "pnpm-lock.yaml");
     private static final Pattern NON_REGISTRY = Pattern.compile("^(file:|link:|portal:|workspace:|catalog:|git|github:|https?:)");
     private static final Pattern GITHUB_SHORTHAND = Pattern.compile("^[\\w.\\-]+/[\\w.\\-]+(#.*)?$");
@@ -51,7 +51,7 @@ public final class NpmScanner {
 
     record MinVersion(String version, boolean exact, Phrase reason) {}
 
-    private NpmScanner() {}
+    private NpmReader() {}
 
     static MinVersion minVersion(String spec) {
         String s = spec.strip();
@@ -70,7 +70,7 @@ public final class NpmScanner {
         return new MinVersion(v, EXACT.matcher(first).matches(), null);
     }
 
-    public static void scan(List<Path> packageJsons, Path root, Collector col, Consumer<Phrase> warn) {
+    public static void scan(List<Path> packageJsons, Path root, DependencyCollector col, Consumer<Phrase> warn) {
         var doneLocks = new HashSet<Path>();
         for (Path pkgPath : packageJsons) {
             Map<String, Object> pkg;

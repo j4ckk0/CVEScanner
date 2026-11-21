@@ -27,7 +27,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import org.jtools.cvescanner.project.Collector;
+import org.jtools.cvescanner.project.DependencyCollector;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -40,7 +40,7 @@ class ManifestReaderTest {
     private Set<String> read(String fileName, String text) throws Exception {
         Path file = dir.resolve(fileName);
         Files.writeString(file, text);
-        var col = new Collector(dir);
+        var col = new DependencyCollector(dir);
         List<Path> one = List.of(file), none = List.of();
         if (fileName.endsWith(".pc")) ManifestReader.scan(one, none, none, col, w -> { throw new AssertionError(w.text()); });
         else if (fileName.equals("vcpkg.json")) ManifestReader.scan(none, one, none, col, w -> { throw new AssertionError(w.text()); });

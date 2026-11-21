@@ -43,7 +43,7 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-public final class MavenScanner {
+public final class MavenReader {
     private static final Pattern PROP = Pattern.compile("\\$\\{([^}]+)\\}");
 
     record PomDep(String group, String artifact, String version, String scope) {}
@@ -58,7 +58,7 @@ public final class MavenScanner {
         Pom(Path path) { this.path = path.toAbsolutePath().normalize(); }
     }
 
-    private MavenScanner() {}
+    private MavenReader() {}
 
     /**
      * The program's only XML parser, set to fetch nothing: a pom.xml of a scanned repository could name a DTD or an
@@ -89,7 +89,7 @@ public final class MavenScanner {
         }
     }
 
-    public static void scan(List<Path> paths, Collector col, Consumer<Phrase> warn) {
+    public static void scan(List<Path> paths, DependencyCollector col, Consumer<Phrase> warn) {
         DocumentBuilder builder = pomParser();
         var poms = new ArrayList<Pom>();
         for (Path p : paths) {

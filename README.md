@@ -277,7 +277,7 @@ Two Maven modules, each a jar and a Java module, built in this order by the pare
 
 | Path | What it holds |
 |---|---|
-| `cvescanner-core/…/project/` | the projects' dependencies: `ProjectFiles` (the files found), `MavenScanner` (POMs, their properties and parents), `GradleScanner` (build files, catalogs), `NpmScanner` (package.json and its lockfiles), `Collector` |
+| `cvescanner-core/…/project/` | the projects' dependencies: `ProjectFiles` (the files found), `MavenReader` (POMs, their properties and parents), `GradleReader` (build files, catalogs), `NpmReader` (package.json and its lockfiles), `DependencyCollector` |
 | `cvescanner-core/…/db/` | the databases: `VulnDb` (the zips streamed, nested ones followed, only what the projects use kept), `Osv` (OSV records, their ranges), `CveList` (CVE JSON 5 records, their package and name matches), `NvdFeed` (NVD's feeds, read a record at a time: CPE rules) |
 | `cvescanner-core/…/cots/` | components off-the-shelf: `InventoryReader` (cots.csv), `SbomReader` (CycloneDX, SPDX), `ManifestReader` (pkg-config, vcpkg, Conan), `BinaryReader` and `PeVersionInfo` (a DLL's version resource, read in bounded reads), `KnownProducts` (names to vendor:product) |
 | `cvescanner-core/…/engine/` | `Engine` (a scan: files, dependencies, databases, matches), `ScanListener` (its progress) |

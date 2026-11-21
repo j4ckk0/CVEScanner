@@ -34,7 +34,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jtools.cvescanner.i18n.Phrase;
 
-public final class GradleScanner {
+public final class GradleReader {
     private static final Pattern DEP_STRING = Pattern.compile(
             "[\"']([A-Za-z0-9_.\\-]+):([A-Za-z0-9_.\\-]+):([^\"'\\s:@]+)(?::[A-Za-z0-9_.\\-]+)?(?:@[A-Za-z0-9]+)?[\"']");
     private static final Pattern DEP_MAP = Pattern.compile(
@@ -49,7 +49,7 @@ public final class GradleScanner {
     private static final Pattern SECTION = Pattern.compile("\\[([^\\]]+)\\]");
     private static final Pattern KEY_VALUE = Pattern.compile("(\"[^\"]+\"|[\\w.\\-]+)\\s*=\\s*(.+)");
 
-    private GradleScanner() {}
+    private GradleReader() {}
 
     static String stripComments(String t) {
         t = t.replaceAll("(?s)/\\*.*?\\*/", "");
@@ -81,7 +81,7 @@ public final class GradleScanner {
         return v;
     }
 
-    private static void addDep(Collector col, String g, String a, String raw, Path path, String scope, Map<String, String> vars) {
+    private static void addDep(DependencyCollector col, String g, String a, String raw, Path path, String scope, Map<String, String> vars) {
         String name = g + ":" + a;
         String v = resolve(raw, vars).replaceAll("!+$", "");
         if (v.contains("$")) col.miss("Maven", name, raw, path, Phrase.of("reason.gradleVariable"));
@@ -90,7 +90,7 @@ public final class GradleScanner {
         else col.add("Maven", name, v, path, scope, false);
     }
 
-    public static void scan(List<Path> buildFiles, List<Path> propertyFiles, Collector col) throws IOException {
+    public static void scan(List<Path> buildFiles, List<Path> propertyFiles, DependencyCollector col) throws IOException {
         var global = new HashMap<String, String>();
         for (Path p : propertyFiles) {
             var props = new Properties();
@@ -118,7 +118,7 @@ public final class GradleScanner {
         }
     }
 
-    public static void scanCatalogs(List<Path> catalogs, Collector col) throws IOException {
+    public static void scanCatalogs(List<Path> catalogs, DependencyCollector col) throws IOException {
         for (Path path : catalogs) {
             String section = null;
             var versions = new HashMap<String, String>();

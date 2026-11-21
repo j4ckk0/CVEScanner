@@ -27,7 +27,7 @@ import java.nio.file.Path;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
-import org.jtools.cvescanner.project.Collector;
+import org.jtools.cvescanner.project.DependencyCollector;
 import org.junit.jupiter.api.Test;
 
 /** The binaries of the sample: named by their version resource, else by their file name; the unknown ones left out. */
@@ -37,7 +37,7 @@ class BinaryReaderTest {
 
     @Test
     void theSamplesBinaries() throws Exception {
-        var col = new Collector(BINARIES);
+        var col = new DependencyCollector(BINARIES);
         try (Stream<Path> files = Files.walk(BINARIES)) {
             BinaryReader.scan(files.filter(Files::isRegularFile).sorted().toList(), col);
         }

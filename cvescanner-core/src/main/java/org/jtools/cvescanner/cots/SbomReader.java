@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.json.Json;
-import org.jtools.cvescanner.project.Collector;
+import org.jtools.cvescanner.project.DependencyCollector;
 import org.jtools.cvescanner.project.ProjectFiles;
 
 /**
@@ -42,7 +42,7 @@ public final class SbomReader {
     private SbomReader() {
     }
 
-    public static void scan(List<Path> sboms, Collector col, Consumer<Phrase> warn) {
+    public static void scan(List<Path> sboms, DependencyCollector col, Consumer<Phrase> warn) {
         for (Path file : sboms) {
             try {
                 var root = Json.obj(Json.parse(ProjectFiles.readText(file)));
@@ -57,14 +57,14 @@ public final class SbomReader {
         }
     }
 
-    private static void cycloneDxComponent(Map<String, Object> c, Path file, Collector col, int depth) {
+    private static void cycloneDxComponent(Map<String, Object> c, Path file, DependencyCollector col, int depth) {
         component(text(c.get("name")), text(c.get("version")), text(c.get("purl")), text(c.get("cpe")), file, col);
         if (depth < 16) {
             for (Object child : Json.arr(c.get("components"))) cycloneDxComponent(Json.obj(child), file, col, depth + 1);
         }
     }
 
-    private static void spdxPackage(Map<String, Object> p, Path file, Collector col) {
+    private static void spdxPackage(Map<String, Object> p, Path file, DependencyCollector col) {
         String purl = "", cpe = "";
         for (Object o : Json.arr(p.get("externalRefs"))) {
             var ref = Json.obj(o);
@@ -77,7 +77,7 @@ public final class SbomReader {
     }
 
     /** A component, its identity from its purl first (Maven, npm), then its CPE, then its name. */
-    private static void component(String name, String version, String purl, String cpe, Path file, Collector col) {
+    private static void component(String name, String version, String purl, String cpe, Path file, DependencyCollector col) {
         if (purl.startsWith("pkg:maven/") || purl.startsWith("pkg:npm/")) {
             Purl p = Purl.parse(purl);
             String v = version.isEmpty() ? p.version() : version;

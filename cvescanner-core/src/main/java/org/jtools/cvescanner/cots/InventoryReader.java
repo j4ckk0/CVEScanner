@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
 import org.jtools.cvescanner.i18n.Phrase;
-import org.jtools.cvescanner.project.Collector;
+import org.jtools.cvescanner.project.DependencyCollector;
 import org.jtools.cvescanner.project.ProjectFiles;
 
 /**
@@ -40,7 +40,7 @@ public final class InventoryReader {
     private InventoryReader() {
     }
 
-    public static void scan(List<Path> inventories, Collector col, Consumer<Phrase> warn) {
+    public static void scan(List<Path> inventories, DependencyCollector col, Consumer<Phrase> warn) {
         for (Path file : inventories) {
             try {
                 for (String line : ProjectFiles.readText(file).lines().toList()) read(line, file, col);
@@ -50,7 +50,7 @@ public final class InventoryReader {
         }
     }
 
-    private static void read(String line, Path file, Collector col) {
+    private static void read(String line, Path file, DependencyCollector col) {
         String text = line.strip();
         if (text.isEmpty() || text.startsWith("#") || text.toLowerCase(Locale.ROOT).startsWith("name,")) return;
         String[] f = (text + ",,,").split(",", -1);
