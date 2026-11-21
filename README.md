@@ -5,21 +5,28 @@
 ![Java 25](https://img.shields.io/badge/Java-25-orange)
 ![Windows | Linux](https://img.shields.io/badge/runs%20on-Windows%20%7C%20Linux-lightgrey)
 
-**Which known vulnerabilities apply to your Maven, Gradle and npm projects?** CVEScanner looks through a folder for
-every `pom.xml`, Gradle build file and `package.json`, reads the dependencies they declare (and, with a lockfile, the
-npm ones they pull in), and checks each against a vulnerability database you downloaded as zip files: the GitHub
-Advisory Database, the CVE List, OSV.dev's exports. The findings are shown in a table you can filter, search and sort,
-and written as reports (`report.md`, `findings.csv`, `findings.json`). Each has its CVSS base score and an
-environmental score for where the software runs: internet-facing, internal network, air-gapped, developer
+**Which known vulnerabilities apply to your projects and to the components they ship?** CVEScanner looks through a
+folder for every `pom.xml`, Gradle build file and `package.json`, and reads the dependencies they declare (and, with a
+lockfile, the npm ones they pull in). It also finds the **components off-the-shelf** — GDAL, FFmpeg, OpenSSL, zlib,
+curl, SQLite… — that a component inventory, an SBOM, a C/C++ build manifest (pkg-config, vcpkg, Conan) or the
+binaries themselves name. It checks each against vulnerability databases you downloaded as zip files: the GitHub
+Advisory Database, the CVE List, OSV.dev's exports, NVD's CVE feeds. The findings are shown in a table you can filter,
+search and sort, and written as reports (`report.md`, `findings.csv`, `findings.json`). Each has its CVSS base score
+and an environmental score for where the software runs: internet-facing, internal network, air-gapped, developer
 workstation, or values of your own.
 
 It is a desktop program with a command line for CI, made for computers without internet access: it runs on its own —
 each distribution carries its Java runtime — and it **never reaches the network** (see [No network](#no-network)). It
 speaks French and English.
 
+[**Download the latest release**](https://github.com/j4ckk0/CVEScanner/releases/latest) for Windows or Linux — nothing
+to install, a Java runtime is inside: unpack it anywhere, drop a database zip into its `database` folder, and start
+`CVEScanner.exe` or `cvescanner.bat` (Windows), `cvescanner.sh` (Linux). Its `examples` folder is there to scan first.
+
 | | |
 |---|---|
 | You scan projects | [**The databases**](#the-databases), then [**The window**](#the-window) or [**The command line**](#the-command-line) |
+| You ship native components | [**Components off-the-shelf**](#components-off-the-shelf): GDAL, FFmpeg, OpenSSL… from an inventory, an SBOM, a build manifest, the binaries |
 | You read the results | [**Understanding the results**](#understanding-the-results) and [**CVSS scores and environments**](#cvss-scores-and-environments) |
 | You want it on your machine | [**Build and run**](#build-and-run) and [**Packaging**](#packaging): self-contained archives for Windows and Linux |
 | You read or change the code | [**Layout**](#layout) |

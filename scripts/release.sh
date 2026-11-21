@@ -62,7 +62,7 @@ jre_version=$(sed -n 's/^JDK_LINUX=.*_\([0-9][0-9.]*\)_[0-9]*\.tar\.gz$/\1/p' ex
 [ -n "$jre_version" ] || jre_version=25
 
 body=$(
-  echo "CVEScanner $version — which known vulnerabilities apply to the dependencies of Maven, Gradle and npm projects, from vulnerability databases you download yourself (GitHub Advisory Database, CVE List, OSV.dev), scored with CVSS for the environment the software runs in. Self-contained, and it never reaches the network."
+  echo "CVEScanner $version — which known vulnerabilities apply to the dependencies of Maven, Gradle and npm projects and to the components off-the-shelf they ship (GDAL, FFmpeg, OpenSSL…), from vulnerability databases you download yourself (GitHub Advisory Database, CVE List, OSV.dev, NVD), scored with CVSS for the environment the software runs in. Self-contained, and it never reaches the network."
   echo
   cat "$notes"
   echo
