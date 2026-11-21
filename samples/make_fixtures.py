@@ -180,7 +180,7 @@ CVE-2022-1471,,,soon,not a date
 # ---------------------------------------------------------------------------------------------------------------------
 # Components off-the-shelf: a project naming them (inventory, SBOMs, manifests, binaries), a mock NVD feed (JSON 2.0,
 # one file for the year), a mock CVE List
-write(os.path.join(out, "cots-projects/inventory/cots.csv"), """# the sample's components off-the-shelf: name,version[,vendor][,cpe]
+write("cots-projects/inventory/cots.csv", """# the sample's components off-the-shelf: name,version[,vendor][,cpe]
 name,version,vendor,cpe
 GDAL,3.4.1
 ffmpeg,4.4.2
@@ -216,7 +216,7 @@ records = [
 ]
 records.append(nvd("CVE-2024-1008", [cpe("libpng", "libpng", versionEndExcluding="1.6.38")],
                    v31=("CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H", 6.5)))
-write(os.path.join(out, "cots-projects/sbom/bom.cdx.json"), json.dumps({
+write("cots-projects/sbom/bom.cdx.json", json.dumps({
     "bomFormat": "CycloneDX", "specVersion": "1.5", "version": 1,
     "metadata": {"component": {"type": "application", "name": "sample-app", "version": "1.0"}},
     "components": [
@@ -227,7 +227,7 @@ write(os.path.join(out, "cots-projects/sbom/bom.cdx.json"), json.dumps({
          "components": [{"type": "library", "name": "zlib", "version": "1.2.11"}]},
         {"type": "library", "name": "<b>unnamed</b>"},
     ]}, indent=2))
-write(os.path.join(out, "cots-projects/sbom/app.spdx.json"), json.dumps({
+write("cots-projects/sbom/app.spdx.json", json.dumps({
     "spdxVersion": "SPDX-2.3", "SPDXID": "SPDXRef-DOCUMENT", "name": "sample",
     "packages": [
         {"SPDXID": "SPDXRef-1", "name": "FFmpeg", "versionInfo": "4.4.2",
@@ -244,25 +244,25 @@ records.append(nvd("CVE-2024-1010", [cpe("sqlite", "sqlite", versionEndExcluding
                    v31=("CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H", 5.5)))
 records.append(nvd("CVE-2024-1011", [cpe("libtiff", "libtiff", "4.3.0")],
                    v31=("CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H", 5.5)))
-write(os.path.join(out, "cots-projects/manifests/libtiff-4.pc"), """prefix=/usr
+write("cots-projects/manifests/libtiff-4.pc", """prefix=/usr
 libdir=${prefix}/lib
 Name: libtiff
 Description: Tag Image File Format (TIFF) library.
 Version: 4.3.0
 Libs: -L${libdir} -ltiff
 """)
-write(os.path.join(out, "cots-projects/manifests/vcpkg.json"), json.dumps({
+write("cots-projects/manifests/vcpkg.json", json.dumps({
     "name": "sample", "version": "1.0", "builtin-baseline": "0123456789abcdef",
     "dependencies": ["libxml2", {"name": "sqlite3", "version>=": "3.36.0"}, {"name": "gdal"}],
     "overrides": [{"name": "gdal", "version": "3.4.1#2"}]}, indent=2))
-write(os.path.join(out, "cots-projects/manifests/conanfile.txt"), """[requires]
+write("cots-projects/manifests/conanfile.txt", """[requires]
 libcurl/7.79.1
 zlib/[>=1.2.11 <2]
 
 [generators]
 CMakeDeps
 """)
-write(os.path.join(out, "cots-projects/manifests/conan.lock"), json.dumps({
+write("cots-projects/manifests/conan.lock", json.dumps({
     "version": "0.5", "requires": ["openssl/1.1.1k#a1b2c3%1650000000.0"], "build_requires": [], "python_requires": []}, indent=2))
 
 def pad4(b):
