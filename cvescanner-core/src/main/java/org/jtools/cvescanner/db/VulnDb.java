@@ -43,12 +43,12 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
 import org.jtools.cvescanner.cots.KnownProducts;
-import org.jtools.cvescanner.engine.Engine;
-import org.jtools.cvescanner.engine.ScanListener;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Dependency;
+import org.jtools.cvescanner.model.ScanListener;
+import org.jtools.cvescanner.model.ScanResult;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -185,7 +185,7 @@ public final class VulnDb {
                 l.warn(Phrase.of("warning.noRecords", file.getFileName().toString()));
             index.sources.put(file.getFileName().toString(), Phrase.of("database.description",
                     kind, records, counts.osvUsed + counts.cveUsed + counts.nvdUsed,
-                    Engine.STAMP.format(Files.getLastModifiedTime(file).toInstant())));
+                    ScanResult.TIMESTAMP_UTC.format(Files.getLastModifiedTime(file).toInstant())));
         }
         if (total == 0)
             throw new IOException(I18n.text("error.noRecordsAtAll"));

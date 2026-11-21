@@ -26,14 +26,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
-import org.jtools.cvescanner.cvss.Scoring;
+import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.engine.Engine;
-import org.jtools.cvescanner.engine.ScanListener;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.model.Finding;
-import org.jtools.cvescanner.model.Severity;
+import org.jtools.cvescanner.model.ScanListener;
+import org.jtools.cvescanner.model.Scoring;
 import org.jtools.cvescanner.report.Reports;
 
 public final class Cli {

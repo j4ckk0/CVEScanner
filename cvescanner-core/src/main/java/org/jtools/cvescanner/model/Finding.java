@@ -25,6 +25,7 @@ import java.util.Comparator;
 import java.util.List;
 import org.jtools.cvescanner.cvss.Rating;
 import org.jtools.cvescanner.cvss.Score;
+import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.Phrase;
 
 /**

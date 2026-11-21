@@ -24,7 +24,7 @@ package org.jtools.cvescanner;
 import java.awt.Color;
 import java.util.EnumMap;
 import java.util.Map;
-import org.jtools.cvescanner.model.Severity;
+import org.jtools.cvescanner.cvss.Severity;
 
 /**
  * The colour each severity is shown in, in light looks and in dark ones (lighter there, to be read on a dark

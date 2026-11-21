@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import org.jtools.cvescanner.model.Dependency;
 import org.junit.jupiter.api.Test;
+import org.jtools.cvescanner.model.ScanListener;
 
 /**
  * The example projects (examples/README.md) stay readable as they are: every package they declare found, with its

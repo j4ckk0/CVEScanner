@@ -1,4 +1,4 @@
-package org.jtools.cvescanner.model;
+package org.jtools.cvescanner.cvss;
 
 /*-
  * #%L

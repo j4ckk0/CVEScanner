@@ -30,6 +30,7 @@ import java.util.Map;
 import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.cvss.Rating;
 import org.jtools.cvescanner.cvss.Score;
+import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.I18nLanguage;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.ignore.IgnoreRule;
@@ -37,7 +38,6 @@ import org.jtools.cvescanner.ignore.Ignores;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
 import org.jtools.cvescanner.model.ScanResult;
-import org.jtools.cvescanner.model.Severity;
 import org.jtools.cvescanner.model.Unresolved;
 import org.junit.jupiter.api.Test;
 

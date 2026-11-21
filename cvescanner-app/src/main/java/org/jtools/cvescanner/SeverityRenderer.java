@@ -25,7 +25,7 @@ import java.awt.Component;
 import java.awt.Font;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
-import org.jtools.cvescanner.model.Severity;
+import org.jtools.cvescanner.cvss.Severity;
 
 final class SeverityRenderer extends DefaultTableCellRenderer {
     @Override

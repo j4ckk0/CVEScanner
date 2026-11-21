@@ -30,10 +30,10 @@ import java.util.Locale;
 import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.cvss.Reach;
 import org.jtools.cvescanner.cvss.Requirement;
+import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
 import org.jtools.cvescanner.ignore.Ignores;
-import org.jtools.cvescanner.model.Severity;
 
 public final class Options {
     /** The options and what they do, in the language in use. */

@@ -1,5 +1,6 @@
 package org.jtools.cvescanner.model;
 
+import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
 

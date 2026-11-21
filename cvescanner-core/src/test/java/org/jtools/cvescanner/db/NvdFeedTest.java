@@ -30,10 +30,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Dependency;
 import org.jtools.cvescanner.model.MatchBasis;
-import org.jtools.cvescanner.model.Severity;
 import org.junit.jupiter.api.Test;
 
 /** NVD's records as CPE rules: their products, versions and ranges, the rejected ones left out, their ratings. */

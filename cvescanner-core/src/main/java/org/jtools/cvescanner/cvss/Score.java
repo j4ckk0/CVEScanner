@@ -21,7 +21,6 @@ package org.jtools.cvescanner.cvss;
  */
 
 
-import org.jtools.cvescanner.model.Severity;
 
 /** Scores computed for one finding under the current environment. */
 public record Score(String version, String baseVector, Double base, Severity baseSeverity, String envVector, Double env) {}

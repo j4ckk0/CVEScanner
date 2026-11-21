@@ -41,11 +41,11 @@ import javax.swing.text.html.parser.ParserDelegator;
 import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.cvss.Rating;
 import org.jtools.cvescanner.cvss.Score;
+import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.ignore.IgnoreRule;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
-import org.jtools.cvescanner.model.Severity;
 import org.junit.jupiter.api.Test;
 
 /**

@@ -1,4 +1,4 @@
-package org.jtools.cvescanner.engine;
+package org.jtools.cvescanner.model;
 
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.Phrase;

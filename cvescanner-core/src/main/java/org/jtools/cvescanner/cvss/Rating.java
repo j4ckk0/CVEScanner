@@ -21,7 +21,6 @@ package org.jtools.cvescanner.cvss;
  */
 
 
-import org.jtools.cvescanner.model.Severity;
 
 /** The CVSS data an advisory provides (best vector per version, or only a rating / reported score). */
 public record Rating(Severity severity, Double score, String cvss3, String cvss4) {

@@ -23,8 +23,6 @@ package org.jtools.cvescanner.engine;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -43,6 +41,7 @@ import org.jtools.cvescanner.ignore.Ignores;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
+import org.jtools.cvescanner.model.ScanListener;
 import org.jtools.cvescanner.model.ScanResult;
 import org.jtools.cvescanner.project.DependencyCollector;
 import org.jtools.cvescanner.project.GradleReader;
@@ -51,8 +50,6 @@ import org.jtools.cvescanner.project.NpmReader;
 import org.jtools.cvescanner.project.ProjectFiles;
 
 public final class Engine {
-    public static final DateTimeFormatter STAMP = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm 'UTC'").withZone(ZoneOffset.UTC);
-
     private Engine() {}
 
     /** A scan reading the folder's own ignore file, if it has one. */

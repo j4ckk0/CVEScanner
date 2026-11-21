@@ -34,10 +34,10 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jtools.cvescanner.cvss.Rating;
 import org.jtools.cvescanner.cvss.Score;
+import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
-import org.jtools.cvescanner.model.Severity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

@@ -40,8 +40,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jtools.cvescanner.cvss.Environment;
+import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.db.VulnDb;
-import org.jtools.cvescanner.engine.Engine;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
 import org.jtools.cvescanner.i18n.Phrase;
@@ -52,7 +52,6 @@ import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.PackageSummary;
 import org.jtools.cvescanner.model.ScanResult;
-import org.jtools.cvescanner.model.Severity;
 import org.jtools.cvescanner.model.Unresolved;
 import org.jtools.cvescanner.version.Versions;
 
@@ -166,7 +165,7 @@ public final class Reports {
         var sb = new StringBuilder();
         var counts = counts(findings);
         sb.append("# ").append(I18n.text(language, "markdown.title")).append("\n\n");
-        sb.append("- **").append(I18n.text(language, "markdown.generated")).append(":** ").append(Engine.STAMP.format(Instant.now())).append('\n');
+        sb.append("- **").append(I18n.text(language, "markdown.generated")).append(":** ").append(ScanResult.TIMESTAMP_UTC.format(Instant.now())).append('\n');
         sb.append("- **").append(I18n.text(language, "markdown.scanned")).append(":** `").append(code(r.root().toString())).append("`\n");
         r.snapshots().forEach((file, desc) -> sb.append("- **").append(I18n.text(language, "markdown.database")).append(":** `")
                 .append(code(file)).append("` (").append(md(desc.text(language))).append(")\n"));
@@ -293,7 +292,7 @@ public final class Reports {
     static String json(ScanResult r, Ignores.Split split, Environment env, boolean preferV4) {
         var findings = split.active();
         var root = new LinkedHashMap<String, Object>();
-        root.put("generated", Engine.STAMP.format(Instant.now()));
+        root.put("generated", ScanResult.TIMESTAMP_UTC.format(Instant.now()));
         root.put("scanned_directory", r.root().toString());
         var databases = new LinkedHashMap<String, Object>();
         r.snapshots().forEach((file, desc) -> databases.put(file, desc.text(I18nLanguage.ENGLISH)));

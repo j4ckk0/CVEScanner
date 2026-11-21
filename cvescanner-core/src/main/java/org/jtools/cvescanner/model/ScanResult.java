@@ -22,6 +22,8 @@ package org.jtools.cvescanner.model;
 
 
 import java.nio.file.Path;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import org.jtools.cvescanner.i18n.Phrase;
@@ -32,4 +34,8 @@ import org.jtools.cvescanner.ignore.Ignores;
  * are scored), the dependencies, those that could not be checked, the databases read, the files counted, the warnings.
  */
 public record ScanResult(Path root, List<Finding> findings, List<Dependency> dependencies, List<Unresolved> unresolved,
-                  Map<String, Phrase> snapshots, Map<String, Integer> fileCounts, List<Phrase> warnings, Ignores ignores) {}
+                  Map<String, Phrase> snapshots, Map<String, Integer> fileCounts, List<Phrase> warnings, Ignores ignores) {
+
+    /** A moment as the reports and the databases' descriptions write it, the same wherever the program runs. */
+    public static final DateTimeFormatter TIMESTAMP_UTC = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm 'UTC'").withZone(ZoneOffset.UTC);
+}

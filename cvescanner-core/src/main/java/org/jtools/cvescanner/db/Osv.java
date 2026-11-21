@@ -29,13 +29,13 @@ import java.util.stream.Stream;
 import org.jtools.cvescanner.cvss.Cvss;
 import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.cvss.Rating;
-import org.jtools.cvescanner.cvss.Scoring;
+import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.json.Json;
 import org.jtools.cvescanner.model.Dependency;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
-import org.jtools.cvescanner.model.Severity;
+import org.jtools.cvescanner.model.Scoring;
 import org.jtools.cvescanner.version.Versions;
 
 public final class Osv {

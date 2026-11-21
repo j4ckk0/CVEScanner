@@ -1,4 +1,4 @@
-package org.jtools.cvescanner.cvss;
+package org.jtools.cvescanner.model;
 
 /*-
  * #%L
@@ -22,8 +22,11 @@ package org.jtools.cvescanner.cvss;
 
 
 import java.util.List;
-import org.jtools.cvescanner.model.Finding;
-import org.jtools.cvescanner.model.Severity;
+import org.jtools.cvescanner.cvss.Cvss;
+import org.jtools.cvescanner.cvss.Environment;
+import org.jtools.cvescanner.cvss.Rating;
+import org.jtools.cvescanner.cvss.Score;
+import org.jtools.cvescanner.cvss.Severity;
 
 /** Applies the chosen CVSS version and environment to a finding. */
 public final class Scoring {

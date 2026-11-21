@@ -24,11 +24,11 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import org.jtools.cvescanner.cvss.Cvss;
 import org.jtools.cvescanner.cvss.Environment;
+import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.ignore.IgnoreRule;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.MatchBasis;
-import org.jtools.cvescanner.model.Severity;
 
 /**
  * The details pane's page for a finding, as HTML. Everything a database or a project wrote goes through Gui.html,

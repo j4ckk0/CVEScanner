@@ -70,7 +70,7 @@ public final class Cvss {
     }
 
     /** Score of the full vector including environmental (and threat/temporal) metrics. */
-    static Double environmentalScore(String vector) {
+    public static Double environmentalScore(String vector) {
         var m = parse(vector);
         if (m == null) return null;
         if (isV4(vector)) return v4Score(m);
@@ -82,7 +82,7 @@ public final class Cvss {
     private static final List<String> AV_ORDER = List.of("N", "A", "L", "P");   // most to least exposed
 
     /** Returns the vector with the environment's security requirements and attack-vector cap applied. */
-    static String applyEnvironment(String vector, Environment env) {
+    public static String applyEnvironment(String vector, Environment env) {
         var m = parse(vector);
         if (m == null) return null;
         for (String k : List.of("CR", "IR", "AR")) m.remove(k);
