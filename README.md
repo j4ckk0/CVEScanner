@@ -6,14 +6,15 @@
 ![Windows | Linux](https://img.shields.io/badge/runs%20on-Windows%20%7C%20Linux-lightgrey)
 
 **Which known vulnerabilities apply to your projects and to the components they ship?** CVEScanner looks through a
-folder for every `pom.xml`, Gradle build file and `package.json`, and reads the dependencies they declare (and, with a
-lockfile, the npm ones they pull in). It also finds the **components off-the-shelf** — GDAL, FFmpeg, OpenSSL, zlib,
-curl, SQLite… — that a component inventory, an SBOM, a C/C++ build manifest (pkg-config, vcpkg, Conan) or the
+folder for every `pom.xml`, Gradle build file and `package.json`, and reads the dependencies they declare (and, with
+a lockfile, the npm ones they pull in). It also finds the **components off-the-shelf** — GDAL, FFmpeg, OpenSSL,
+zlib, curl, SQLite… — that a component inventory, an SBOM, a C/C++ build manifest (pkg-config, vcpkg, Conan) or the
 binaries themselves name. It checks each against vulnerability databases you downloaded as zip files: the GitHub
-Advisory Database, the CVE List, OSV.dev's exports, NVD's CVE feeds. The findings are shown in a table you can filter,
-search and sort, and written as reports (`report.md`, `findings.csv`, `findings.json`). Each has its CVSS base score
-and an environmental score for where the software runs: internet-facing, internal network, air-gapped, developer
-workstation, or values of your own.
+Advisory Database, the CVE List, OSV.dev's exports, NVD's CVE feeds. The findings are shown in a table you can
+filter, search and sort, and written as reports (`report.md`, `findings.csv`, `findings.json`). Each finding comes
+with **its severity** (critical, high, medium, low), **its CVSS base score** (3.x or 4.0) and **its environmental
+score**: the score for where the software runs — internet-facing, internal network, air-gapped, developer
+workstation, or values of your own — which can lower or raise the severity.
 
 It is a desktop program with a command line for CI, made for computers without internet access: it runs on its own —
 each distribution carries its Java runtime — and it **never reaches the network** (see [No network](#no-network)). It
