@@ -5,26 +5,45 @@
 ![Java 25](https://img.shields.io/badge/Java-25-orange)
 ![Windows | Linux](https://img.shields.io/badge/runs%20on-Windows%20%7C%20Linux-lightgrey)
 
-**Which known vulnerabilities apply to your projects and to the components they ship?** CVEScanner looks through a
-folder for every `pom.xml`, Gradle build file and `package.json`, and reads the dependencies they declare (and, with
-a lockfile, the npm ones they pull in). It also finds the **components off-the-shelf** — GDAL, FFmpeg, OpenSSL,
-zlib, curl, SQLite… — that a component inventory, an SBOM, a C/C++ build manifest (pkg-config, vcpkg, Conan) or the
-binaries themselves name. It checks each against vulnerability databases you downloaded as zip files: the GitHub
-Advisory Database, the CVE List, OSV.dev's exports, NVD's CVE feeds. The findings are shown in a table you can
-filter, search and sort, and written as reports (`report.md`, `findings.csv`, `findings.json`). Each finding comes
-with **its severity** (critical, high, medium, low), **its CVSS base score** (3.x or 4.0) and **its environmental
-score**: the score for where the software runs — internet-facing, internal network, air-gapped, developer
-workstation, or values of your own — which can lower or raise the severity.
+**Which known vulnerabilities apply to your projects and to the components they ship?**
 
-It is a desktop program with a command line for CI, made for computers without internet access: it runs on its own —
-each distribution carries its Java runtime — and it **never reaches the network** (see [No network](#no-network)). It
-speaks French and English.
+## What it does
+
+- **Finds the known vulnerabilities** (CVEs and advisories) of your **Maven, Gradle and npm/Yarn** projects'
+  dependencies, and of the **native components you ship**: GDAL, FFmpeg, OpenSSL, zlib, curl, SQLite…
+- **Gives each finding its severity** (critical, high, medium, low), **its CVSS base score** (3.x or 4.0) and **its
+  environmental score**: the score for where your software runs (internet-facing, internal network, air-gapped,
+  developer workstation, or values of your own), which can lower or raise the severity.
+- **Tells you which version fixes it**, and lists the packages to upgrade and to which version.
+- **Sets aside the findings you have reviewed**, with a reason and, if you want, an end date, in a file you keep with
+  the project.
+- **Shows the findings in a table** you can filter, search and sort, and **writes them as reports**: `report.md` to
+  read, `findings.csv` and `findings.json` for other tools. On the command line, a CI build can fail past a severity.
+- **Works offline**: a desktop program with a command line, made for computers without internet access, that **never
+  reaches the network**. In French and English.
 
 [**Download the latest release**](https://github.com/j4ckk0/CVEScanner/releases/latest) for Windows or Linux — nothing
 to install, a Java runtime is inside: unpack it anywhere, drop a database zip into its `database` folder, and start
 `CVEScanner.exe` or `cvescanner.bat` (Windows), `cvescanner.sh` (Linux). Its `examples` folder is there to scan first.
 
 ![The examples scanned for an internet-facing environment: 668 findings, Log4Shell selected with its scores and fix](docs/images/findings.png)
+
+## How it works
+
+1. **It finds your dependencies** in the folder you give it, sub-folders included:
+   - `pom.xml` files, with their properties and parents; Gradle build files and version catalogs; `package.json`
+     files, with their lockfile (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`) for the npm packages they pull in;
+   - the native components named by a component inventory (`cots.csv`), an SBOM (CycloneDX, SPDX), a C/C++ build
+     manifest (pkg-config, vcpkg, Conan), or the binaries themselves (a DLL's version resource, a file name).
+2. **It checks them against vulnerability databases you download** as zip files: the GitHub Advisory Database, the
+   CVE List, OSV.dev's exports and NVD's CVE feeds. Nothing is fetched. Advisories match packages exactly; NVD matches
+   components by vendor and product (CPE); the CVE List matches by package or by name.
+3. **It scores each finding** from its advisory's CVSS vector (3.x or 4.0), or its rating when it has no vector, then
+   applies the environment you chose as CVSS environmental metrics.
+4. **It runs on its own**: each archive carries its Java runtime, and the program makes no download, no name lookup and
+   starts no browser (see [No network](#no-network)).
+
+## Find your way
 
 | | |
 |---|---|
