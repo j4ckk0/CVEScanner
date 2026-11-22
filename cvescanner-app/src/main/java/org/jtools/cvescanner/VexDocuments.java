@@ -83,6 +83,8 @@ final class VexDocuments {
     /** Its row of the toolbar, at the row the constraints are set to. */
     void addRow(JPanel rows, GridBagConstraints c) {
         var choose = labels.text(new JButton(), "toolbar.chooseVex");
+        choose.setName("vexChoose");
+        field.setName("vexField");
         choose.addActionListener(_ -> choose());
         labels.text(noneButton, "toolbar.noVex");
         noneButton.addActionListener(_ -> set(List.of()));

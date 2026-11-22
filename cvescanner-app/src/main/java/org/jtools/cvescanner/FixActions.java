@@ -76,6 +76,7 @@ final class FixActions {
         this.owner = owner;
         this.tables = tables;
         this.host = host;
+        button.setName("applyFixes");
         button.addActionListener(_ -> apply());
         tables.onTicked = this::update;
         labels.on(this::update);

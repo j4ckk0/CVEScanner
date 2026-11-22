@@ -175,6 +175,7 @@ final class MainWindow extends JFrame {
         this.opts = opts;
         this.settings = settings;
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+        nameForTests();
         labels.bind(this::setTitle, "window.title");
         dirField.setText(opts.scanDir.toAbsolutePath().normalize().toString());
         if (!opts.dbFiles.isEmpty()) dbFiles.addAll(opts.dbFiles);
@@ -271,6 +272,17 @@ final class MainWindow extends JFrame {
         setMinimumSize(new Dimension(1000, 640));
         setLocationRelativeTo(null);
         if (opts.dirGiven) SwingUtilities.invokeLater(this::startScan);
+    }
+
+    /** The components the window test (WindowDriver) looks up, by a name no language changes. */
+    private void nameForTests() {
+        scanButton.setName("scan");
+        dirField.setName("folder");
+        tabs.setName("tabs");
+        statusLabel.setName("status");
+        scanModeCombo.setName("scanMode");
+        languageBox.setName("language");
+        detailPane.setName("details");
     }
 
     // ------------------------------------------------------------------------------------ menus, language

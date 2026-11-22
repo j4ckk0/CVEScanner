@@ -29,12 +29,17 @@ OSV.dev exports), scored with CVSS 3.x/4.0 for the environment the software runs
 ```bash
 scripts/setup.sh      # once: external/jdk and external/maven
 scripts/build.sh      # build + tests (extra arguments go to mvn)
-scripts/ci.sh         # clean build with every test; run by .githooks/pre-push
+scripts/ci.sh         # clean build with every test, the window test under xvfb-run; run by .githooks/pre-push
+scripts/window-check.sh  # the window test alone (WindowChecklistTest), on a virtual display
 scripts/run.sh        # the window (or: scripts/run.sh --no-gui -d DIR --db ZIP ...)
 scripts/package.sh    # releases/cvescanner-<version>-linux.tar.gz
 ```
 
 ## Tests worth knowing
+
+- `WindowChecklistTest` (app): the window started in the test's JVM (`WindowDriver`) and clicked through with a Robot;
+  only with `-Dcvescanner.windowTest=true`, which `scripts/ci.sh` and the build workflow pass under `xvfb-run`.
+  Components it looks up have a test name (`MainWindow.nameForTests`).
 
 - `cli/GoldenTest` (core): the scan of `samples/` must give what the original prototype gave, case by case
   (`src/test/resources/org/jtools/cvescanner/cli/golden/*`). A change of behaviour that is wanted updates the golden

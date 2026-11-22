@@ -3,6 +3,12 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
+## 1.4 — not released yet
+
+- **The window tested on every build**: `WindowChecklistTest` starts the window and clicks it through on a virtual
+  display (a scan, the packages ticked and the plan of Apply fixes, an installed product, a VEX document, the database
+  age, French), in `scripts/ci.sh` and the build workflow; `scripts/window-check.sh` runs it alone.
+
 ## 1.3 — 2026-11-22
 
 - **A CycloneDX SBOM** beside the reports, `bom.cdx.json` (CycloneDX 1.6): every dependency by its package URL, a
