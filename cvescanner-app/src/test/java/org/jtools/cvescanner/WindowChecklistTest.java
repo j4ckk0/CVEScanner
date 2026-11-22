@@ -41,9 +41,10 @@ import org.junit.jupiter.api.io.TempDir;
 
 /**
  * The window clicked through, as a person would check it: a scan and its filters, a header's ▾, the looks, the packages
- * ticked for Apply fixes, the plan, an installed product, standard and expert modes, a VEX document, the database age,
- * the Dependencies tab, Direct dependencies only, the other language. Only with -Dcvescanner.windowTest=true, on a
- * virtual display (scripts/window-check.sh): never on a desktop, which it would take over.
+ * ticked for Apply fixes, the plan, an installed product, standard and expert modes, the settings collapsed, a VEX
+ * document, the database age, the Dependencies tab, Direct dependencies only, the other language. Only with
+ * -Dcvescanner.windowTest=true, on a virtual display (scripts/window-check.sh): never on a desktop, which it would take
+ * over.
  */
 class WindowChecklistTest {
 
@@ -151,6 +152,14 @@ class WindowChecklistTest {
         w.menu("View", "Mode", "Expert");
         for (String name : java.util.List.of("ignoreChoose", "vexChoose", "cvss", "reach")) w.named(name);   // each waited for, shown
         assertEquals(null, w.find(Component.class, k -> "envCustomise".equals(k.getName())), "the reach on the row in expert mode");
+
+        // ▴ collapses the settings to the folder's row, the room left to the tables; ▾ shows them again
+        w.click(w.named("collapseSettings"));
+        for (String name : java.util.List.of("databases", "scanMode", "vexChoose", "reach"))
+            w.waitUntil(name + " hidden", () -> w.find(Component.class, k -> name.equals(k.getName())) == null);
+        w.named("folder");
+        w.click(w.named("collapseSettings"));
+        for (String name : java.util.List.of("databases", "scanMode", "vexChoose", "reach")) w.named(name);
 
         // 5. a VEX document: its statements set two findings aside, said with the document
         w.choose(w.named("scanMode", JComboBox.class), I18n.text("toolbar.scanMode.sources"));

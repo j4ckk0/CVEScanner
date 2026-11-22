@@ -22,6 +22,7 @@ package org.jtools.cvescanner;
 
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -122,8 +123,20 @@ final class MainWindow extends JFrame {
     private final RecentFolders recentFolders;
     /** Before the first scan the welcome, then the tables and the details. */
     private final JPanel centreCards = new JPanel(new CardLayout());
-    /** The environment, the search, the filters and the counters: shown from the first scan, the welcome alone before. */
+    /** The search, the filters and the counters: shown from the first scan, the welcome alone before. */
     private final List<JComponent> afterScan = new ArrayList<>();
+    /** The environment's row and the line above it: shown from the first scan, unless the settings are collapsed. */
+    private final List<JComponent> environment = new ArrayList<>();
+    /** The toolbar's rows below the folder's (the databases, what a scan reads), hidden when the settings are collapsed. */
+    private final List<Component> collapsible = new ArrayList<>();
+    /** The ignore file's and the VEX documents' rows: expert mode's, hidden too when the settings are collapsed. */
+    private final List<Component> expertRows = new ArrayList<>();
+    private final JButton collapseButton = new JButton();
+    /** The toolbar's grid: Apply fixes moves to the folder's row when the settings are collapsed. */
+    private JPanel toolbarRows;
+    /** The settings collapsed to the folder's row, the room left to the tables and the details (Settings). */
+    private boolean collapsed;
+    private boolean expert;
 
     private ScanResult result;
     /** The scan's findings scored for the environment, those the ignore file sets aside apart. */
@@ -183,7 +196,9 @@ final class MainWindow extends JFrame {
         // the rows of controls, each group apart: where to scan, how to score, what to show
         north.add(toolbar());
         north.add(separator());
-        afterScan.addAll(List.of(environmentBar.panel(), separator(), filterBar.panel(), summaryBar.panel()));
+        environment.addAll(List.of(environmentBar.panel(), separator()));
+        environment.forEach(north::add);
+        afterScan.addAll(List.of(filterBar.panel(), summaryBar.panel()));
         afterScan.forEach(north::add);
         add(north, BorderLayout.NORTH);
         addComponentListener(new ComponentAdapter() {       // let wrapped toolbar rows re-flow when the window is resized
@@ -243,8 +258,8 @@ final class MainWindow extends JFrame {
         setSize(1480, 940);
         setMinimumSize(new Dimension(1000, 640));
         setLocationRelativeTo(null);
+        collapsed = Boolean.parseBoolean(settings.get(Settings.SETTINGS_COLLAPSED, "false"));
         applyMode(viewMenu.expert());
-        afterScan.forEach(c -> c.setVisible(false));
         if (opts.dirGiven) SwingUtilities.invokeLater(this::startScan);
     }
 
@@ -257,11 +272,40 @@ final class MainWindow extends JFrame {
 
     /** Standard mode hides the ignore file, the VEX documents and the CVSS version, and uses their defaults. */
     private void applyMode(boolean expert) {
+        this.expert = expert;
         ignoreActions.standard(!expert);
         vexDocuments.standard(!expert);
         environmentBar.standard(!expert);
+        showBlocks();
+    }
+
+    /**
+     * What the window shows of its controls: the folder's row always; the other settings unless collapsed, the ignore
+     * file and the VEX documents in expert mode only, the environment from the first scan; the search, the filters and
+     * the counters from the first scan.
+     */
+    private void showBlocks() {
+        collapsible.forEach(c -> c.setVisible(!collapsed));
+        expertRows.forEach(c -> c.setVisible(expert && !collapsed));
+        environment.forEach(c -> c.setVisible(result != null && !collapsed));
+        afterScan.forEach(c -> c.setVisible(result != null));
+        collapseButton.setText(collapsed ? "▾" : "▴");
+        var fix = new GridBagConstraints();
+        fix.insets = new Insets(5, 6, 5, 6);
+        fix.anchor = GridBagConstraints.WEST;
+        fix.gridx = collapsed ? 5 : 4;   // beside Export on the folder's row, else below it
+        fix.gridy = collapsed ? 0 : 1;
+        ((GridBagLayout) toolbarRows.getLayout()).setConstraints(fixActions.button(), fix);
+        collapseButton.setToolTipText(I18n.text(collapsed ? "toolbar.expand" : "toolbar.collapse"));
         getContentPane().revalidate();
         getContentPane().repaint();
+    }
+
+    /** ▴ / ▾ at the end of the folder's row: the settings collapsed or shown again, kept for the next time. */
+    private void toggleCollapsed() {
+        collapsed = !collapsed;
+        settings.set(Settings.SETTINGS_COLLAPSED, Boolean.toString(collapsed));
+        showBlocks();
     }
 
     /** View ▸ Mode: the findings shown as the mode's settings give them, scanned again when the files read change. */
@@ -354,6 +398,7 @@ final class MainWindow extends JFrame {
     /** The rows of the toolbar: the folder, the databases, what a scan reads, the ignore file, the VEX documents. */
     private JPanel toolbar() {
         var rows = new JPanel(new GridBagLayout());
+        toolbarRows = rows;
         rows.setBorder(BorderFactory.createEmptyBorder(12, 14, 8, 14));
         var browse = labels.text(new JButton(), "toolbar.browse");
         browse.addActionListener(_ -> chooseFolder());
@@ -385,9 +430,16 @@ final class MainWindow extends JFrame {
         rows.add(scanButton, c);
         c.gridx = 4;
         rows.add(exportButton, c);
+        c.gridx = 6;
+        collapseButton.setName("collapseSettings");   // for the window test (WindowDriver)
+        collapseButton.addActionListener(_ -> toggleCollapsed());
+        labels.on(() -> collapseButton.setToolTipText(I18n.text(collapsed ? "toolbar.expand" : "toolbar.collapse")));
+        rows.add(collapseButton, c);
 
         c.gridy = 1;
+        int before = rows.getComponentCount();
         databases.addRow(rows, c);
+        collapsible.addAll(List.of(rows.getComponents()).subList(before, rows.getComponentCount()));
         c.gridx = 4;
         rows.add(fixActions.button(), c);
 
@@ -402,6 +454,7 @@ final class MainWindow extends JFrame {
         scanKind.add(directOnlyBox);
         c.gridx = 1;
         rows.add(scanKind, c);
+        collapsible.addAll(List.of(rows.getComponents()).subList(rows.getComponentCount() - 2, rows.getComponentCount()));
         labels.tip(scanModeCombo, "toolbar.scanMode.tip");
         boolean installed = opts.installed || settings.get(Settings.SCAN_MODE, "SOURCES").equals(ScanMode.INSTALLED.name());
         scanModeCombo.setSelectedIndex(installed ? 1 : 0);
@@ -410,9 +463,11 @@ final class MainWindow extends JFrame {
             directOnlyBox.setEnabled(scanMode() == ScanMode.SOURCES);
         });
         c.gridy = 3;
+        before = rows.getComponentCount();
         ignoreActions.addRow(rows, c);
         c.gridy = 4;
         vexDocuments.addRow(rows, c);
+        expertRows.addAll(List.of(rows.getComponents()).subList(before, rows.getComponentCount()));
         labels.text(directOnlyBox, "toolbar.directOnly");
         labels.tip(directOnlyBox, "toolbar.directOnly.tip");
         directOnlyBox.setName("directOnly");
@@ -550,8 +605,7 @@ final class MainWindow extends JFrame {
     private void showResult(ScanResult r) {
         result = r;
         ((CardLayout) centreCards.getLayout()).show(centreCards, "results");
-        afterScan.forEach(c -> c.setVisible(true));
-        getContentPane().revalidate();
+        showBlocks();
         ignoreActions.scanned(r.ignores());
         tables.findingsTable.clearSelection();
         tables.ignoredTable.clearSelection();
