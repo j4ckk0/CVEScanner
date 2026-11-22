@@ -36,9 +36,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * The README's pictures, in English and in French: the examples scanned with real databases (the findings, the
- * packages to upgrade, the dependency tree, the components off-the-shelf in a dark look), and a VEX document's
- * statements in the samples.
+ * The README's pictures, in English and in French: the welcome before a scan; the examples scanned with real databases
+ * (the findings, the packages to upgrade, the dependency tree, the components off-the-shelf in a dark look); a VEX
+ * document's statements in the samples.
  * Only with -Dcvescanner.screenshots=DIR and the databases in -Dcvescanner.screenshotDbs (scripts/screenshots.sh).
  */
 class ScreenshotsTest {
@@ -66,6 +66,7 @@ class ScreenshotsTest {
             if (!db.isBlank()) databases.addAll(List.of("--db", db));
         for (I18nLanguage language : List.of(I18nLanguage.ENGLISH, I18nLanguage.FRENCH)) {
             Path dir = Files.createDirectories(language == I18nLanguage.ENGLISH ? Path.of(out) : Path.of(out, "fr"));
+            welcome(language, databases, dir);
             examples(language, databases, dir);
             vex(language, dir);
         }
@@ -89,6 +90,25 @@ class ScreenshotsTest {
             w.choose(w.named("language", JComboBox.class), language.toString());
             w.waitUntil("the window in " + language, () -> I18n.language() == language);
         }
+    }
+
+    /** The window before its first scan, the examples beside the program (its settings' folder) to try. */
+    private void welcome(I18nLanguage language, List<String> databases, Path dir) throws Exception {
+        Path program = Files.createDirectories(settings.resolve("welcome-" + language));
+        Files.createSymbolicLink(program.resolve("examples"), ROOT.resolve("examples"));
+        w = WindowDriver.start(program, databases.toArray(String[]::new));
+        SwingUtilities.invokeAndWait(() -> w.window.setSize(SIZE));
+        if (language != I18nLanguage.ENGLISH) {
+            w.choose(w.named("language", JComboBox.class), language.toString());
+            w.waitUntil("the window in " + language, () -> I18n.language() == language);
+        }
+        show("folder", "~/CVEScanner/examples");
+        show("databases", "~/CVEScanner/database/  Maven-all.zip  ;  npm-all.zip  ;  PyPI-all.zip  ;  nvdcve-2.0-2002.json.zip … "
+                + "nvdcve-2.0-2026.json.zip  ;  nvdcve-2.0-modified.json.zip");
+        w.named("tryExamples");
+        w.screenshot(dir.resolve("welcome.png"));
+        w.close();
+        w = null;
     }
 
     /**
