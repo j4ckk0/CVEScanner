@@ -3,7 +3,12 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
-## 1.5 — 2026-11-22
+## 1.5.1 — 2026-11-22
+
+1.5 was tagged but not published: its Windows build failed. 1.5.1 is 1.5 with that fixed.
+
+- **Fixed, on Windows**: a damaged file of the databases' index cache is written again (it stayed open, and Windows
+  refused to replace it: the zip was read again at every scan).
 
 - **The dependency tree**: each dependency knows the packages that bring it, from Maven's and Gradle's walks and from
   `package-lock.json` (v2, v3), `yarn.lock` (v1, berry), `pnpm-lock.yaml`, `poetry.lock` and `uv.lock`, each package
