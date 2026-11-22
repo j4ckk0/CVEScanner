@@ -126,8 +126,11 @@ class WindowChecklistTest {
         // standard mode: no ignore file, VEX documents nor CVSS version to choose; expert mode shows them
         for (String name : java.util.List.of("ignoreChoose", "vexChoose", "cvss"))
             assertEquals(null, w.find(Component.class, k -> name.equals(k.getName())), name + " hidden in standard mode");
+        assertEquals(null, w.find(Component.class, k -> "reach".equals(k.getName())), "the reach behind Customise… in standard mode");
+        w.named("envCustomise");
         w.menu("View", "Mode", "Expert");
-        for (String name : java.util.List.of("ignoreChoose", "vexChoose", "cvss")) w.named(name);   // each waited for, shown
+        for (String name : java.util.List.of("ignoreChoose", "vexChoose", "cvss", "reach")) w.named(name);   // each waited for, shown
+        assertEquals(null, w.find(Component.class, k -> "envCustomise".equals(k.getName())), "the reach on the row in expert mode");
 
         // 5. a VEX document: its statements set two findings aside, said with the document
         w.choose(w.named("scanMode", JComboBox.class), I18n.text("toolbar.scanMode.sources"));

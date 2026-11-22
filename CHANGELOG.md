@@ -11,6 +11,14 @@ checksums.
   read change.
 - **The search and the filters apart**: the search on a row of its own, the severity, the ecosystem and the boxes on
   the next, under *Filters*.
+- **A more modern window**: rounder controls, striped tables, *Scan* in the accent colour; severities as coloured
+  pills; the counters as pills, filled for the severities shown, a click on the lowest filled one showing them all
+  again; the details in cards (Fix, Scores, References, Description) with buttons above them for the right-click
+  menus' actions (copy the advisory link, the CVEs, the package; ignore, stop ignoring).
+- **Easier to begin**: until the first scan, the steps where the tables will be, with *Scan* and *Try the examples*;
+  a folder dropped on the window is scanned; the ▾ beside the folder lists the last eight scanned. In standard mode the
+  environment is one choice with *Customise…* for the reach and the requirements.
+- *Scan:* on a toolbar row of its own: the scan mode and *Direct dependencies only*.
 
 ## 1.5.2 — 2026-11-22
 

@@ -139,19 +139,22 @@ reported as affecting it; a range NVD bounds by dates (FFmpeg's git snapshots) i
 
 Start `cvescanner.bat` or `CVEScanner.exe` (Windows), `cvescanner.sh` (Linux); give it a folder to scan it at once.
 
-1. **Project folder**: the folder of your project(s), its sub-folders scanned too.
+1. **Project folder**: the folder of your project(s), its sub-folders scanned too; or drop the folder on the window.
+   The ▾ beside it lists the folders scanned last.
 2. **Vulnerability database**: the zips of `database/` are already there; *Choose database zip…* for others.
 3. **Environment** (optional): where the scanned software runs, for the environmental score; changing it re-scores
-   at once, without scanning again.
+   at once, without scanning again. *Customise…* sets the reach and the three requirements one by one (in expert
+   mode they are on the row).
 4. **Scan.** Reading a database takes from a few seconds to a minute or two, as its size.
 
-To see it at work first, scan the `examples` folder beside the program: a Maven, a Gradle, an npm and a yarn project
+Until the first scan the window shows these steps where the tables will be, with **Try the examples**. To see it at
+work first, scan the `examples` folder beside the program: a Maven, a Gradle, an npm and a yarn project
 declaring real packages at vulnerable versions (Log4Shell, Text4Shell, Spring4Shell…), what a scan finds listed in
 [examples/README.md](examples/README.md).
 
 The table sorts by any column and filters as you type: on the first row **Search** (every word must match, across
 the columns and the aliases; Ctrl+F, Esc to clear); on the second the **Filters**: the **severity** (the coloured
-counters do the same), the **ecosystem**, *Only with CVE ID*, *Hide approximate (≈) versions*, *Hide name matches ⚠*,
+counters do the same: a click on one shows it and above, filled; a click on the lowest filled one shows all again), the **ecosystem**, *Only with CVE ID*, *Hide approximate (≈) versions*, *Hide name matches ⚠*,
 *Hide indirect dependencies*. Its tabs: **Findings**, one row per
 vulnerability and dependency, its details below (the fix, the scores, the match, the links); **Packages to
 upgrade**, one row per package version with the version that fixes all its findings; **Dependencies**, each file's
@@ -160,7 +163,8 @@ lockfiles that do not record what brings a package, Gradle's and `Pipfile.lock`,
 **Unchecked dependencies**,
 those whose version could not be known (an external BOM, a dynamic version like `1.+`), and why; **Ignored**, the
 findings the ignore file sets aside (see [Ignoring findings](#ignoring-findings)). A double-click or a right-click
-copies the advisory's link, the CVEs, the package's coordinates; a right-click also ignores a finding. **Export…**
+copies the advisory's link, the CVEs, the package's coordinates; a right-click also ignores a finding. The buttons
+above the details do the same for the finding shown. **Export…**
 writes the reports for the rows shown. *Hide indirect dependencies* shows only what the projects declare;
 *Direct dependencies only*, beside the scan mode, scans only that. *View ▸ Mode*: **Standard**, the first time,
 leaves out the *Ignore file* and *VEX documents* rows and the CVSS version's choice, and scans as the command line

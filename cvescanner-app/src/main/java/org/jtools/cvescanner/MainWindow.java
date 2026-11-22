@@ -21,6 +21,7 @@ package org.jtools.cvescanner;
  */
 
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -118,6 +119,9 @@ final class MainWindow extends JFrame {
     private final DetailsPane details;
     private final StatusLine status;
     private final ViewMenu viewMenu;
+    private final RecentFolders recentFolders;
+    /** Before the first scan the welcome, then the tables and the details. */
+    private final JPanel centreCards = new JPanel(new CardLayout());
 
     private ScanResult result;
     /** The scan's findings scored for the environment, those the ignore file sets aside apart. */
@@ -133,6 +137,7 @@ final class MainWindow extends JFrame {
         dirField.setText(opts.scanDir.toAbsolutePath().normalize().toString());
         status = new StatusLine(labels);
         databases = new DatabaseChoice(this, labels, settings, opts.dbFiles, opts.dbDir);
+        recentFolders = new RecentFolders(labels, settings, this::scanFolder);
         ignoreActions = new IgnoreActions(this, labels, new IgnoreActions.Host() {
             public ScanResult result() { return result; }
             public Ignores.Split split() { return split; }
@@ -205,7 +210,18 @@ final class MainWindow extends JFrame {
         centre.setResizeWeight(0.6);
         centre.setDividerSize(10);
         centre.setBorder(BorderFactory.createEmptyBorder(0, 16, 0, 16));
-        add(centre, BorderLayout.CENTER);
+        Path examples = examplesFolder();
+        var welcome = new WelcomePanel(labels, this::startScan, examples == null ? null : () -> {
+            scanModeCombo.setSelectedIndex(0);
+            scanFolder(examples);
+        });
+        centreCards.add(welcome.component(), "welcome");
+        centreCards.add(centre, "results");
+        add(centreCards, BorderLayout.CENTER);
+        // a folder dropped on the window, or on the welcome, is scanned
+        var drop = new FolderDrop(this::scanFolder);
+        setTransferHandler(drop);
+        welcome.component().setTransferHandler(drop);
         add(status.panel(), BorderLayout.SOUTH);
 
         int menuKey = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
@@ -267,6 +283,19 @@ final class MainWindow extends JFrame {
 
     private Path scanFolder() {
         return Path.of(dirField.getText().strip());
+    }
+
+    /** Scans this folder: one picked among the recent ones, dropped on the window, the examples. */
+    private void scanFolder(Path folder) {
+        if (busy) return;
+        dirField.setText(folder.toString());
+        startScan();
+    }
+
+    /** The examples beside the program (the folder the settings are kept in, else the working one); null when absent. */
+    private Path examplesFolder() {
+        Path folder = settings.folder() != null ? settings.folder().resolve("examples") : Path.of("examples").toAbsolutePath();
+        return Files.isDirectory(folder) ? folder : null;
     }
 
     // ------------------------------------------------------------------------------------ menus, language
@@ -341,7 +370,10 @@ final class MainWindow extends JFrame {
         c.gridx = 1;
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 1;
-        rows.add(dirField, c);
+        var folder = new JPanel(new BorderLayout(4, 0));
+        folder.add(dirField, BorderLayout.CENTER);
+        folder.add(recentFolders.button(), BorderLayout.EAST);
+        rows.add(folder, c);
         c.fill = GridBagConstraints.NONE;
         c.weightx = 0;
         c.gridx = 2;
@@ -470,6 +502,7 @@ final class MainWindow extends JFrame {
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
+        recentFolders.scanned(dir);
         setBusy(true);
         var dbFiles = databases.files();
         // the Maven and Gradle caches the command line names, else the home folder's; none for a direct-only scan
@@ -513,6 +546,7 @@ final class MainWindow extends JFrame {
 
     private void showResult(ScanResult r) {
         result = r;
+        ((CardLayout) centreCards.getLayout()).show(centreCards, "results");
         ignoreActions.scanned(r.ignores());
         tables.findingsTable.clearSelection();
         tables.ignoredTable.clearSelection();

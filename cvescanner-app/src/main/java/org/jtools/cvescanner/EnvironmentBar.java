@@ -22,8 +22,11 @@ package org.jtools.cvescanner;
 
 import java.awt.Component;
 import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JButton;
@@ -59,6 +62,9 @@ final class EnvironmentBar {
     private boolean preferV4 = true;
     /** Standard mode: the CVSS version's choice hidden, 4.0 first whatever was chosen. */
     private boolean standard;
+    /** The reach and the three requirements with their labels: in standard mode behind Customise… instead. */
+    private final List<Component> detail = new ArrayList<>();
+    private final JButton customise = new JButton();
     /** Set while the controls are made to show the choice: their own events then change nothing. */
     private boolean updating;
 
@@ -79,10 +85,39 @@ final class EnvironmentBar {
         return standard || preferV4;
     }
 
-    /** Standard mode: the CVSS version's choice hidden, 4.0 first; the choice kept for expert mode. */
+    /**
+     * Standard mode: the environment as one choice and Customise…, the CVSS version's choice hidden, 4.0 first; expert
+     * mode, the reach and the requirements on the row. The choices are kept for either.
+     */
     void standard(boolean on) {
         standard = on;
         cvssCombo.setVisible(!on);
+        detail.forEach(c -> c.setVisible(!on));
+        customise.setVisible(on);
+    }
+
+    /** Customise…: the reach and the three requirements in a dialog, the environment custom once they are set. */
+    private void customiseDialog() {
+        var reach = new JComboBox<>(Reach.values());
+        var cr = new JComboBox<>(Requirement.values());
+        var ir = new JComboBox<>(Requirement.values());
+        var ar = new JComboBox<>(Requirement.values());
+        reach.setSelectedItem(environment.reach());
+        cr.setSelectedItem(environment.confidentiality());
+        ir.setSelectedItem(environment.integrity());
+        ar.setSelectedItem(environment.availability());
+        labels.tip(reach, "environment.reach.tip");
+        for (var c : List.of(cr, ir, ar)) labels.tip(c, "environment.requirement.tip");
+        var form = new JPanel(new GridLayout(0, 2, 10, 8));
+        for (var pair : List.of(Map.entry("environment.reachable", reach), Map.entry("environment.confidentiality", cr),
+                Map.entry("environment.integrity", ir), Map.entry("environment.availability", ar))) {
+            form.add(new JLabel(I18n.text(pair.getKey())));
+            form.add(pair.getValue());
+        }
+        if (JOptionPane.showConfirmDialog(owner, form, I18n.text("environment.customise.title"), JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE) == JOptionPane.OK_OPTION)
+            setEnvironment(Environment.of((Reach) reach.getSelectedItem(), (Requirement) cr.getSelectedItem(),
+                    (Requirement) ir.getSelectedItem(), (Requirement) ar.getSelectedItem()));
     }
 
     JPanel panel() {
@@ -114,17 +149,22 @@ final class EnvironmentBar {
                 changed();
             }
         });
+        labels.text(customise, "environment.customise").addActionListener(_ -> customiseDialog());
+        customise.setName("envCustomise");   // for the window test (WindowDriver)
+        reachCombo.setName("reach");
         p.add(labels.text(new JLabel(), "environment.label"));
         p.add(envCombo);
-        p.add(Box.createHorizontalStrut(8));
-        p.add(labels.text(new JLabel(), "environment.reachable"));
-        p.add(reachCombo);
-        p.add(labels.text(new JLabel(), "environment.confidentiality"));
-        p.add(crCombo);
-        p.add(labels.text(new JLabel(), "environment.integrity"));
-        p.add(irCombo);
-        p.add(labels.text(new JLabel(), "environment.availability"));
-        p.add(arCombo);
+        p.add(customise);
+        detail.add(Box.createHorizontalStrut(8));
+        detail.add(labels.text(new JLabel(), "environment.reachable"));
+        detail.add(reachCombo);
+        detail.add(labels.text(new JLabel(), "environment.confidentiality"));
+        detail.add(crCombo);
+        detail.add(labels.text(new JLabel(), "environment.integrity"));
+        detail.add(irCombo);
+        detail.add(labels.text(new JLabel(), "environment.availability"));
+        detail.add(arCombo);
+        detail.forEach(p::add);
         p.add(Box.createHorizontalStrut(8));
         p.add(cvssCombo);
         p.add(help);
