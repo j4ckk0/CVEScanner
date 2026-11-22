@@ -3,11 +3,21 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
-## Unreleased
+## 1.7 — 2026-11-22
+
+- **Scan waits for what it needs**: on the welcome and in the toolbar, *Scan* is greyed until a folder to analyze and a
+  database are given, their fields outlined in red until then.
+- **The preferences in your own folder**: the folder analyzed last, the databases and the window's settings are kept
+  in `~/.config/cvescanner` (Linux) or `%APPDATA%\CVEScanner` (Windows), no longer beside the program (that file is
+  taken over once); *Help ▸ Preferences folder…* says where, copies the path and clears them. The databases' index
+  stays in `cache/` beside the program.
+- **The command line's help**: *Help ▸ Command line…* in the window lists every option; `cvescanner.bat --help`
+  (`-h`, `/?`) prints them in its console, as `cvescanner-cli.bat --help` (or `/?`) and `cvescanner.sh --help` do;
+  on Linux, `cvescanner.sh --man` shows the manual, `cvescanner.1`, shipped beside the program.
 
 - **Findings and Packages to upgrade in one tab**: the findings grouped by package version, a row each in bold with
   its worst severity, the version fixing all its findings (*Upgrade to*), its tick for *Apply fixes* and how many
-  findings it has; ▸ (a click, →) opens its findings below it, ← closes it, a search opens them all. A click on a
+  advisories it has; ▸ (a click, →) opens its findings below it, ← closes it, a search opens them all. A click on a
   header sorts, each package keeping its findings; the line under the counters says how many package versions hold the
   findings shown. Its columns: the package, its version, how many advisories, the CVE, the severity, the base and
   environment scores, the CVSS version, the fixed version, the date published, the summary, the advisory, then the
