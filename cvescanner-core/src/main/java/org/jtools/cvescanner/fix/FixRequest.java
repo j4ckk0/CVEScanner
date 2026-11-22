@@ -29,7 +29,7 @@ import org.jtools.cvescanner.model.PackageSummary;
 
 /**
  * An upgrade asked for: this package, from this version to the one fixing its findings, wherever the scan found it.
- * The target is the one the Packages tab showed when asked: the window's filters change no request once made.
+ * The target is the one the package's row showed when asked: the window's filters change no request once made.
  *
  * @param declarations the files declaring it (a pom, a Gradle build file or catalog, a package.json, a Python manifest,
  *                     a lockfile), with the scope the scan gave each

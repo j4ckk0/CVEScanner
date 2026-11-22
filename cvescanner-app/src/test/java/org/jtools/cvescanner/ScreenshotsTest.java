@@ -37,7 +37,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 /**
  * The README's pictures, in English and in French: the welcome before a scan; the examples scanned with real databases
- * (the findings, the packages to upgrade, the dependency tree, the components off-the-shelf in a dark look); a VEX
+ * (the findings, three package versions ticked, the dependency tree, the components off-the-shelf in a dark look); a VEX
  * document's statements in the samples.
  * Only with -Dcvescanner.screenshots=DIR and the databases in -Dcvescanner.screenshotDbs (scripts/screenshots.sh).
  */

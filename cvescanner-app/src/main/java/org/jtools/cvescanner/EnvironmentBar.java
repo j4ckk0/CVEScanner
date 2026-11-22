@@ -152,6 +152,7 @@ final class EnvironmentBar {
         labels.text(customise, "environment.customise").addActionListener(_ -> customiseDialog());
         customise.setName("envCustomise");   // for the window test (WindowDriver)
         reachCombo.setName("reach");
+        envCombo.setName("environment");
         p.add(labels.text(new JLabel(), "environment.label"));
         p.add(envCombo);
         p.add(customise);

@@ -495,9 +495,7 @@ final class MainWindow extends JFrame {
     /** Recomputes every finding's scores for the current environment (no rescan needed). */
     private void rescore() {
         if (result == null) return;
-        var selected = tables.selectedFinding();
-        refreshFindings();
-        if (selected != null) tables.select(selected);
+        refreshFindings();   // the row selected kept, a finding or a package version (FindingTables.filter)
         showSelected();
     }
 

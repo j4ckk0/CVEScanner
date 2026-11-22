@@ -38,7 +38,8 @@ import org.jtools.cvescanner.version.Versions;
 
 /**
  * The findings grouped by package version, as the findings' table shows them: a row for each package version (its
- * worst severity, the version fixing all its findings, its tick for Apply fixes, how many), and below it, when opened,
+ * worst severity, the version fixing all its findings, its tick for Apply fixes, how many advisories), and below it,
+ * when opened,
  * a row for each of its findings. Sorted here, not by a RowSorter: a package's findings stay below it whatever the
  * order, the packages ordered by their own value of the column (the first of their findings' for a finding's column).
  */
@@ -107,7 +108,7 @@ final class FindingGroups extends AbstractTableModel {
                 new GColumn("column.package", String.class, 300, g -> g.summary().pkg(), f -> "", TEXT, Finding::pkg),
                 new GColumn("column.version", String.class, 95, g -> g.summary().displayVersion(), f -> "", VERSION_ORDER, Finding::displayVersion),
                 new GColumn("column.upgradeTo", String.class, 140, g -> g.summary().upgradeTo(), f -> "", VERSION_ORDER, none),
-                new GColumn("column.vulnerabilities", Integer.class, 115, g -> g.findings().size(), f -> null, natural(), none),
+                new GColumn("column.vulnerabilities", Integer.class, 115, g -> g.summary().vulnerabilities(), f -> null, natural(), none),
                 new GColumn("column.fixedIn", String.class, 95, g -> "", f -> f.fixedIn().isEmpty() ? "—" : f.fixedIn(), VERSION_ORDER,
                         f -> f.fixedIn().isEmpty() ? "—" : f.fixedIn()),
                 new GColumn("column.cve", String.class, 130, g -> "", Finding::cveText, TEXT, Finding::cveText),

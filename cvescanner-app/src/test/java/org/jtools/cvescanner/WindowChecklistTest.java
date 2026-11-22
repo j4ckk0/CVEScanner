@@ -117,6 +117,17 @@ class WindowChecklistTest {
         w.clickButton("Clear filters");
         w.waitUntil("every finding shown", () -> w.tabTitle(0).equals("Findings (12)"));
 
+        // another environment scores the findings anew: the package version selected stays selected, closed
+        w.clickRow("lodash", FindingGroups.PACKAGE);
+        int before = WindowDriver.onEdt(findings::getRowCount);
+        var environments = w.named("environment", JComboBox.class);
+        WindowDriver.onEdt(() -> { environments.setSelectedIndex(1); return null; });
+        w.waitUntil("scored for it", () -> w.tabTitle(0).equals("Findings (12)") && WindowDriver.onEdt(environments::getSelectedIndex) == 1);
+        assertEquals(before, (int) WindowDriver.onEdt(findings::getRowCount), "a package opened by the new scores");
+        assertTrue(WindowDriver.onEdt(() -> findings.getSelectedRow() >= 0
+                && findings.getModel().getValueAt(findings.getSelectedRow(), FindingGroups.PACKAGE).toString().contains("lodash")), "lodash still selected");
+        WindowDriver.onEdt(() -> { environments.setSelectedIndex(0); return null; });
+
         // View ▸ Look: the window in a dark look, then back
         w.menu("View", "Look", "FlatLaf Dark");
         w.waitUntil("the dark look", () -> Looks.isDark());
