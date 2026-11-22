@@ -1,0 +1,19 @@
+ecosystem,package,version,file,scope,depth,path,findings,worst_severity,advisories
+PyPI,jinja2,2.11.2,pinned-pyproject/requirements.txt,requirements,0,jinja2 2.11.2,1,MEDIUM,GHSA-g3rq-g295-4j3m
+PyPI,django,3.1.0,pipenv/Pipfile.lock,direct,0,django 3.1.0,1,CRITICAL,GHSA-68w8-qjq3-2gfm
+PyPI,pytest,7.0.0,pipenv/Pipfile.lock,direct (dev),0,pytest 7.0.0,0,,
+PyPI,asgiref,3.3.1,pipenv/Pipfile.lock,transitive,,asgiref 3.3.1,0,,
+PyPI,pytz,2021.1,pipenv/Pipfile.lock,transitive,,pytz 2021.1,0,,
+PyPI,sqlparse,0.4.1,pipenv/Pipfile.lock,transitive,,sqlparse 0.4.1,0,,
+PyPI,jinja2,2.11.2,poetry/poetry.lock,direct,0,jinja2 2.11.2,1,MEDIUM,GHSA-g3rq-g295-4j3m
+PyPI,markupsafe,1.1.1,poetry/poetry.lock,transitive,1,jinja2 2.11.2 > markupsafe 1.1.1,0,,
+PyPI,pytest,7.0.0,poetry/poetry.lock,direct (dev),0,pytest 7.0.0,0,,
+PyPI,requests,2.25.0,poetry/poetry.lock,direct,0,requests 2.25.0,1,MEDIUM,GHSA-j8r2-6x86-q33q
+PyPI,urllib3,1.26.4,poetry/poetry.lock,transitive,1,requests 2.25.0 > urllib3 1.26.4,1,HIGH,GHSA-q2q7-5pp4-w6pg
+PyPI,requests,2.25.0,reqs/base.txt,requirements,0,requests 2.25.0,1,MEDIUM,GHSA-j8r2-6x86-q33q
+PyPI,Django,3.1,reqs/requirements.txt,requirements,0,Django 3.1,1,CRITICAL,GHSA-68w8-qjq3-2gfm
+PyPI,PyYAML,5.3.1,reqs/requirements.txt,requirements,0,PyYAML 5.3.1,1,CRITICAL,GHSA-8q59-q68h-6hv4
+PyPI,pytest,7.4.0,uv/uv.lock,direct (dev),0,pytest 7.4.0,0,,
+PyPI,pyyaml,5.3.1,uv/uv.lock,direct,0,pyyaml 5.3.1,1,CRITICAL,GHSA-8q59-q68h-6hv4
+PyPI,requests,2.25.1,uv/uv.lock,direct,0,requests 2.25.1,1,MEDIUM,GHSA-j8r2-6x86-q33q
+PyPI,urllib3,1.26.4,uv/uv.lock,transitive,1,requests 2.25.1 > urllib3 1.26.4,1,HIGH,GHSA-q2q7-5pp4-w6pg

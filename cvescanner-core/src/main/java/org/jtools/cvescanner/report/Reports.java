@@ -34,6 +34,8 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.jtools.cvescanner.model.DependencyTree;
+import org.jtools.cvescanner.model.Dependency;
 import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.i18n.I18n;
@@ -58,22 +60,59 @@ public final class Reports {
     /** The CycloneDX SBOM's file name: .cdx.json, as the tools that read one look for it. */
     public static final String SBOM = "bom.cdx.json";
 
+    /** The dependencies' tree, one row per dependency with its path from the declared one. */
+    public static final String DEPENDENCIES = "dependencies.csv";
+
+    public static List<Path> writeAll(ScanResult r, Ignores.Split split, Path outDir, List<Phrase> filters,
+                                      Environment env, boolean preferV4, I18nLanguage language) throws IOException {
+        return writeAll(r, split, outDir, filters, env, preferV4, language, false);
+    }
+
     /**
-     * Writes report.md, in this language, and findings.csv, findings.json and bom.cdx.json (CycloneDX), in English
+     * Writes report.md, in this language, and findings.csv, dependencies.csv, findings.json and bom.cdx.json (CycloneDX), in English
      * whatever the language: their readers are programs. The findings reported are the split's active ones; those it
      * sets aside have a section of their own in report.md and findings.json, are analysed "not_affected" in the SBOM,
-     * and are not in findings.csv. Returns the paths written.
+     * and are not in findings.csv.
+     *
+     * @param hideTransitive the indirect dependencies left out of dependencies.csv, as the filter leaves out their findings
+     * @return the paths written
      */
     public static List<Path> writeAll(ScanResult r, Ignores.Split split, Path outDir, List<Phrase> filters,
-                               Environment env, boolean preferV4, I18nLanguage language) throws IOException {
+                               Environment env, boolean preferV4, I18nLanguage language, boolean hideTransitive) throws IOException {
         Files.createDirectories(outDir);
-        Path md = outDir.resolve("report.md"), csv = outDir.resolve("findings.csv"), json = outDir.resolve("findings.json"),
-                bom = outDir.resolve(SBOM);
+        Path md = outDir.resolve("report.md"), csv = outDir.resolve("findings.csv"), deps = outDir.resolve(DEPENDENCIES),
+                json = outDir.resolve("findings.json"), bom = outDir.resolve(SBOM);
         Files.writeString(md, markdown(r, split, filters, env, preferV4, language), UTF_8);
         Files.writeString(csv, csv(split.active(), env), UTF_8);
+        var shown = hideTransitive ? r.dependencies().stream().filter(d -> !d.transitive()).toList() : r.dependencies();
+        Files.writeString(deps, dependenciesCsv(shown, split.active()), UTF_8);
         Files.writeString(json, json(r, split, env, preferV4), UTF_8);
         Files.writeString(bom, CycloneDx.bom(r, split, env), UTF_8);
-        return List.of(md, csv, json, bom);
+        return List.of(md, csv, deps, json, bom);
+    }
+
+    /**
+     * dependencies.csv: each dependency once, file by file in tree order (each followed by what it brings), with its
+     * depth (0 declared, empty when its file does not record what brings it), its path from the declared one, and its
+     * findings: how many, the worst severity, the advisories.
+     */
+    static String dependenciesCsv(List<Dependency> dependencies, List<Finding> findings) {
+        var sb = new StringBuilder("ecosystem,package,version,file,scope,depth,path,findings,worst_severity,advisories\n");
+        var byDependency = DependencyTree.findingsBy(findings);
+        for (DependencyTree tree : DependencyTree.of(dependencies))
+            for (DependencyTree.Row row : tree.rows()) {
+                Dependency d = row.dependency();
+                var own = byDependency.getOrDefault(DependencyTree.key(d), List.of());
+                var path = new ArrayList<String>();
+                if (row.depth() != null) d.parents().forEach(p -> path.add(DependencyTree.shown(p)));
+                path.add(d.name() + " " + d.version());
+                Severity worst = own.stream().map(Finding::severity).max(Comparator.naturalOrder()).orElse(null);
+                sb.append(Stream.of(d.ecosystem().id(), d.name(), d.version(), d.file(), d.scope(),
+                        row.depth() == null ? "" : String.valueOf(d.parents().size()), String.join(" > ", path), String.valueOf(own.size()),
+                        worst == null ? "" : worst.name(), String.join(";", own.stream().map(Finding::id).distinct().sorted().toList()))
+                        .map(Reports::cell).collect(Collectors.joining(","))).append('\n');
+            }
+        return sb.toString();
     }
 
     /**

@@ -199,7 +199,10 @@ Exit codes: `0`, `1` on an error (and when `--ignore-remove` finds no entry to r
 a fix confirmed by `--yes` could not be applied. Without a display the program goes to the command line by itself.
 
 The reports, in the `-o` folder: `report.md` (in the language chosen), `findings.csv` and `findings.json` (in English),
-and `bom.cdx.json`, a [CycloneDX](https://cyclonedx.org/) 1.6 SBOM: every dependency found, by its package URL
+`dependencies.csv`, the dependency tree in a spreadsheet (a row per dependency, each followed by what it brings, with
+its depth, its path from the declared one, `jackson-dataformat-yaml 2.14.2 > snakeyaml 1.33`, and its findings' count,
+worst severity and advisories; empty depth when the lockfile does not record what brings it, as Gradle's lockfile
+and `Pipfile.lock`), and `bom.cdx.json`, a [CycloneDX](https://cyclonedx.org/) 1.6 SBOM: every dependency found, by its package URL
 (`pkg:maven/…`, `pkg:npm/…`, `pkg:pypi/…`; a component off-the-shelf with its CPE), and every finding reported with
 its base and environmental CVSS ratings and the version that fixes it; the findings the ignore file sets aside are
 there too, analysed `not_affected` with the entry's reason. The same scan writes the same SBOM, its time aside.

@@ -1,0 +1,20 @@
+ecosystem,package,version,file,scope,depth,path,findings,worst_severity,advisories
+Maven,org.yaml:snakeyaml,1.33,gradle/build.gradle,implementation,0,org.yaml:snakeyaml 1.33,1,CRITICAL,GHSA-mjmj-j48q-9wg2
+Maven,com.google.guava:guava,31.1-jre,gradle/build.gradle,implementation,0,com.google.guava:guava 31.1-jre,1,HIGH,GHSA-7g45-4rm6-3mm3
+Maven,commons-text:commons-text,1.9,gradle/build.gradle,implementation,0,commons-text:commons-text 1.9,0,,
+Maven,org.apache.commons:commons-text,1.9,gradle/gradle/libs.versions.toml,catalog:commons-text,0,org.apache.commons:commons-text 1.9,1,CRITICAL,GHSA-599f-7c49-w659
+Maven,org.apache.logging.log4j:log4j-core,2.14.1,maven/child/pom.xml,compile,0,org.apache.logging.log4j:log4j-core 2.14.1,1,CRITICAL,GHSA-jfh8-c2jp-5v3q
+Maven,org.apache.logging.log4j:log4j-api,2.14.1,maven/child/pom.xml,transitive via org.apache.logging.log4j:log4j-core,1,org.apache.logging.log4j:log4j-core 2.14.1 > org.apache.logging.log4j:log4j-api 2.14.1,0,,
+Maven,com.google.guava:guava,31.0-jre,maven/child/pom.xml,transitive via org.apache.logging.log4j:log4j-core,1,org.apache.logging.log4j:log4j-core 2.14.1 > com.google.guava:guava 31.0-jre,1,HIGH,GHSA-7g45-4rm6-3mm3
+Maven,org.checkerframework:checker-qual,3.12.0,maven/child/pom.xml,transitive via org.apache.logging.log4j:log4j-core,2,org.apache.logging.log4j:log4j-core 2.14.1 > com.google.guava:guava 31.0-jre > org.checkerframework:checker-qual 3.12.0,0,,
+Maven,org.yaml:snakeyaml,1.33,maven/child/pom.xml,transitive via org.apache.logging.log4j:log4j-core,2,org.apache.logging.log4j:log4j-core 2.14.1 > com.google.guava:guava 31.0-jre > org.yaml:snakeyaml 1.33,1,CRITICAL,GHSA-mjmj-j48q-9wg2
+Maven,com.fasterxml.jackson.core:jackson-databind,2.9.8,maven/child/pom.xml,compile,0,com.fasterxml.jackson.core:jackson-databind 2.9.8,1,HIGH,GHSA-57j2-w4cx-62h2
+Maven,com.fasterxml.jackson.core:jackson-annotations,2.9.0,maven/child/pom.xml,transitive via com.fasterxml.jackson.core:jackson-databind,1,com.fasterxml.jackson.core:jackson-databind 2.9.8 > com.fasterxml.jackson.core:jackson-annotations 2.9.0,0,,
+Maven,com.fasterxml.jackson.core:jackson-core,2.9.8,maven/child/pom.xml,transitive via com.fasterxml.jackson.core:jackson-databind,1,com.fasterxml.jackson.core:jackson-databind 2.9.8 > com.fasterxml.jackson.core:jackson-core 2.9.8,0,,
+Maven,com.fasterxml.jackson.core:jackson-databind,2.9.8,maven/pom.xml,dependencyManagement,0,com.fasterxml.jackson.core:jackson-databind 2.9.8,1,HIGH,GHSA-57j2-w4cx-62h2
+npm,lodash,4.17.15,npm-lock/package-lock.json,direct,0,lodash 4.17.15,1,HIGH,GHSA-35jh-r3h4-6jhm
+npm,minimist,1.2.5,npm-lock/package-lock.json,transitive (dev),,minimist 1.2.5,1,CRITICAL,GHSA-xvch-5gv4-984h
+npm,axios,0.21.0,npm-nolock/package.json,dependencies,0,axios 0.21.0,1,HIGH,GHSA-cph5-m8f7-6c5x
+npm,jquery,3.4.0,npm-nolock/package.json,devDependencies,0,jquery 3.4.0,1,LOW,GHSA-gxr4-xjj5-5px2
+npm,lodash,4.17.20,yarn/yarn.lock,direct,0,lodash 4.17.20,1,HIGH,GHSA-35jh-r3h4-6jhm
+npm,minimist,1.2.5,yarn/yarn.lock,direct,0,minimist 1.2.5,1,CRITICAL,GHSA-xvch-5gv4-984h

@@ -250,11 +250,19 @@ final class FindingTables {
         return row < 0 ? null : packagesModel.row(packagesTable.convertRowIndexToModel(row));
     }
 
+    /** The filters last applied: the export leaves out what they leave out. */
+    FindingFilter facets() {
+        return facets;
+    }
+
+    private FindingFilter facets = FindingFilter.NONE;
+
     /**
      * The filters applied to every table: the findings by the facets and the search; the package view rebuilt from the
      * findings that pass the facets, then searched; the others by the ecosystem and the search.
      */
     void filter(FindingFilter facets, List<String> terms, Ecosystem ecosystem) {
+        this.facets = facets;
         findingsSorter.setRowFilter(new RowFilter<>() {
             @Override
             public boolean include(Entry<? extends ListTableModel<Finding>, ? extends Integer> e) {

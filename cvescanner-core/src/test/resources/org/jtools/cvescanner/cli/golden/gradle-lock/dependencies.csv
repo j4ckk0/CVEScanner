@@ -1,0 +1,6 @@
+ecosystem,package,version,file,scope,depth,path,findings,worst_severity,advisories
+Maven,junit:junit,4.13.2,gradle.lockfile,direct,0,junit:junit 4.13.2,0,,
+Maven,org.apache.logging.log4j:log4j-core,2.14.1,gradle.lockfile,direct,0,org.apache.logging.log4j:log4j-core 2.14.1,1,CRITICAL,GHSA-jfh8-c2jp-5v3q
+Maven,org.apache.logging.log4j:log4j-api,2.14.1,gradle.lockfile,transitive,,org.apache.logging.log4j:log4j-api 2.14.1,0,,
+Maven,org.hamcrest:hamcrest-core,1.3,gradle.lockfile,transitive (test),,org.hamcrest:hamcrest-core 1.3,0,,
+Maven,org.yaml:snakeyaml,1.33,gradle.lockfile,transitive,,org.yaml:snakeyaml 1.33,1,CRITICAL,GHSA-mjmj-j48q-9wg2

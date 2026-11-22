@@ -77,7 +77,7 @@ public final class Cli {
                 }
             }
             var findings = split.active();
-            var written = Reports.writeAll(r, split, o.outDir, o.filter().describe(), o.environment, o.preferV4, language);
+            var written = Reports.writeAll(r, split, o.outDir, o.filter().describe(), o.environment, o.preferV4, language, o.hideTransitive);
             var counts = Finding.countBySeverity(findings);
             System.out.println("\n" + "=".repeat(60) + "\n " + I18n.text("cli.complete") + "\n" + "=".repeat(60));
             System.out.printf("  %-11s: %s%n", I18n.text("cli.scoring"), Reports.scoringText(o.preferV4, language));

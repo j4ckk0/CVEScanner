@@ -87,6 +87,8 @@ class GoldenTest {
         assertEquals(read(golden, "findings.csv"), read(out, "findings.csv"), "findings.csv");
         assertEquals(markdown(read(golden, "report.md")), markdown(read(out, "report.md")), "report.md");
         assertEquals(json(read(golden, "findings.json")), json(read(out, "findings.json")), "findings.json");
+        if (Files.exists(golden.resolve(Reports.DEPENDENCIES)))
+            assertEquals(read(golden, Reports.DEPENDENCIES), read(out, Reports.DEPENDENCIES), Reports.DEPENDENCIES);
         if (Files.exists(golden.resolve(Reports.SBOM)))
             assertEquals(bom(read(golden, Reports.SBOM)), bom(read(out, Reports.SBOM)), Reports.SBOM);
     }

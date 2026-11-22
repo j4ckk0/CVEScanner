@@ -56,7 +56,7 @@ final class ExportAction {
         try {
             var written = Reports.writeAll(result, split.withActive(visible), chooser.getSelectedFile().toPath(),
                     filtered ? List.of(Phrase.of("export.filter", visible.size(), tables.findingsModel.getRowCount())) : List.of(),
-                    environmentBar.environment(), environmentBar.preferV4(), I18n.language());
+                    environmentBar.environment(), environmentBar.preferV4(), I18n.language(), tables.facets().hideTransitive());
             String folder = chooser.getSelectedFile().getAbsolutePath();
             int choice = JOptionPane.showOptionDialog(owner,
                     SwingText.plain(I18n.text("export.done", written.stream().map(Path::toString).collect(Collectors.joining("\n")))),
