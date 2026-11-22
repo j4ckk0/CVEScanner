@@ -502,17 +502,7 @@ final class MainWindow extends JFrame {
         if (result == null) return;
         var selected = tables.selectedFinding();
         refreshFindings();
-        if (selected != null) {
-            for (int i = 0; i < tables.findingsTable.getRowCount(); i++) {
-                var f = tables.findingsModel.row(tables.findingsTable.convertRowIndexToModel(i));
-                if (f.id().equals(selected.id()) && f.file().equals(selected.file()) && f.scope().equals(selected.scope())
-                        && f.pkg().equals(selected.pkg())) {
-                    tables.findingsTable.setRowSelectionInterval(i, i);
-                    tables.findingsTable.scrollRectToVisible(tables.findingsTable.getCellRect(i, 0, true));
-                    break;
-                }
-            }
-        }
+        if (selected != null) tables.select(selected);
         showSelected();
     }
 
@@ -523,14 +513,13 @@ final class MainWindow extends JFrame {
         dependencyTab.filter(filterBar.ecosystem(), filterBar.searchTerms(), filterBar.facets().hideTransitive());
         summaryBar.active();
         updateCounts();
-        int shown = tables.findingsTable.getRowCount();
-        if (tables.findingsTable.getSelectedRow() < 0 && shown > 0) tables.findingsTable.setRowSelectionInterval(0, 0);
-        else if (shown == 0) details.show((Finding) null);
+        if (tables.selectedRow() < 0) tables.selectRow(0);
+        if (tables.selectedFinding() == null) details.show((Finding) null);
     }
 
     /** The tabs' titles and the line saying how many findings are shown. */
     private void updateCounts() {
-        int shown = tables.findingsTable.getRowCount(), total = tables.findingsModel.getRowCount();
+        int shown = tables.shownFindings().size(), total = tables.allFindings().size();
         tabs.setTitleAt(FINDINGS_TAB, shown == total ? I18n.text("tab.findings", total) : I18n.text("tab.findings.filtered", shown, total));
         tabs.setTitleAt(PACKAGES_TAB, I18n.text("tab.packages", tables.packagesTable.getRowCount()));
         tabs.setTitleAt(DEPENDENCIES_TAB, dependencyTab.title());
@@ -546,7 +535,7 @@ final class MainWindow extends JFrame {
     }
 
     private void updateChips() {
-        summaryBar.count(tables.findingsModel.rows());
+        summaryBar.count(tables.allFindings());
     }
 
     private void showSelected() {
@@ -659,7 +648,7 @@ final class MainWindow extends JFrame {
     private void refreshFindings() {
         if (result == null) return;
         split = ignoreActions.ignores().split(Scoring.applyAll(result.findings(), environmentBar.environment(), environmentBar.preferV4()), LocalDate.now());
-        tables.findingsModel.setRows(split.active());
+        tables.setFindings(split.active());
         tables.ignoredModel.setRows(split.ignored());
         dependencyTab.show(result.dependencies(), split.active());
         updateChips();
@@ -685,14 +674,9 @@ final class MainWindow extends JFrame {
 
     /** Ignore… on a finding; once the entry is written, the row now in its place is selected. */
     private void ignore(Finding f) {
-        int row = tables.findingsTable.getSelectedRow();
+        int row = tables.selectedRow();
         if (!ignoreActions.ignore(f)) return;
-        int rows = tables.findingsTable.getRowCount();
-        if (rows > 0) {
-            int next = Math.min(Math.max(row, 0), rows - 1);
-            tables.findingsTable.setRowSelectionInterval(next, next);
-            tables.findingsTable.scrollRectToVisible(tables.findingsTable.getCellRect(next, 0, true));
-        }
+        tables.selectRow(row);
     }
 
     // ----------------------------------------------------------------------------- export, misc

@@ -125,7 +125,7 @@ final class FindingTables {
     final JTable ignoredTable = new ScrollingTable(ignoredModel);
     final HeaderFilters.FilteringSorter<ListTableModel<Finding>> findingsSorter = new HeaderFilters.FilteringSorter<>(findingsModel);
     /** The findings' ▾ in each header: the values to show, column by column. */
-    final HeaderFilters<Finding> headerFilters;
+    final HeaderFilters headerFilters;
     /** Told whenever the values ticked in a header change. */
     Runnable onHeaderFilter = () -> { };
     final TableRowSorter<ListTableModel<PackageSummary>> packagesSorter = new TableRowSorter<>(packagesModel);
@@ -174,7 +174,8 @@ final class FindingTables {
         findingsTable.getColumnModel().getColumn(column(FINDING_COLUMNS, "column.env")).setCellRenderer(envRenderer);
         ignoredTable.getColumnModel().getColumn(column(IGNORED_COLUMNS, "column.env")).setCellRenderer(envRenderer);
         labels.tip(findingsTable.getTableHeader(), "column.header.tip");
-        headerFilters = new HeaderFilters<>(findingsTable, findingsModel, HeaderFilters::text, () -> onHeaderFilter.run());
+        headerFilters = new HeaderFilters(findingsTable, c -> FINDING_COLUMNS.get(c).value(), findingsModel::rows, HeaderFilters::text,
+                () -> onHeaderFilter.run());
         findingsSorter.filters(headerFilters);
         labels.tip(packagesTable, "packages.tip");
     }
@@ -261,6 +262,47 @@ final class FindingTables {
         }
     }
 
+    /** The findings of a scan the table shows from, the ignore file's set aside. */
+    void setFindings(List<Finding> findings) {
+        findingsModel.setRows(findings);
+    }
+
+    List<Finding> allFindings() {
+        return findingsModel.rows();
+    }
+
+    /** The findings the filters, the headers' ▾ and the search let through, in the table's order. */
+    List<Finding> shownFindings() {
+        return java.util.stream.IntStream.range(0, findingsTable.getRowCount())
+                .mapToObj(i -> findingsModel.row(findingsTable.convertRowIndexToModel(i))).toList();
+    }
+
+    /** Selects this finding's row, scrolled to; false when it is not shown. */
+    boolean select(Finding f) {
+        for (int i = 0; i < findingsTable.getRowCount(); i++) {
+            var g = findingsModel.row(findingsTable.convertRowIndexToModel(i));
+            if (g.id().equals(f.id()) && g.file().equals(f.file()) && g.scope().equals(f.scope()) && g.pkg().equals(f.pkg())) {
+                selectRow(i);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** The row selected in the findings' table, -1 for none. */
+    int selectedRow() {
+        return findingsTable.getSelectedRow();
+    }
+
+    /** Selects the row at this place, the last when there are fewer; none when the table is empty. */
+    void selectRow(int row) {
+        int rows = findingsTable.getRowCount();
+        if (rows == 0) return;
+        int r = Math.min(Math.max(row, 0), rows - 1);
+        findingsTable.setRowSelectionInterval(r, r);
+        findingsTable.scrollRectToVisible(findingsTable.getCellRect(r, 0, true));
+    }
+
     Finding selectedFinding() {
         int row = findingsTable.getSelectedRow();
         return row < 0 ? null : findingsModel.row(findingsTable.convertRowIndexToModel(row));
@@ -289,12 +331,12 @@ final class FindingTables {
             @Override
             public boolean include(Entry<? extends ListTableModel<Finding>, ? extends Integer> e) {
                 var f = e.getModel().row(e.getIdentifier());
-                return facets.test(f) && headerFilters.test(e.getIdentifier()) && matchesSearch(e, terms, String.join(" ", f.aliases()));
+                return facets.test(f) && headerFilters.test(f) && matchesSearch(e, terms, String.join(" ", f.aliases()));
             }
         });
         var rows = findingsModel.rows();
         packagesModel.setRows(PackageSummary.of(java.util.stream.IntStream.range(0, rows.size())
-                .filter(i -> facets.test(rows.get(i)) && headerFilters.test(i)).mapToObj(rows::get).toList()));
+                .filter(i -> facets.test(rows.get(i)) && headerFilters.test(rows.get(i))).mapToObj(rows::get).toList()));
         packagesSorter.setRowFilter(new RowFilter<>() {
             @Override
             public boolean include(Entry<? extends ListTableModel<PackageSummary>, ? extends Integer> e) {

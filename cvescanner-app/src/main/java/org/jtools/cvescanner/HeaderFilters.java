@@ -32,7 +32,10 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.List;
 import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.Supplier;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -49,19 +52,23 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import org.jtools.cvescanner.i18n.I18n;
+import org.jtools.cvescanner.model.Finding;
 
 /**
  * A ▾ at the right of each header of a table: a click on it lists the column's values, each to tick, as a spreadsheet
  * filters; a row is shown when each filtered column's value is one ticked. The ▾ of a filtered column is drawn in the
  * accent colour. A click elsewhere on the header still sorts.
  */
-final class HeaderFilters<T> {
+final class HeaderFilters {
 
     /** The width of the ▾ zone at a header's right, the last pixels left to resizing the column. */
     private static final int ZONE = 20, RESIZE = 4;
 
     private final JTable table;
-    private final ListTableModel<T> model;
+    /** Each model column's value of a finding, which its list names and filters by; null for a column not filtered. */
+    private final IntFunction<Function<Finding, ?>> value;
+    /** Every finding the table can show, whose values the lists offer. */
+    private final Supplier<List<Finding>> all;
     private final Function<Object, String> text;
     private final Runnable changed;
     /** Each filtered column's values shown, by its model index; a column not in it is not filtered. */
@@ -75,17 +82,21 @@ final class HeaderFilters<T> {
     private Border border;
 
     /**
-     * @param text    a cell's value as the list names it
+     * @param value   a model column's value of a finding; null for a column without a list
+     * @param all     every finding the table can show
+     * @param text    a value as the list names it
      * @param changed run when the values ticked change
      */
-    HeaderFilters(JTable table, ListTableModel<T> model, Function<Object, String> text, Runnable changed) {
+    HeaderFilters(JTable table, IntFunction<Function<Finding, ?>> value, Supplier<List<Finding>> all, Function<Object, String> text,
+                  Runnable changed) {
         this.table = table;
-        this.model = model;
+        this.value = value;
+        this.all = all;
         this.text = text;
         this.changed = changed;
         var header = table.getTableHeader();
-        header.setDefaultRenderer((t, value, selected, focus, row, column) -> {
-            Component c = plain().getTableCellRendererComponent(t, value, selected, focus, row, column);
+        header.setDefaultRenderer((t, heading, selected, focus, row, column) -> {
+            Component c = plain().getTableCellRendererComponent(t, heading, selected, focus, row, column);
             var arrow = new JLabel(shown.containsKey(t.convertColumnIndexToModel(column)) ? "▼" : "▾");
             arrow.setBorder(BorderFactory.createEmptyBorder(0, 2, 0, RESIZE));
             if (shown.containsKey(t.convertColumnIndexToModel(column))) {
@@ -134,10 +145,10 @@ final class HeaderFilters<T> {
         return was;
     }
 
-    /** Whether a row shows: each filtered column's value is one ticked. */
-    boolean test(int modelRow) {
+    /** Whether a finding shows: each filtered column's value of it is one ticked. */
+    boolean test(Finding f) {
         for (var e : shown.entrySet())
-            if (!e.getValue().contains(text.apply(model.getValueAt(modelRow, e.getKey())))) return false;
+            if (!e.getValue().contains(text.apply(value.apply(e.getKey()).apply(f)))) return false;
         return true;
     }
 
@@ -155,8 +166,10 @@ final class HeaderFilters<T> {
     /** The list of a column's values, below its header: All, then each value, ticked when shown. */
     private void list(int viewColumn, Rectangle header) {
         int column = table.convertColumnIndexToModel(viewColumn);
+        Function<Finding, ?> of = value.apply(column);
+        if (of == null) return;
         var values = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-        for (int r = 0; r < model.getRowCount(); r++) values.add(text.apply(model.getValueAt(r, column)));
+        for (Finding f : all.get()) values.add(text.apply(of.apply(f)));
         Set<String> current = shown.getOrDefault(column, values);
         var boxes = new JPanel();
         boxes.setLayout(new BoxLayout(boxes, BoxLayout.Y_AXIS));
@@ -203,13 +216,13 @@ final class HeaderFilters<T> {
 
     /** A sorter that does not sort on the click that opened a header's list. */
     static final class FilteringSorter<M extends ListTableModel<?>> extends TableRowSorter<M> {
-        private HeaderFilters<?> filters;
+        private HeaderFilters filters;
 
         FilteringSorter(M model) {
             super(model);
         }
 
-        void filters(HeaderFilters<?> filters) {
+        void filters(HeaderFilters filters) {
             this.filters = filters;
         }
 

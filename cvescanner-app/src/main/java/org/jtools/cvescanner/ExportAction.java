@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import org.jtools.cvescanner.i18n.I18n;
@@ -47,15 +46,15 @@ final class ExportAction {
         if (result == null) return;
         var chooser = new JFileChooser(outDir.toAbsolutePath().toFile());
         chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        chooser.setDialogTitle(I18n.text("export.chooser.title", tables.findingsTable.getRowCount()));
+        var visible = tables.shownFindings();
+        int total = tables.allFindings().size();
+        chooser.setDialogTitle(I18n.text("export.chooser.title", visible.size()));
         chooser.setApproveButtonText(I18n.text("export.chooser.approve"));
         if (chooser.showSaveDialog(owner) != JFileChooser.APPROVE_OPTION) return;
-        var visible = IntStream.range(0, tables.findingsTable.getRowCount())
-                .mapToObj(i -> tables.findingsModel.row(tables.findingsTable.convertRowIndexToModel(i))).toList();
-        boolean filtered = visible.size() != tables.findingsModel.getRowCount();
+        boolean filtered = visible.size() != total;
         try {
             var written = Reports.writeAll(result, split.withActive(visible), chooser.getSelectedFile().toPath(),
-                    filtered ? List.of(Phrase.of("export.filter", visible.size(), tables.findingsModel.getRowCount())) : List.of(),
+                    filtered ? List.of(Phrase.of("export.filter", visible.size(), total)) : List.of(),
                     environmentBar.environment(), environmentBar.preferV4(), I18n.language(), tables.facets().hideTransitive());
             String folder = chooser.getSelectedFile().getAbsolutePath();
             int choice = JOptionPane.showOptionDialog(owner,
