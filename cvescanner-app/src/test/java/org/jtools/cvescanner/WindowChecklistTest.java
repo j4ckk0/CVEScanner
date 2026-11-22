@@ -102,9 +102,13 @@ class WindowChecklistTest {
         var header = findings.getTableHeader();
         java.awt.Rectangle ecosystem = WindowDriver.onEdt(() -> {
             for (int c = 0; c < findings.getColumnCount(); c++)
-                if ("Ecosystem".equals(findings.getColumnModel().getColumn(c).getHeaderValue())) return header.getHeaderRect(c);
+                if ("Ecosystem".equals(findings.getColumnModel().getColumn(c).getHeaderValue())) {
+                    findings.scrollRectToVisible(findings.getCellRect(0, c, true));   // a column on the right: scrolled to
+                    return header.getHeaderRect(c);
+                }
             throw new AssertionError("no Ecosystem column");
         });
+        Thread.sleep(200);
         w.clickAt(header, ecosystem.x + ecosystem.width - 10, ecosystem.height / 2);
         w.named("headerFilter");   // the list of the column's values, waited for
         w.click(w.find(javax.swing.JCheckBox.class, b -> "npm".equals(b.getText())));

@@ -68,9 +68,9 @@ final class FindingGroups extends AbstractTableModel {
     record GColumn(String key, Class<?> type, int width, Function<Group, ?> ofGroup, Function<Finding, ?> ofFinding,
                    Comparator<Object> order, Function<Finding, ?> filter) {}
 
-    static final int EXPAND = 0, SEVERITY = 1, FIX = 2, ECOSYSTEM = 3, PACKAGE = 4, VERSION = 5, UPGRADE_TO = 6, COUNT = 7,
-            FIXED_IN = 8, CVE = 9, ADVISORY = 10, BASE = 11, ENV = 12, CVSS = 13, MATCH = 14, SCOPE = 15, PATH = 16,
-            FILE = 17, PUBLISHED = 18, SUMMARY = 19;
+    static final int EXPAND = 0, PACKAGE = 1, VERSION = 2, COUNT = 3, CVE = 4, SEVERITY = 5, BASE = 6, ENV = 7,
+            CVSS = 8, FIXED_IN = 9, PUBLISHED = 10, SUMMARY = 11, ADVISORY = 12, FIX = 13, ECOSYSTEM = 14,
+            UPGRADE_TO = 15, MATCH = 16, SCOPE = 17, PATH = 18, FILE = 19;
 
     @SuppressWarnings("unchecked")
     private static Comparator<Object> natural() {
@@ -101,30 +101,30 @@ final class FindingGroups extends AbstractTableModel {
         Function<Finding, ?> none = null;
         columns = List.of(
                 new GColumn("column.expand", String.class, 34, g -> expanded(g) ? "▾" : "▸", f -> "", TEXT, none),
-                new GColumn("column.severity", Severity.class, 120, g -> g.summary().worst(), Finding::severity, natural(), Finding::severity),
-                new GColumn("column.apply", Boolean.class, 50, g -> FindingTables.fixable(g.summary()) ? ticked.contains(g.key()) : null,
-                        f -> null, natural(), none),
-                new GColumn("column.ecosystem", String.class, 90, g -> g.summary().ecosystem().id(), f -> "", TEXT, f -> f.ecosystem().id()),
                 new GColumn("column.package", String.class, 300, g -> g.summary().pkg(), f -> "", TEXT, Finding::pkg),
                 new GColumn("column.version", String.class, 95, g -> g.summary().displayVersion(), f -> "", VERSION_ORDER, Finding::displayVersion),
-                new GColumn("column.upgradeTo", String.class, 140, g -> g.summary().upgradeTo(), f -> "", VERSION_ORDER, none),
                 new GColumn("column.vulnerabilities", Integer.class, 115, g -> g.summary().vulnerabilities(), f -> null, natural(), none),
-                new GColumn("column.fixedIn", String.class, 95, g -> "", f -> f.fixedIn().isEmpty() ? "—" : f.fixedIn(), VERSION_ORDER,
-                        f -> f.fixedIn().isEmpty() ? "—" : f.fixedIn()),
                 new GColumn("column.cve", String.class, 130, g -> "", Finding::cveText, TEXT, Finding::cveText),
-                new GColumn("column.advisory", String.class, 150, g -> "", Finding::id, TEXT, Finding::id),
+                new GColumn("column.severity", Severity.class, 120, g -> g.summary().worst(), Finding::severity, natural(), Finding::severity),
                 new GColumn("column.base", Double.class, 95, g -> g.most(Finding::cvss), Finding::cvss, natural(), Finding::cvss),
                 new GColumn("column.env", Double.class, 120, g -> g.most(Finding::envScore), Finding::envScore, natural(), Finding::envScore),
                 new GColumn("column.cvss", String.class, 90, g -> "", f -> Objects.requireNonNullElse(f.score().version(), ""), TEXT,
                         f -> Objects.requireNonNullElse(f.score().version(), "")),
+                new GColumn("column.fixedIn", String.class, 95, g -> "", f -> f.fixedIn().isEmpty() ? "—" : f.fixedIn(), VERSION_ORDER,
+                        f -> f.fixedIn().isEmpty() ? "—" : f.fixedIn()),
+                new GColumn("column.published", String.class, 85, g -> "", Finding::publishedDate, TEXT, Finding::publishedDate),
+                new GColumn("column.summary", String.class, 380, g -> "", Finding::summary, TEXT, Finding::summary),
+                new GColumn("column.advisory", String.class, 150, g -> "", Finding::id, TEXT, Finding::id),
+                new GColumn("column.apply", Boolean.class, 50, g -> FindingTables.fixable(g.summary()) ? ticked.contains(g.key()) : null,
+                        f -> null, natural(), none),
+                new GColumn("column.ecosystem", String.class, 90, g -> g.summary().ecosystem().id(), f -> "", TEXT, f -> f.ecosystem().id()),
+                new GColumn("column.upgradeTo", String.class, 140, g -> g.summary().upgradeTo(), f -> "", VERSION_ORDER, none),
                 new GColumn("column.match", String.class, 125, g -> "", f -> f.basis().label(), TEXT, f -> f.basis().label()),
                 new GColumn("column.scope", String.class, 160, g -> "", Finding::scope, TEXT, Finding::scope),
                 new GColumn("column.path", String.class, 180, g -> String.join(", ", new TreeSet<>(g.findings().stream()
                         .map(f -> FindingTables.folderOf(f.file())).toList())), f -> FindingTables.folderOf(f.file()), TEXT,
                         f -> FindingTables.folderOf(f.file())),
-                new GColumn("column.file", String.class, 220, g -> g.summary().files(), Finding::file, TEXT, Finding::file),
-                new GColumn("column.published", String.class, 85, g -> "", Finding::publishedDate, TEXT, Finding::publishedDate),
-                new GColumn("column.summary", String.class, 380, g -> "", Finding::summary, TEXT, Finding::summary));
+                new GColumn("column.file", String.class, 220, g -> g.summary().files(), Finding::file, TEXT, Finding::file));
     }
 
     List<GColumn> columns() {

@@ -9,7 +9,9 @@ checksums.
   its worst severity, the version fixing all its findings (*Upgrade to*), its tick for *Apply fixes* and how many
   findings it has; ▸ (a click, →) opens its findings below it, ← closes it, a search opens them all. A click on a
   header sorts, each package keeping its findings; the line under the counters says how many package versions hold the
-  findings shown.
+  findings shown. Its columns: the package, its version, how many advisories, the CVE, the severity, the base and
+  environment scores, the CVSS version, the fixed version, the date published, the summary, the advisory, then the
+  tick, the ecosystem, the version to upgrade to, the match, the scope, the path, the file.
 - **Filters in the column headers**: in the findings table, a ▾ at the right of each header lists the column's values
   to tick, as a spreadsheet filters; a filtered column's ▾ is drawn in colour, and *Clear filters* clears them too.
 - **Path**, a new column of the findings: the folder of the file a finding comes from (`maven-webapp/service`), to
