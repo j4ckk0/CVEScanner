@@ -3,7 +3,7 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
-## Unreleased
+## 1.6 — 2026-11-22
 
 - **Standard and expert modes** (*View ▸ Mode*): standard, the first time, leaves out the *Ignore file* and *VEX
   documents* rows and the CVSS version's choice, and scans with their defaults (the folder's own ignore file and

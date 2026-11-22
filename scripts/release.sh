@@ -63,7 +63,7 @@ jre_version=$(sed -n 's/^JDK_LINUX=.*_\([0-9][0-9.]*\)_[0-9]*\.tar\.gz$/\1/p' ex
 [ -n "$jre_version" ] || jre_version=25
 
 body=$(
-  echo "CVEScanner $version — which known vulnerabilities apply to the dependencies of Maven, Gradle and npm projects, to the components off-the-shelf they ship (GDAL, FFmpeg, OpenSSL…) and to an installed product read from its binaries (jars, node_modules, Python packages, native libraries), from vulnerability databases you download yourself (GitHub Advisory Database, CVE List, OSV.dev, NVD), scored with CVSS for the environment the software runs in, upgraded with the project's own build tool if you ask, and exported as a CycloneDX SBOM that VEX statements inform. Self-contained, and it never reaches the network."
+  echo "CVEScanner $version — which known vulnerabilities apply to the dependencies of Maven, Gradle, npm and Python projects, to the components off-the-shelf they ship (GDAL, FFmpeg, OpenSSL…) and to an installed product read from its binaries (jars, node_modules, Python packages, native libraries), from vulnerability databases you download yourself (GitHub Advisory Database, CVE List, OSV.dev, NVD), scored with CVSS for the environment the software runs in, upgraded with the project's own build tool if you ask, and exported as a CycloneDX SBOM that VEX statements inform. Self-contained, and it never reaches the network."
   echo
   cat "$notes"
   echo

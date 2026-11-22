@@ -114,7 +114,7 @@ Database age…* in the window, change the limit (0: never).
 
 ## Components off-the-shelf
 
-Besides Maven, Gradle and npm packages, CVEScanner checks the **components off-the-shelf** (COTS) a project ships:
+Besides Maven, Gradle, npm and Python packages, CVEScanner checks the **components off-the-shelf** (COTS) a project ships:
 native libraries and programs such as GDAL, FFmpeg, OpenSSL, zlib, curl, SQLite. They have no package coordinates;
 NVD files their CVEs by vendor and product (a CPE, `cpe:2.3:a:osgeo:gdal:…`) with version ranges, and CVEScanner
 matches them against **NVD's CVE feeds** and the CVE List. It finds them four ways:
