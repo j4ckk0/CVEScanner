@@ -222,3 +222,16 @@ Where the result differs from the proposal:
   under the 1,000-line mark; `FindingTables`, `EnvironmentBar` and `IgnoreActions` are about 200 lines each.
 - **Patterns:** the three generic names were renamed too: `SwingText`, `VulnDb.indexRecord` and
   `MainWindow.findingItem`.
+
+## Status — the window split further, 2026-11-22
+
+`MainWindow` had grown back to 992 lines with Apply fixes and the VEX documents. Its parts moved out, one class each,
+the window test (`WindowChecklistTest`) clicking the window through before and after:
+- `DatabaseChoice` (the databases' row), `FilterBar` (the filters), `SummaryBar` (the severity chips and the count
+  shown), `DetailsPane` (the details of the selection, per tab), `StatusLine` (the status line, its progress bar and
+  tooltip), `ViewMenu` (the looks, the database age), `TableActions` (what a click, a double-click, a right-click
+  does), `ExportAction` (File ▸ Export), `Clipboard`;
+- the tables' filtering went into `FindingTables.filter`, beside the sorters it sets.
+
+`MainWindow` is now 533 lines: the frame and its layout, the menu bar and the language, and the scan (start, result,
+the findings refreshed for the environment and the ignore file).

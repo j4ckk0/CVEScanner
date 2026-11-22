@@ -25,11 +25,13 @@ import java.awt.Font;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.RowFilter;
 import javax.swing.RowSorter;
 import javax.swing.SortOrder;
 import javax.swing.SwingConstants;
@@ -41,14 +43,15 @@ import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.ignore.IgnoredFinding;
 import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.Finding;
+import org.jtools.cvescanner.model.FindingFilter;
 import org.jtools.cvescanner.model.PackageSummary;
 import org.jtools.cvescanner.model.Unresolved;
 import org.jtools.cvescanner.version.Versions;
 
 /**
  * The window's four tables (the findings, the packages to upgrade, the dependencies not checked, the findings set aside)
- * as they look: their columns, known by their key and titled in the language in use, their sorting, their renderers.
- * What a click or a menu does with them is the window's.
+ * as they look: their columns, known by their key and titled in the language in use, their sorting, their renderers,
+ * the filters they show through. What a click or a menu does with them is TableActions'.
  */
 final class FindingTables {
 
@@ -245,6 +248,51 @@ final class FindingTables {
     PackageSummary selectedPackage() {
         int row = packagesTable.getSelectedRow();
         return row < 0 ? null : packagesModel.row(packagesTable.convertRowIndexToModel(row));
+    }
+
+    /**
+     * The filters applied to every table: the findings by the facets and the search; the package view rebuilt from the
+     * findings that pass the facets, then searched; the others by the ecosystem and the search.
+     */
+    void filter(FindingFilter facets, List<String> terms, Ecosystem ecosystem) {
+        findingsSorter.setRowFilter(new RowFilter<>() {
+            @Override
+            public boolean include(Entry<? extends ListTableModel<Finding>, ? extends Integer> e) {
+                var f = e.getModel().row(e.getIdentifier());
+                return facets.test(f) && matchesSearch(e, terms, String.join(" ", f.aliases()));
+            }
+        });
+        packagesModel.setRows(PackageSummary.of(findingsModel.rows().stream().filter(facets::test).toList()));
+        packagesSorter.setRowFilter(new RowFilter<>() {
+            @Override
+            public boolean include(Entry<? extends ListTableModel<PackageSummary>, ? extends Integer> e) {
+                return matchesSearch(e, terms, "");
+            }
+        });
+        unresolvedSorter.setRowFilter(new RowFilter<>() {
+            @Override
+            public boolean include(Entry<? extends ListTableModel<Unresolved>, ? extends Integer> e) {
+                var u = e.getModel().row(e.getIdentifier());
+                return (ecosystem == null || u.ecosystem() == ecosystem) && matchesSearch(e, terms, "");
+            }
+        });
+        ignoredSorter.setRowFilter(new RowFilter<>() {
+            @Override
+            public boolean include(Entry<? extends ListTableModel<IgnoredFinding>, ? extends Integer> e) {
+                var i = e.getModel().row(e.getIdentifier());
+                return (ecosystem == null || i.finding().ecosystem() == ecosystem) && matchesSearch(e, terms, i.rule().reason());
+            }
+        });
+    }
+
+    /** Every word searched is in a column of the row, or in the extra text given (aliases, the reason set aside). */
+    private static <M extends ListTableModel<?>> boolean matchesSearch(RowFilter.Entry<? extends M, ? extends Integer> e,
+                                                                       List<String> terms, String extra) {
+        if (terms.isEmpty()) return true;
+        var sb = new StringBuilder(extra);
+        for (int c = 0; c < e.getValueCount(); c++) sb.append('\u0001').append(e.getStringValue(c));
+        String hay = sb.toString().toLowerCase(Locale.ROOT);
+        return terms.stream().allMatch(hay::contains);
     }
 
     IgnoredFinding selectedIgnored() {

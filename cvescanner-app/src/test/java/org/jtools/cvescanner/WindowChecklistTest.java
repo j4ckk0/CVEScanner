@@ -73,6 +73,19 @@ class WindowChecklistTest {
         assertTrue(status.startsWith("Scanned 7 files, 13 dependencies → 12 findings"), status);
         assertTrue(w.tabTitle(0).contains("12"), w.tabTitle(0));
 
+        // the critical chip shows the critical findings only; Clear filters shows them all again
+        w.click(w.find(javax.swing.JLabel.class, l -> l.getText() != null && l.getText().startsWith("Critical")));
+        w.waitUntil("the critical findings only", () -> !w.tabTitle(0).equals("Findings (12)"));
+        assertTrue(w.text(w.window).contains("Showing "), w.text(w.window));
+        w.clickButton("Clear filters");
+        w.waitUntil("every finding shown", () -> w.tabTitle(0).equals("Findings (12)"));
+
+        // View ▸ Look: the window in a dark look, then back
+        w.menu("View", "Look", "FlatLaf Dark");
+        w.waitUntil("the dark look", () -> Looks.isDark());
+        w.menu("View", "Look", "FlatLaf Light");
+        w.waitUntil("the light look", () -> !Looks.isDark());
+
         // 2. the packages: a tick, the button's count, the package's finding in the details
         w.clickTab(1);
         w.clickRow("lodash", 3);
