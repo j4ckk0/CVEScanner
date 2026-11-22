@@ -75,10 +75,12 @@ cp -a samples/fix-tools/. "$work/prime/"
 (cd "$work/prime/yarn4" && online yarn install --immutable)
 (cd "$work/prime/pnpm" && online pnpm install --frozen-lockfile)
 (cd "$work/prime/gradle" && online gradle dependencies)
-for tool in yarn1 yarn4 pnpm; do   # the fixed version, through a project of its own
+# the fixed versions, through a project of its own, resolved: an override makes the tool resolve again, offline, from
+# the metadata a resolution leaves in its cache (pnpm's above, from the lockfile alone, left none)
+for tool in yarn1 yarn4 pnpm; do
   mkdir -p "$work/prime/fixed-$tool"
   manager=$([ $tool = yarn4 ] && echo ', "packageManager": "yarn@4.9.2"' || true)
-  echo "{ \"name\": \"fixed\", \"version\": \"1.0.0\", \"private\": true$manager, \"dependencies\": { \"lodash\": \"4.17.21\", \"minimist\": \"1.2.6\" } }" \
+  echo "{ \"name\": \"fixed\", \"version\": \"1.0.0\", \"private\": true$manager, \"dependencies\": { \"lodash\": \"4.17.21\", \"minimist\": \"1.2.6\", \"mkdirp\": \"0.5.5\" } }" \
     > "$work/prime/fixed-$tool/package.json"
   [ $tool = yarn4 ] && printf 'nodeLinker: node-modules\n' > "$work/prime/fixed-$tool/.yarnrc.yml"
   # a CI runner makes yarn 4 and pnpm refuse to write a lockfile: this project has none yet
