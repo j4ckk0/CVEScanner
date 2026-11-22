@@ -81,15 +81,27 @@ class ScreenshotsTest {
         });
     }
 
+    /**
+     * The folder as a reader's would be, not this machine's: the window as it is with that folder there, neither
+     * outlined in red nor Scan greyed (MainWindow.updateReady).
+     */
+    private void showFolder(String text) throws Exception {
+        show("folder", text);
+        var folder = w.named("folder", javax.swing.JTextField.class);
+        var scan = w.named("scan");
+        SwingUtilities.invokeAndWait(() -> {
+            folder.putClientProperty("JComponent.outline", null);
+            scan.setEnabled(true);
+        });
+    }
+
     private void open(I18nLanguage language, String folder, Path settingsFolder, List<String> more) throws Exception {
         var args = new ArrayList<>(List.of("-d", folder));
         args.addAll(more);
         w = WindowDriver.start(settingsFolder, args.toArray(String[]::new));
         SwingUtilities.invokeAndWait(() -> w.window.setSize(SIZE));
-        // the pictures show every setting: once the scan has collapsed them after the welcome, ▾
+        // the window as a reader sees it after the scan: the settings collapsed, the folder's row alone
         w.waitUntil("the scan's findings", () -> w.find(java.awt.Component.class, k -> "tabs".equals(k.getName())) != null);
-        w.click(w.named("collapseSettings"));
-        w.named("databases");
         if (language != I18nLanguage.ENGLISH) {
             w.choose(w.named("language", JComboBox.class), language.toString());
             w.waitUntil("the window in " + language, () -> I18n.language() == language);
@@ -106,17 +118,12 @@ class ScreenshotsTest {
             w.choose(w.named("language", JComboBox.class), language.toString());
             w.waitUntil("the window in " + language, () -> I18n.language() == language);
         }
-        show("folder", "~/CVEScanner/examples");
+        showFolder("~/CVEScanner/examples");
         show("databases", "~/CVEScanner/database/  Maven-all.zip  ;  npm-all.zip  ;  PyPI-all.zip  ;  nvdcve-2.0-2002.json.zip … "
                 + "nvdcve-2.0-2026.json.zip  ;  nvdcve-2.0-modified.json.zip");
         w.named("tryExamples");
-        // the folder shown is a reader's, not this machine's: the window as it is with that folder there
-        var folder = w.named("folder", javax.swing.JTextField.class);
-        var scans = List.of(w.named("scan"), w.named("welcomeScan"));
-        SwingUtilities.invokeAndWait(() -> {
-            folder.putClientProperty("JComponent.outline", null);
-            scans.forEach(b -> b.setEnabled(true));
-        });
+        var welcomeScan = w.named("welcomeScan");
+        SwingUtilities.invokeAndWait(() -> welcomeScan.setEnabled(true));
         w.screenshot(dir.resolve("welcome.png"));
         w.close();
         w = null;
@@ -130,9 +137,7 @@ class ScreenshotsTest {
         var more = new ArrayList<>(databases);
         more.addAll(List.of("--env", "internet"));
         open(language, ROOT.resolve("examples").toString(), Files.createDirectories(settings.resolve("examples-" + language)), more);
-        show("folder", "~/CVEScanner/examples");
-        show("databases", "~/CVEScanner/database/  Maven-all.zip  ;  npm-all.zip  ;  PyPI-all.zip  ;  nvdcve-2.0-2002.json.zip … "
-                + "nvdcve-2.0-2026.json.zip  ;  nvdcve-2.0-modified.json.zip");
+        showFolder("~/CVEScanner/examples");
         w.clickRow("log4j-core", FindingGroups.EXPAND);
         w.clickRow("CVE-2021-44228", FindingGroups.CVE);
         w.screenshot(dir.resolve("findings.png"));
@@ -174,8 +179,7 @@ class ScreenshotsTest {
         Files.copy(SAMPLES.resolve("vex/product.vex.json"), projects.resolve("product.vex.json"));
         open(language, projects.toString(), Files.createDirectories(settings.resolve("vex-" + language)),
                 List.of("--db", SAMPLES.resolve("db/advisory-database-main.zip").toString()));
-        show("folder", "~/CVEScanner/samples/projects");
-        show("databases", "~/CVEScanner/samples/db/advisory-database-main.zip");
+        showFolder("~/CVEScanner/samples/projects");
         w.clickTab(MainWindow.IGNORED_TAB);
         w.clickRow("lodash", 3);
         w.screenshot(dir.resolve("vex.png"));
