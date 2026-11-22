@@ -24,12 +24,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -214,11 +216,24 @@ public final class FixPlanner {
     private FixPlan npm(FixRequest r) throws IOException {
         var steps = new LinkedHashMap<Path, Step>();
         var pinned = new LinkedHashSet<Phrase>();
+        boolean askFirst = false;
         String projectNode = null;
+        // a folder declaring the package upgrades it there; a folder having it only through others overrides it
+        var declaredIn = new HashSet<Path>();
+        for (var d : r.declarations()) if (!d.scope().startsWith("transitive")) declaredIn.add(d.file().getParent());
         for (var d : r.declarations()) {
-            if (d.scope().startsWith("transitive")) return FixPlan.not(r, Phrase.of("fix.reason.transitive"));
             if (d.scope().equals("peerDependencies")) return FixPlan.not(r, Phrase.of("fix.reason.peer"));
             Path dir = d.file().getParent();
+            if (d.scope().startsWith("transitive")) {
+                if (declaredIn.contains(dir) || steps.containsKey(dir)) continue;
+                var override = override(r, d.file(), pinned);
+                if (override.notApplicable() != null) return FixPlan.not(r, override.notApplicable());
+                askFirst |= override.askFirst();
+                steps.put(dir, override.step());
+                String node = Json.str(Json.obj(Json.obj(Json.parse(ProjectFiles.readText(dir.resolve("package.json")))).get("engines")), "node");
+                if (node != null) projectNode = node;
+                continue;
+            }
             Path packageJson = dir.resolve("package.json");
             if (!Files.isRegularFile(packageJson)) return FixPlan.not(r, Phrase.of("fix.reason.versionNotFound", rel(d.file())));
             var json = Json.obj(Json.parse(ProjectFiles.readText(packageJson)));
@@ -278,7 +293,78 @@ public final class FixPlanner {
             requirement = needs.get().isEmpty() ? Phrase.of("fix.requirement.nodeAny", projectNode)
                     : Phrase.of("fix.requirement.node", needs.get(), projectNode);
         }
-        return new FixPlan(r, List.copyOf(steps.values()), null, requirement, majorJump(r), List.copyOf(pinned));
+        return new FixPlan(r, List.copyOf(steps.values()), null, requirement, majorJump(r) || askFirst, List.copyOf(pinned));
+    }
+
+    /** An override's step, or why there is none; whether it asks first (a dependent's range left, or not known). */
+    private record Override(Step step, Phrase notApplicable, boolean askFirst) {}
+
+    /**
+     * The package, transitive in this lockfile's project, overridden to the fixed version: its vulnerable version only
+     * where the tool can say so (npm, pnpm, yarn 2+: its specs), every copy with yarn 1, which cannot. The notes say a
+     * dependent whose range the fixed version leaves, or that the ranges are not known.
+     */
+    private Override override(FixRequest r, Path lockfile, Set<Phrase> notes) throws IOException {
+        Path dir = lockfile.getParent();
+        Path packageJson = dir.resolve("package.json");
+        if (!Files.isRegularFile(packageJson)) return new Override(null, Phrase.of("fix.reason.versionNotFound", rel(lockfile)), false);
+        var json = Json.obj(Json.parse(ProjectFiles.readText(packageJson)));
+        var found = NpmDependents.of(lockfile, r.pkg(), r.from());
+        String selector = r.pkg() + "@" + r.from();
+        Step step;
+        switch (lockfile.getFileName().toString()) {
+            case "yarn.lock" -> {
+                Optional<Path> yarn = machine.program("yarn");
+                if (yarn.isEmpty()) return new Override(null, Phrase.of("fix.reason.notInstalled", "yarn"), false);
+                var touched = List.of(packageJson, lockfile);
+                if (yarnBerry(dir)) {
+                    var members = new LinkedHashMap<String, String>();
+                    for (String spec : found.descriptors()) members.put(spec, "npm:" + r.to());
+                    if (members.isEmpty()) members.put(r.pkg() + "@npm:" + r.from(), "npm:" + r.to());
+                    step = new Step(new PackageJsonMembers(packageJson, List.of("resolutions"), members),
+                            List.of(yarn.get().toString(), "install"), dir, YARN_BERRY_OFFLINE, touched);
+                } else {
+                    var others = new java.util.TreeSet<>(found.locked());
+                    others.remove(r.from());
+                    if (!others.isEmpty())
+                        return new Override(null, Phrase.of("fix.reason.yarn1Override", r.pkg(), String.join(", ", others)), false);
+                    step = new Step(new PackageJsonMembers(packageJson, List.of("resolutions"), Map.of(r.pkg(), r.to())),
+                            List.of(yarn.get().toString(), "install", "--offline", "--ignore-scripts"), dir, Map.of(), touched);
+                }
+            }
+            case "pnpm-lock.yaml" -> {
+                Optional<Path> pnpm = machine.program("pnpm");
+                if (pnpm.isEmpty()) return new Override(null, Phrase.of("fix.reason.notInstalled", "pnpm"), false);
+                Path workspace = dir.resolve("pnpm-workspace.yaml");
+                // pnpm 10 and later read overrides from pnpm-workspace.yaml; a project still using package.json's "pnpm" keeps it
+                Step.Edit edit = json.get("pnpm") instanceof Map<?, ?>
+                        ? new PackageJsonMembers(packageJson, List.of("pnpm", "overrides"), Map.of(selector, r.to()))
+                        : new PnpmWorkspaceOverride(workspace, selector, r.to());
+                step = new Step(edit, List.of(pnpm.get().toString(), "install", "--offline", "--ignore-scripts", "--no-frozen-lockfile"),
+                        dir, Map.of(), List.of(packageJson, lockfile, workspace));
+            }
+            default -> {
+                Optional<Path> npm = machine.program("npm");
+                if (npm.isEmpty()) return new Override(null, Phrase.of("fix.reason.notInstalled", "npm"), false);
+                if (!NodeEngines.tarballCached(machine, r.pkg(), r.to()))
+                    return new Override(null, Phrase.of("fix.reason.notCachedNpm", r.to()), false);
+                step = new Step(new PackageJsonMembers(packageJson, List.of("overrides"), Map.of(selector, r.to())),
+                        List.of(npm.get().toString(), "install", "--offline", "--ignore-scripts"), dir, NPM_OFFLINE,
+                        List.of(packageJson, lockfile, dir.resolve("npm-shrinkwrap.json")));
+            }
+        }
+        boolean askFirst = false;
+        for (var asked : found.asked()) {
+            if (NpmRange.satisfies(r.to(), asked.range()).orElse(false)) continue;
+            askFirst = true;
+            notes.add(asked.by() == null ? Phrase.of("fix.note.outsideRange", r.to(), asked.range())
+                    : Phrase.of("fix.note.outsideRangeOf", r.to(), asked.by(), asked.range()));
+        }
+        if (!found.rangesKnown()) {
+            askFirst = true;
+            notes.add(Phrase.of("fix.note.rangesUnknown"));
+        }
+        return new Override(step, null, askFirst);
     }
 
     /**

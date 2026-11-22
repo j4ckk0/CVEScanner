@@ -13,7 +13,9 @@
 # downloads are the tools' and this script's, never CVEScanner's: the scan and the fixes then run with the tools offline.
 # Then each project is checked: its manifest and lockfile name the fixed version, written as the project wrote it
 # (exact, ^ or ~; pnpm and yarn 4 pin it, since offline they resolve no range, and so does yarn 1 a ^ on Windows), and
-# the folder scanned again holds no finding. Last, without the tools on the PATH, nothing is applied and nothing changes.
+# the folder scanned again holds no finding. minimist, which the projects have only through mkdirp, is overridden in each
+# (npm's overrides, yarn's resolutions, pnpm-workspace.yaml). Last, without the tools on the PATH, nothing is applied
+# and nothing changes.
 #
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")/.."
@@ -67,7 +69,8 @@ check() {   # check DESCRIPTION FILE TEXT [absent]: the file holds the text, or 
 echo "==> Filling the tools' caches (online)"
 mkdir -p "$work/prime"
 cp -a samples/fix-tools/. "$work/prime/"
-(cd "$work/prime/npm" && online npm ci --ignore-scripts --no-audit --no-fund && online npm cache add lodash@4.17.21)
+(cd "$work/prime/npm" && online npm ci --ignore-scripts --no-audit --no-fund && online npm cache add lodash@4.17.21 \
+  && online npm cache add minimist@1.2.6)
 (cd "$work/prime/yarn1" && online yarn install --frozen-lockfile --ignore-scripts)
 (cd "$work/prime/yarn4" && online yarn install --immutable)
 (cd "$work/prime/pnpm" && online pnpm install --frozen-lockfile)
@@ -75,7 +78,7 @@ cp -a samples/fix-tools/. "$work/prime/"
 for tool in yarn1 yarn4 pnpm; do   # the fixed version, through a project of its own
   mkdir -p "$work/prime/fixed-$tool"
   manager=$([ $tool = yarn4 ] && echo ', "packageManager": "yarn@4.9.2"' || true)
-  echo "{ \"name\": \"fixed\", \"version\": \"1.0.0\", \"private\": true$manager, \"dependencies\": { \"lodash\": \"4.17.21\" } }" \
+  echo "{ \"name\": \"fixed\", \"version\": \"1.0.0\", \"private\": true$manager, \"dependencies\": { \"lodash\": \"4.17.21\", \"minimist\": \"1.2.6\" } }" \
     > "$work/prime/fixed-$tool/package.json"
   [ $tool = yarn4 ] && printf 'nodeLinker: node-modules\n' > "$work/prime/fixed-$tool/.yarnrc.yml"
   # a CI runner makes yarn 4 and pnpm refuse to write a lockfile: this project has none yet
@@ -93,6 +96,8 @@ echo "tasks.register('fetch') { doLast { configurations.runtimeClasspath.files }
 echo "==> Applying the fixes (the tools offline)"
 mkdir -p "$work/run"
 cp -a samples/fix-tools/. "$work/run/"
+# installed, as a project is: pnpm's lockfile keeps only versions, its dependents' ranges are read from node_modules
+(cd "$work/run/pnpm" && quiet pnpm install --offline --frozen-lockfile --ignore-scripts)
 set +e
 java -jar "$(native "$jar")" --no-gui --lang en -d "$(native "$work/run")" --db "$(native "$db")" -o "$(native "$work/out")" \
   --apply-fixes --yes > "$work/fixes.log" 2>&1
@@ -121,7 +126,21 @@ check "pnpm: locked"                   "$r/pnpm/pnpm-lock.yaml"   'lodash@4.17.2
 check "pnpm: the old version gone"     "$r/pnpm/pnpm-lock.yaml"   '4.17.20' absent
 check "pnpm: the pin said"             "$work/fixes.log"          'pnpm cannot resolve a range offline'
 check "Gradle: the build file"         "$r/gradle/build.gradle"   'commons-text:1.10.0'
+# minimist, there only through mkdirp: overridden, its vulnerable version only where the tool can say so
+check "npm: minimist overridden"       "$r/npm/package.json"      '"minimist@1.2.5": "1.2.6"'
+check "npm: minimist locked"           "$r/npm/package-lock.json" 'minimist-1.2.6.tgz'
+check "npm: minimist 1.2.5 gone"       "$r/npm/package-lock.json" 'minimist-1.2.5.tgz' absent
+check "yarn 1: minimist resolved"      "$r/yarn1/package.json"    '"minimist": "1.2.6"'
+check "yarn 1: minimist locked"        "$r/yarn1/yarn.lock"       'minimist-1.2.6.tgz'
+check "yarn 1: minimist 1.2.5 gone"    "$r/yarn1/yarn.lock"       'minimist-1.2.5.tgz' absent
+check "yarn 4: minimist resolved"      "$r/yarn4/package.json"    '"minimist@npm:^1.2.5": "npm:1.2.6"'
+check "yarn 4: minimist locked"        "$r/yarn4/yarn.lock"       'minimist@npm:1.2.6'
+check "yarn 4: minimist 1.2.5 gone"    "$r/yarn4/yarn.lock"       'resolution: "minimist@npm:1.2.5"' absent
+check "pnpm: minimist overridden"      "$r/pnpm/pnpm-workspace.yaml" "'minimist@1.2.5': 1.2.6"
+check "pnpm: minimist locked"          "$r/pnpm/pnpm-lock.yaml"   'minimist@1.2.6: {}'
+check "pnpm: minimist 1.2.5 gone"      "$r/pnpm/pnpm-lock.yaml"   'minimist@1.2.5: {}' absent
 check "scanned again: no finding left" "$work/out/report.md"      'lodash' absent
+check "scanned again: minimist too"    "$work/out/report.md"      'minimist' absent
 # one annotation for them all: GitHub shows only the first ten of a step
 [ $failures -eq 0 ] || annotate "$failures check(s) failed" "$failed_checks"$'\n'"$(sed -n '/^Fixes:/,$p' "$work/fixes.log" | head -n 120)"
 

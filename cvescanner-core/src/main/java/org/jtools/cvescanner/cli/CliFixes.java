@@ -85,7 +85,7 @@ final class CliFixes {
             if (plan.requirement() != null) out.println("      " + plan.requirement().text());
             plan.notes().forEach(note -> out.println("      " + note.text()));
             if (plan.majorJump() && !o.allowMajor) {
-                out.println("      " + I18n.text("cli.fixes.majorJump"));
+                out.println("      " + I18n.text(plan.majorVersionChange() ? "cli.fixes.majorJump" : "cli.fixes.askFirst"));
                 continue;
             }
             if (!o.yes) continue;

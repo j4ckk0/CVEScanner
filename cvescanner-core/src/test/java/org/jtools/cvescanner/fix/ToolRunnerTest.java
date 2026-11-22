@@ -115,4 +115,19 @@ class ToolRunnerTest {
                 List.of(gradle.toString()), dir, Map.of(), List.of(build))), _ -> { });
         assertEquals("fix.outcome.editGone", gone.reason().key());
     }
+    @Test
+    void anOverrideIsWrittenIntoTheFileAsAnEarlierFixLeftIt() throws IOException {
+        // the direct upgrade's npm rewrites package.json; the override planned before is written into what it wrote
+        Path file = Files.writeString(dir.resolve("package.json"), "{\n  \"dependencies\": {\n    \"lodash\": \"4.17.15\"\n  }\n}\n");
+        Path npm = tool("npm", "printf '{\\n  \"dependencies\": {\\n    \"lodash\": \"4.17.21\"\\n  }\\n}\\n' > package.json");
+        var runner = new ToolRunner(Duration.ofSeconds(30));
+        var upgrade = runner.run(plan(new Step(null, List.of(npm.toString(), "install", "lodash@4.17.21"), dir, Map.of(), List.of(file))), _ -> { });
+        assertTrue(upgrade.applied(), upgrade.log());
+        Path ok = tool("ok", "exit 0");
+        var override = runner.run(plan(new Step(new PackageJsonMembers(file, List.of("overrides"), Map.of("minimist@1.2.5", "1.2.6")),
+                List.of(ok.toString()), dir, Map.of(), List.of(file))), _ -> { });
+        assertTrue(override.applied(), override.log());
+        assertEquals("{\n  \"dependencies\": {\n    \"lodash\": \"4.17.21\"\n  },\n  \"overrides\": { \"minimist@1.2.5\": \"1.2.6\" }\n}\n",
+                Files.readString(file));
+    }
 }

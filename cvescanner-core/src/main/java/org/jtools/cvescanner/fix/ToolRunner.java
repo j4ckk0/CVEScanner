@@ -77,9 +77,10 @@ public final class ToolRunner {
         try {
             if (step.edit() != null) {
                 var e = step.edit();
-                String text = ProjectFiles.readText(e.file());
-                if (!text.contains(e.before())) return Phrase.of("fix.outcome.editGone", e.file().getFileName());
-                Files.writeString(e.file(), text.replace(e.before(), e.after()), StandardCharsets.UTF_8);
+                String text = Files.isRegularFile(e.file()) ? ProjectFiles.readText(e.file()) : "";   // a file it makes
+                String edited = e.apply(text);
+                if (edited == null) return Phrase.of("fix.outcome.editGone", e.file().getFileName());
+                Files.writeString(e.file(), edited, StandardCharsets.UTF_8);
             }
             output = Files.createTempFile("cvescanner-fix", ".log");
             var builder = new ProcessBuilder(command(step.command())).directory(step.directory().toFile())

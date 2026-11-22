@@ -29,7 +29,8 @@ import org.jtools.cvescanner.i18n.Phrase;
  * @param notApplicable why the fix cannot be applied; null when it can
  * @param requirement   what was checked of the new version (the Java or Node it needs), or why nothing was; null when
  *                      nothing applies
- * @param majorJump     the major version changes: applied only once the user confirms
+ * @param majorJump     applied only once the user confirms: the major version changes, or a transitive package's new
+ *                      version leaves what a dependent asks (or what they ask is not known)
  * @param notes         what else to know: a version shared with other packages, raised for them
  */
 public record FixPlan(FixRequest request, List<Step> steps, Phrase notApplicable, Phrase requirement, boolean majorJump,
@@ -44,6 +45,11 @@ public record FixPlan(FixRequest request, List<Step> steps, Phrase notApplicable
         var all = new java.util.ArrayList<>(notes);
         all.add(note);
         return new FixPlan(request, steps, notApplicable, requirement, majorJump, all);
+    }
+
+    /** Whether the major version changes (2.x to 3.x): its API may too. */
+    public boolean majorVersionChange() {
+        return FixPlanner.majorJump(request);
     }
 
     public boolean applicable() {

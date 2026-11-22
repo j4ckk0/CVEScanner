@@ -11,12 +11,28 @@ importers:
       lodash:
         specifier: ~4.17.20
         version: 4.17.20
+      mkdirp:
+        specifier: 0.5.5
+        version: 0.5.5
 
 packages:
 
   lodash@4.17.20:
     resolution: {integrity: sha512-PlhdFcillOINfeV7Ni6oF1TAEayyZBoZ8bcshTHqOYJYlrqzRK5hagpagky5o4HfCzzd1TRkXPMFq6cKk9rGmA==}
 
+  minimist@1.2.5:
+    resolution: {integrity: sha512-FM9nNUYrRBAELZQT3xeZQ7fmMOBg6nWNmJKTcgsJeaLstP/UODVpGsr5OhXhhXg6f+qtJ8uiZ+PUxkDWcgIXLw==}
+
+  mkdirp@0.5.5:
+    resolution: {integrity: sha512-NKmAlESf6jMGym1++R0Ra7wvhV+wFW63FaSOFPwRahvea0gMUcGUhVeAg/0BC0wiv9ih5NYPB1Wn1UEI1/L+xQ==}
+    hasBin: true
+
 snapshots:
 
   lodash@4.17.20: {}
+
+  minimist@1.2.5: {}
+
+  mkdirp@0.5.5:
+    dependencies:
+      minimist: 1.2.5

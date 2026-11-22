@@ -105,7 +105,7 @@ final class FixDialog {
                 }
                 if (plan.requirement() != null) lines.add(plan.requirement().text());
                 plan.notes().forEach(note -> lines.add(note.text()));
-                if (plan.majorJump()) lines.add(I18n.text("fixDialog.majorJump"));
+                if (plan.majorVersionChange()) lines.add(I18n.text("fixDialog.majorJump"));
             }
             var detail = SwingText.plain(String.join("\n", lines));
             detail.setLineWrap(true);

@@ -220,9 +220,9 @@ class FixPlannerTest {
         assertEquals(List.of("--offline", "-q", "-p", root.toString(), "dependencies"), guava.steps().getFirst().command().subList(1, 6));
         assertEquals(Phrase.of("fix.requirement.java", 8, 17), guava.requirement());
         assertEquals("snakeVersion = '2.0'", plan(Ecosystem.MAVEN, "org.yaml:snakeyaml", "1.33", "2.0", "build.gradle", "implementation")
-                .steps().getFirst().edit().after());
+                .steps().getFirst().edit() instanceof Step.TextEdit t ? t.after() : null);
         assertEquals("group: 'commons-io', name: 'commons-io', version: '2.7'", plan(Ecosystem.MAVEN, "commons-io:commons-io", "2.6", "2.7",
-                "build.gradle", "implementation").steps().getFirst().edit().after());
+                "build.gradle", "implementation").steps().getFirst().edit() instanceof Step.TextEdit t ? t.after() : null);
         var text = plan(Ecosystem.MAVEN, "org.apache.commons:commons-text", "1.9", "1.10.0", "gradle/libs.versions.toml", "catalog:commons-text");
         assertEquals(new Step.TextEdit(root.resolve("gradle/libs.versions.toml"), "text = \"1.9\"", "text = \"1.10.0\""), text.steps().getFirst().edit());
         assertEquals(root, text.steps().getFirst().directory(), "the catalog's project, where settings.gradle is");
@@ -256,7 +256,91 @@ class FixPlannerTest {
         var pnpm = plan(Ecosystem.NPM, "lodash", "4.17.15", "4.17.21", "d/pnpm-lock.yaml", "direct");
         assertEquals(List.of("add", "lodash@4.17.21", "--offline", "--ignore-scripts", "-D"), pnpm.steps().getFirst().command().subList(1, 6));
         assertEquals(List.of("fix.note.pinned"), pnpm.notes().stream().map(Phrase::key).toList());
-        assertEquals("fix.reason.transitive", reason(plan(Ecosystem.NPM, "minimist", "1.2.5", "1.2.6", "a/package-lock.json", "transitive (dev)")));
+    }
+
+    /** mkdirp 0.5.5 asking minimist ^1.2.5, locked at 1.2.5: as the real tools' fixtures (samples/fix-tools). */
+    private static final String PACKAGE_LOCK = """
+            {"name": "t", "lockfileVersion": 3, "packages": {
+              "": {"dependencies": {"mkdirp": "0.5.5"}},
+              "node_modules/mkdirp": {"version": "0.5.5", "dependencies": {"minimist": "%s"}},
+              "node_modules/minimist": {"version": "1.2.5"}}}""";
+
+    @Test
+    void aTransitiveNpmPackageIsOverriddenItsVulnerableVersionOnly() throws Exception {
+        write("a/package.json", "{\n  \"dependencies\": {\n    \"mkdirp\": \"0.5.5\"\n  }\n}\n");
+        write("a/package-lock.json", PACKAGE_LOCK.formatted("^1.2.5"));
+        fake.program("npm", "exit 0");
+        assertEquals("fix.reason.notCachedNpm", reason(plan(Ecosystem.NPM, "minimist", "1.2.5", "1.2.6", "a/package-lock.json", "transitive")));
+        fake.npmTarball("minimist", "1.2.6");
+        var p = plan(Ecosystem.NPM, "minimist", "1.2.5", "1.2.6", "a/package-lock.json", "transitive");
+        assertTrue(p.applicable(), String.valueOf(p.notApplicable()));
+        assertFalse(p.majorJump(), "1.2.6 within ^1.2.5: nothing to ask");
+        var step = p.steps().getFirst();
+        assertEquals(new PackageJsonMembers(root.resolve("a/package.json"), List.of("overrides"), Map.of("minimist@1.2.5", "1.2.6")), step.edit());
+        assertEquals(List.of("install", "--offline", "--ignore-scripts"), step.command().subList(1, 4));
+        assertEquals("package.json: overrides \"minimist@1.2.5\": \"1.2.6\"", step.edit().shown());
+        // a fix outside what the dependent asks: applied only when ticked, said so
+        write("a/package-lock.json", PACKAGE_LOCK.formatted("~1.2.5"));
+        fake.npmTarball("minimist", "1.3.0");
+        var outside = plan(Ecosystem.NPM, "minimist", "1.2.5", "1.3.0", "a/package-lock.json", "transitive");
+        assertTrue(outside.majorJump());
+        assertEquals(List.of(Phrase.of("fix.note.outsideRangeOf", "1.3.0", "mkdirp@0.5.5", "~1.2.5")), outside.notes());
+    }
+
+    @Test
+    void yarnOverridesBySpecAndYarn1OnlyWhenEveryCopyIsTheVulnerableOne() throws Exception {
+        fake.program("yarn", "exit 0");
+        write("b/package.json", "{\"dependencies\":{\"mkdirp\":\"0.5.5\"}}");
+        write("b/yarn.lock", "# yarn lockfile v1\n\nminimist@^1.2.5:\n  version \"1.2.5\"\n\nmkdirp@0.5.5:\n  version \"0.5.5\"\n"
+                + "  dependencies:\n    minimist \"^1.2.5\"\n");
+        var yarn1 = plan(Ecosystem.NPM, "minimist", "1.2.5", "1.2.6", "b/yarn.lock", "transitive");
+        assertEquals(Map.of("minimist", "1.2.6"), ((PackageJsonMembers) yarn1.steps().getFirst().edit()).members());
+        assertEquals(List.of("install", "--offline", "--ignore-scripts"), yarn1.steps().getFirst().command().subList(1, 4));
+        assertFalse(yarn1.majorJump());
+        Files.writeString(root.resolve("b/yarn.lock"), Files.readString(root.resolve("b/yarn.lock")) + "\nminimist@^0.2.0:\n  version \"0.2.4\"\n");
+        assertEquals(Phrase.of("fix.reason.yarn1Override", "minimist", "0.2.4"),
+                plan(Ecosystem.NPM, "minimist", "1.2.5", "1.2.6", "b/yarn.lock", "transitive").notApplicable());
+
+        write("c/package.json", "{\"dependencies\":{\"mkdirp\":\"0.5.5\"}}");
+        write("c/yarn.lock", "__metadata:\n  version: 8\n\n\"minimist@npm:^1.2.5\":\n  version: 1.2.5\n  resolution: \"minimist@npm:1.2.5\"\n");
+        var berry = plan(Ecosystem.NPM, "minimist", "1.2.5", "1.2.6", "c/yarn.lock", "transitive").steps().getFirst();
+        assertEquals(Map.of("minimist@npm:^1.2.5", "npm:1.2.6"), ((PackageJsonMembers) berry.edit()).members());
+        assertEquals(List.of("install"), berry.command().subList(1, 2));
+        assertEquals("0", berry.environment().get("YARN_ENABLE_NETWORK"));
+    }
+
+    @Test
+    void pnpmOverridesInItsWorkspaceFileTheRangesReadOnceInstalled() throws Exception {
+        fake.program("pnpm", "exit 0");
+        write("d/package.json", "{\"dependencies\":{\"mkdirp\":\"0.5.5\"}}");
+        write("d/pnpm-lock.yaml", "lockfileVersion: '9.0'\n\npackages:\n\n  minimist@1.2.5:\n    resolution: {integrity: x}\n\n"
+                + "snapshots:\n\n  minimist@1.2.5: {}\n\n  mkdirp@0.5.5:\n    dependencies:\n      minimist: 1.2.5\n");
+        var unknown = plan(Ecosystem.NPM, "minimist", "1.2.5", "1.2.6", "d/pnpm-lock.yaml", "transitive");
+        assertTrue(unknown.majorJump(), "not installed: mkdirp's range unknown, asked first");
+        assertEquals(List.of(Phrase.of("fix.note.rangesUnknown")), unknown.notes());
+        var step = unknown.steps().getFirst();
+        assertEquals(new PnpmWorkspaceOverride(root.resolve("d/pnpm-workspace.yaml"), "minimist@1.2.5", "1.2.6"), step.edit());
+        assertEquals(List.of("install", "--offline", "--ignore-scripts", "--no-frozen-lockfile"), step.command().subList(1, 5));
+        write("d/node_modules/.pnpm/mkdirp@0.5.5/node_modules/mkdirp/package.json", "{\"dependencies\":{\"minimist\":\"^1.2.5\"}}");
+        var installed = plan(Ecosystem.NPM, "minimist", "1.2.5", "1.2.6", "d/pnpm-lock.yaml", "transitive");
+        assertFalse(installed.majorJump());
+        assertEquals(List.of(), installed.notes());
+    }
+
+    @Test
+    void whereTheProjectDeclaresThePackageItIsUpgradedThereAndOverriddenElsewhere() throws Exception {
+        fake.program("npm", "exit 0");
+        fake.npmTarball("minimist", "1.2.6");
+        write("a/package.json", "{\"dependencies\":{\"minimist\":\"1.2.5\",\"mkdirp\":\"0.5.5\"}}");
+        write("a/package-lock.json", PACKAGE_LOCK.formatted("^1.2.5"));
+        write("e/package.json", "{\"dependencies\":{\"mkdirp\":\"0.5.5\"}}");
+        write("e/package-lock.json", PACKAGE_LOCK.formatted("^1.2.5"));
+        var p = plan(Ecosystem.NPM, "minimist", "1.2.5", "1.2.6", "a/package-lock.json", "direct", "a/package-lock.json", "transitive",
+                "e/package-lock.json", "transitive");
+        assertEquals(2, p.steps().size());
+        assertEquals(List.of("install", "minimist@1.2.6"), p.steps().get(0).command().subList(1, 3));
+        assertTrue(p.steps().get(1).edit() instanceof PackageJsonMembers);
+        assertEquals(root.resolve("e"), p.steps().get(1).directory());
     }
 
     @Test

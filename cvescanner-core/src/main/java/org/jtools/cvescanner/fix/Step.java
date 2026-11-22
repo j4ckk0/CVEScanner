@@ -25,15 +25,39 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * One thing done to apply a fix: a text edit first, if any (Gradle, which has no command for it), then a command of
- * the project's build tool, in its offline mode.
+ * One thing done to apply a fix: an edit of a file first, if any (Gradle's build file, which no command changes; an
+ * override in package.json), then a command of the project's build tool, in its offline mode.
  *
  * @param touched the files the step may change: kept before it runs, put back should it fail
  */
-public record Step(TextEdit edit, List<String> command, Path directory, Map<String, String> environment, List<Path> touched) {
+public record Step(Edit edit, List<String> command, Path directory, Map<String, String> environment, List<Path> touched) {
 
-    /** In this file, this exact text, once, becomes that one. */
-    public record TextEdit(Path file, String before, String after) {}
+    /**
+     * An edit of a file, worked out on its text as it is when the step runs: another fix of the same project may have
+     * changed it since the plans were made.
+     */
+    public interface Edit {
+        Path file();
+
+        /** The text the edit gives; null when it can no longer be made (what it replaces is gone). */
+        String apply(String text);
+
+        /** As a person reads it: the file, what changes. */
+        String shown();
+    }
+
+    /** In this file, this exact text becomes that one. */
+    public record TextEdit(Path file, String before, String after) implements Edit {
+        @Override
+        public String apply(String text) {
+            return text.contains(before) ? text.replace(before, after) : null;
+        }
+
+        @Override
+        public String shown() {
+            return file.getFileName() + ": " + before + " → " + after;
+        }
+    }
 
     public Step {
         command = List.copyOf(command);
@@ -56,6 +80,6 @@ public record Step(TextEdit edit, List<String> command, Path directory, Map<Stri
     }
 
     private String withEdit(String cmd) {
-        return edit == null ? cmd : edit.file().getFileName() + ": " + edit.before() + " → " + edit.after() + "; " + cmd;
+        return edit == null ? cmd : edit.shown() + "; " + cmd;
     }
 }
