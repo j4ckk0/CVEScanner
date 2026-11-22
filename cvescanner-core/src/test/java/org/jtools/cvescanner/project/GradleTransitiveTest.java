@@ -164,6 +164,25 @@ class GradleTransitiveTest {
     }
 
     @Test
+    void aCatalogEntryAPlatformGivesAVersionToOrTheGraphRaisesSaysThatVersion() throws IOException {
+        pom("g", "bom", "1", "<packaging>pom</packaging><dependencyManagement>" + deps("g:x:3") + "</dependencyManagement>");
+        pom("g", "x", "3", "");
+        pom("g", "lib", "1", deps("g:codec:2"));
+        pom("g", "codec", "1", "");
+        pom("g", "codec", "2", "");
+        var found = scan("""
+                dependencies {
+                    implementation(platform("g:bom:1"))
+                    implementation(libs.x)
+                    implementation(libs.codec)
+                    implementation("g:lib:1")
+                }""", true, "gradle/libs.versions.toml", "[libraries]\nx = { module = \"g:x\" }\ncodec = \"g:codec:1\"\n");
+        assertEquals("3 catalog:x", found.get("g:x @gradle/libs.versions.toml"), "the platform's version, not 'no version in catalog'");
+        assertEquals("2 catalog:codec", found.get("g:codec @gradle/libs.versions.toml"), "raised to 2 by lib");
+        assertTrue(col.unresolved.isEmpty(), col.unresolved.toString());
+    }
+
+    @Test
     void aLockfilesVersionsWinTheDeclaredOnesDirect() throws IOException {
         var found = scan("""
                 dependencies {

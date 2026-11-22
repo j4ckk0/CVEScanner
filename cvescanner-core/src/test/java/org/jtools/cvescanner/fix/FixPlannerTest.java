@@ -139,9 +139,44 @@ class FixPlannerTest {
         assertTrue(both.steps().get(0).edit() instanceof Step.TextEdit);
         assertTrue(both.steps().get(1).edit() instanceof PomManagedEntry);
 
+        // a module having it through a sibling module that declares it: the sibling upgraded, no pin, nothing asked
+        write("lib/pom.xml", """
+                <project><modelVersion>4.0.0</modelVersion><parent><groupId>g</groupId><artifactId>parent</artifactId><version>1</version></parent>
+                  <artifactId>lib</artifactId>
+                  <dependencies><dependency><groupId>org.yaml</groupId><artifactId>snakeyaml</artifactId><version>1.33</version></dependency></dependencies>
+                </project>""");
+        write("app/pom.xml", """
+                <project><modelVersion>4.0.0</modelVersion><parent><groupId>g</groupId><artifactId>parent</artifactId><version>1</version></parent>
+                  <artifactId>app</artifactId>
+                  <dependencies><dependency><groupId>g</groupId><artifactId>lib</artifactId><version>1</version></dependency></dependencies>
+                </project>""");
+        var reactor = plan(Ecosystem.MAVEN, "org.yaml:snakeyaml", "1.33", "2.0", "lib/pom.xml", "compile", "app/pom.xml", "transitive via g:lib");
+        assertEquals(1, reactor.steps().size(), String.valueOf(reactor.notApplicable()));
+        assertEquals(null, reactor.steps().getFirst().edit(), "versions:use-dep-version in lib, no pin");
+        assertEquals(List.of("fix.note.transitiveFollow"), reactor.notes().stream().map(Phrase::key).toList());
+
         // transitive in Gradle builds only: nothing written by hand to edit
         assertEquals("fix.reason.transitiveGradle", reason(plan(Ecosystem.MAVEN, "org.yaml:snakeyaml", "1.33", "2.0",
                 "build.gradle", "transitive via g:x")));
+    }
+
+    @Test
+    void aVersionAGradleLockfileGivesIsWrittenInItsBuildFileTheLocksWrittenAgain() throws IOException {
+        write("locked/build.gradle", "dependencies {\n    implementation 'org.yaml:snakeyaml:1.33'\n}\n");
+        write("locked/gradle.lockfile", "org.yaml:snakeyaml:1.33=compileClasspath,runtimeClasspath\n");
+        write("locked/settings.gradle", "rootProject.name = 'locked'\n");
+        fake.program("gradle", "exit 0");
+        fake.jar("org.yaml", "snakeyaml", "2.0", 8);
+        var p = plan(Ecosystem.MAVEN, "org.yaml:snakeyaml", "1.33", "2.0", "locked/gradle.lockfile", "direct");
+        assertTrue(p.applicable(), String.valueOf(p.notApplicable()));
+        var step = p.steps().getFirst();
+        assertEquals(new Step.TextEdit(root.resolve("locked/build.gradle"), "'org.yaml:snakeyaml:1.33'", "'org.yaml:snakeyaml:2.0'"), step.edit());
+        assertEquals("--write-locks", step.command().getLast());
+        assertEquals(List.of(root.resolve("locked/build.gradle"), root.resolve("locked/gradle.lockfile")), step.touched());
+        // locked higher than written: the build file does not say the locked version, nothing to edit
+        write("locked/gradle.lockfile", "org.yaml:snakeyaml:1.30=runtimeClasspath\n");
+        assertEquals("fix.reason.versionNotFound", reason(plan(Ecosystem.MAVEN, "org.yaml:snakeyaml", "1.30", "2.0",
+                "locked/gradle.lockfile", "direct")));
     }
 
     @Test

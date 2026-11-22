@@ -373,6 +373,12 @@ public final class MavenReader {
             return Optional.empty();
         }
 
+        /** The scanned pom of this group and artifact: a module of the folder; empty when none. */
+        public Optional<Path> module(String group, String artifact) {
+            Pom pom = index.byCoordinates(group, artifact);
+            return pom == null ? Optional.empty() : Optional.of(pom.path);
+        }
+
         /** The pom and its parents among the scanned ones, the pom first; empty when it is not in the tree. */
         public List<Path> chain(Path pomPath) {
             Pom pom = index.byPath.get(pomPath.toAbsolutePath().normalize());

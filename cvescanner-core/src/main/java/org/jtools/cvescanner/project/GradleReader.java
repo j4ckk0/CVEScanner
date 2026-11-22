@@ -191,6 +191,8 @@ public final class GradleReader {
         }
 
         var transitive = cache == null ? null : new GradleTransitive(cache);
+        // a catalog's library a platform gives a version to, or the graph raises: its row says that version
+        var catalogVersions = new HashMap<String, String>();
         for (var e : texts.entrySet()) {
             Path file = e.getKey();
             var vars = new HashMap<>(global);
@@ -198,13 +200,14 @@ public final class GradleReader {
             var decls = declarations(e.getValue(), byAccessor);
             var lock = locked.get(file.getParent());
             if (lock != null) locked(col, file, decls, lock, locks.get(file.getParent()), vars);
-            else declared(col, file, decls, vars, transitive);
+            else declared(col, file, decls, vars, transitive, catalogVersions);
         }
         // a catalog's library a lockfile holds is said by the lockfile, at the version Gradle resolved
         for (Lib l : libs) {
             if (lockedAnywhere.contains(l.ga())) continue;
-            if (l.version() == null) col.miss(Ecosystem.MAVEN, l.ga(), "", l.catalog(), Phrase.of("reason.catalogNoVersion"));
-            else addDep(col, l.group(), l.artifact(), l.version(), l.catalog(), "catalog:" + l.alias(), Map.of());
+            String version = catalogVersions.getOrDefault(l.ga(), l.version());
+            if (version == null) col.miss(Ecosystem.MAVEN, l.ga(), "", l.catalog(), Phrase.of("reason.catalogNoVersion"));
+            else addDep(col, l.group(), l.artifact(), version, l.catalog(), "catalog:" + l.alias(), Map.of());
         }
         if (transitive != null) transitive.warnings().forEach(warn);
     }
@@ -228,7 +231,8 @@ public final class GradleReader {
     }
 
     /** A build without a lockfile: its declarations, a platform's versions for those that give none; then what they bring. */
-    private static void declared(DependencyCollector col, Path file, List<Decl> decls, Map<String, String> vars, GradleTransitive transitive) {
+    private static void declared(DependencyCollector col, Path file, List<Decl> decls, Map<String, String> vars, GradleTransitive transitive,
+                                 Map<String, String> catalogVersions) {
         var constraints = new LinkedHashMap<String, String>();
         var enforced = new LinkedHashMap<String, String>();
         if (transitive != null)
@@ -241,8 +245,13 @@ public final class GradleReader {
             }
         var seeds = new ArrayList<GradleTransitive.Seed>();
         var rowVersions = new HashMap<String, String>();
+        var catalogSeeds = new HashMap<String, String>();
         for (Decl d : decls) {
             String v = d.raw() == null ? enforced.getOrDefault(d.ga(), constraints.get(d.ga())) : concrete(d.raw(), vars);
+            if (d.catalogRef() && v != null) {
+                catalogSeeds.putIfAbsent(d.ga(), v);
+                if (d.raw() == null) catalogVersions.merge(d.ga(), v, GradleReader::higher);   // the platform's
+            }
             if (!d.catalogRef()) {
                 if (d.raw() == null) {
                     if (v == null) col.miss(Ecosystem.MAVEN, d.ga(), "", file, Phrase.of("reason.platformVersion"));
@@ -260,10 +269,17 @@ public final class GradleReader {
                 String declaredVersion = rowVersions.get(r.ga());
                 if (declaredVersion != null && Ecosystem.MAVEN.compare(r.version(), declaredVersion) > 0)
                     col.replaceVersion(Ecosystem.MAVEN, r.ga(), declaredVersion, file, r.version());
+                String catalogVersion = catalogSeeds.get(r.ga());
+                if (catalogVersion != null && Ecosystem.MAVEN.compare(r.version(), catalogVersion) > 0)
+                    catalogVersions.merge(r.ga(), r.version(), GradleReader::higher);
                 continue;
             }
             col.add(Ecosystem.MAVEN, r.ga(), r.version(), file, MavenTransitive.label(r.scope(), r.via()), false);
         }
+    }
+
+    private static String higher(String a, String b) {
+        return Ecosystem.MAVEN.compare(a, b) >= 0 ? a : b;
     }
 
     /** What a build file declares: "g:a:v", group/name/version maps, "g:a" with no version, catalog accessors; platforms said. */

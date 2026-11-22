@@ -80,7 +80,8 @@ public final class Launcher {
             return;
         }
         // the databases' index kept between scans, beside the program as its settings are
-        if (opts.cacheDir == null && settings.folder() != null) opts.cacheDir = settings.folder().resolve("cache");
+        // (not in the training run that packaging makes: the archive ships no cache)
+        if (opts.cacheDir == null && settings.folder() != null && !Boolean.getBoolean(TRAINING)) opts.cacheDir = settings.folder().resolve("cache");
         if (opts.help) {
             System.out.println(Options.usage());
             return;

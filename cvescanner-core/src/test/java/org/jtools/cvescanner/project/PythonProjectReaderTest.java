@@ -168,6 +168,15 @@ class PythonProjectReaderTest {
     }
 
     @Test
+    void anUnreadablePyprojectLeavesTheFoldersOtherFilesRead() throws IOException {
+        var col = scan("u/pyproject.toml", "[tool.odd\nx = 1\n", "u/requirements.txt", "requests==2.25.0\n",
+                "v/pyproject.toml", "[project]\ndependencies = [\"requests\"]\n", "v/poetry.lock", "[[package]\nname = 1\n");
+        assertEquals(new TreeSet<>(List.of("u/requirements.txt requests 2.25.0 requirements", "v/pyproject.toml requests ! reason.unpinned")),
+                rows(col), "an unreadable lockfile: the folder's manifests read instead");
+        assertEquals(2, warnings.size(), warnings.toString());
+    }
+
+    @Test
     void anUnreadableFileIsSaidAndTheOthersRead() throws IOException {
         var col = scan("bad/pyproject.toml", "[project\n", "good/requirements.txt", "requests==2.25.0\n");
         assertEquals(new TreeSet<>(List.of("good/requirements.txt requests 2.25.0 requirements")), rows(col));

@@ -136,7 +136,12 @@ public final class FixPlanner {
                 continue;
             }
             var chain = poms().chain(d.file());
-            if (chain.stream().anyMatch(declaredPoms::contains)) governed = true;
+            // governed: a declared pom of its chain, or the sibling module it comes through ("transitive via g:b"), upgraded
+            int via = d.scope().indexOf(" via ");
+            String[] through = via < 0 ? new String[0] : d.scope().substring(via + 5).strip().split(":");
+            var sibling = through.length == 2 ? poms().module(through[0], through[1]) : Optional.<Path>empty();
+            boolean bySibling = sibling.isPresent() && poms().chain(sibling.get()).stream().anyMatch(declaredPoms::contains);
+            if (bySibling || chain.stream().anyMatch(declaredPoms::contains)) governed = true;
             else if (!chain.isEmpty()) pins.computeIfAbsent(chain.getLast(), _ -> new ArrayList<>()).add(d);
         }
         if (declared.isEmpty() && pins.isEmpty())

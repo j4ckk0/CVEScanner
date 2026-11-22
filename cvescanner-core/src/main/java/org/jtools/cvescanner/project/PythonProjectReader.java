@@ -56,19 +56,29 @@ public final class PythonProjectReader {
     public static void scan(List<Path> files, DependencyCollector col, Consumer<Phrase> warn) {
         var byFolder = new TreeMap<Path, List<Path>>();
         for (Path f : files) byFolder.computeIfAbsent(f.getParent(), _ -> new ArrayList<>()).add(f);
-        for (var e : byFolder.entrySet()) {
-            try {
-                folder(e.getKey(), e.getValue(), col);
-            } catch (IOException | RuntimeException ex) {
-                warn.accept(Phrase.of("warning.skipped", col.rel(e.getKey()), String.valueOf(ex.getMessage())));
-            }
+        for (var e : byFolder.entrySet()) folder(e.getKey(), e.getValue(), col, warn);
+    }
+
+    /** What this reads of a file, or null when it cannot: said, the folder's other files read. */
+    private interface Read<T> {
+        T from(Path file) throws IOException;
+    }
+
+    private static <T> T read(Path file, Read<T> how, DependencyCollector col, Consumer<Phrase> warn) {
+        try {
+            return how.from(file);
+        } catch (IOException | RuntimeException ex) {
+            warn.accept(Phrase.of("warning.skipped", col.rel(file), String.valueOf(ex.getMessage())));
+            return null;
         }
     }
 
-    private static void folder(Path dir, List<Path> files, DependencyCollector col) throws IOException {
+    private static void folder(Path dir, List<Path> files, DependencyCollector col, Consumer<Phrase> warn) {
         Path pyproject = dir.resolve("pyproject.toml"), pipfile = dir.resolve("Pipfile");
-        Map<String, Object> project = files.contains(pyproject) ? TomlLite.parse(ProjectFiles.readText(pyproject)) : Map.of();
-        Map<String, Object> pipenv = files.contains(pipfile) ? TomlLite.parse(ProjectFiles.readText(pipfile)) : Map.of();
+        Map<String, Object> project = files.contains(pyproject) ? read(pyproject, f -> TomlLite.parse(ProjectFiles.readText(f)), col, warn) : null;
+        Map<String, Object> pipenv = files.contains(pipfile) ? read(pipfile, f -> TomlLite.parse(ProjectFiles.readText(f)), col, warn) : null;
+        if (project == null) project = Map.of();
+        if (pipenv == null) pipenv = Map.of();
         // what the project declares, in PEP 503 form, and which of it is for development only
         var declared = new HashSet<String>();
         var dev = new HashSet<String>();
@@ -76,14 +86,23 @@ public final class PythonProjectReader {
         for (String lock : List.of("poetry.lock", "uv.lock", "Pipfile.lock")) {
             Path file = dir.resolve(lock);
             if (!files.contains(file)) continue;
-            if (lock.equals("Pipfile.lock")) pipfileLock(file, declared, col);
-            else tomlLock(file, lock.equals("uv.lock"), declared, dev, col);
+            // read into a collector of its own: a lockfile that cannot be read leaves no half of its rows
+            var locked = new DependencyCollector(col.root);
+            boolean read = read(file, f -> {
+                if (lock.equals("Pipfile.lock")) pipfileLock(f, declared, locked);
+                else tomlLock(f, lock.equals("uv.lock"), declared, dev, locked);
+                return Boolean.TRUE;
+            }, col, warn) != null;
+            if (!read) continue;   // the next lockfile, else the folder's manifests
+            locked.deps.forEach(col::add);
+            col.unresolved.addAll(locked.unresolved);
             return;   // with a lockfile, its versions: the folder's requirements and declarations are not read again
         }
         // requirements first: a package they pin is not given again at a declaration's lower bound
         var pinned = new HashSet<String>();
         for (Path f : files)
-            if (f.getFileName().toString().endsWith(".txt")) requirements(f, col, pinned, new HashSet<>());
+            if (f.getFileName().toString().endsWith(".txt"))
+                read(f, file -> { requirements(file, col, pinned, new HashSet<>()); return Boolean.TRUE; }, col, warn);
         if (!project.isEmpty()) pyproject(pyproject, project, col, pinned);
         else if (!pipenv.isEmpty()) pipfile(pipfile, pipenv, col, pinned);
     }
