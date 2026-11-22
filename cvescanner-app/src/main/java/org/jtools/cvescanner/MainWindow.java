@@ -185,7 +185,7 @@ final class MainWindow extends JFrame {
             public void copyLink(String url) { MainWindow.this.copyLink(url); }
             public void showFindingsOf(String text) {
                 filterBar.search(text);
-                tabs.setSelectedIndex(0);
+                tabs.setSelectedIndex(FINDINGS_TAB);
             }
             public void search(String text) { filterBar.search(text); }
             public void ignore(Finding f) { MainWindow.this.ignore(f); }

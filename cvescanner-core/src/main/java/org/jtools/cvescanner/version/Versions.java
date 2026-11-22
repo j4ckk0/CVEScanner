@@ -187,9 +187,11 @@ public final class Versions {
         return m.matches() && !QUALIFIERS.containsKey(m.group(1));
     }
 
-    /** A version's suffix that is one of Maven's pre-release qualifiers: "-beta", "-rc", "-snapshot". */
+    private static final Pattern WORD_AND_NUMBER_AFTER_DASH = Pattern.compile("-([a-z]+)[.-]?\\d*");
+
+    /** A version's suffix that is one of Maven's pre-release qualifiers: "-beta", "-rc2", "-beta.1", "-snapshot". */
     private static boolean isPreRelease(String flavour) {
-        var m = WORD_AFTER_DASH.matcher(flavour);
+        var m = WORD_AND_NUMBER_AFTER_DASH.matcher(flavour);
         return m.matches() && QUALIFIERS.getOrDefault(m.group(1), 6) < 6;
     }
 

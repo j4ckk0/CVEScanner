@@ -72,6 +72,23 @@ class NpmRangeTest {
     }
 
     @Test
+    void aPrereleaseIsWithinOnlyARangeNamingAPrereleaseOfTheSameVersion() {
+        outside("1.2.4-beta", "^1.2.3");
+        outside("1.2.3-beta", "1.2.3");
+        outside("1.0.0-rc.1", "*");
+        outside("2.0.0-rc.1", "^1.0.0");
+        within("1.2.4-beta.2", "^1.2.4-beta.1");
+        within("1.2.4-beta.10", ">1.2.4-beta.9");
+        outside("1.2.4-alpha", "^1.2.4-beta");
+        outside("1.2.5-beta", "^1.2.4-beta");
+        within("1.2.5", "^1.2.4-beta");
+        within("1.2.4-beta", "1.2.4-beta");
+        within("2.0.0-rc.1", ">=2.0.0-rc.1 <2.0.0");
+        within("1.0.0-rc.2", "1.0.0-rc.1 - 1.0.0");
+        outside("1.0.0-rc.1", "^1.0.0-rc.2 || 1.x");
+    }
+
+    @Test
     void anAliasIsReadAfterItsNameAndAnythingElseSaysNothing() {
         within("1.2.6", "npm:minimist@^1.2.5");
         assertEquals(Optional.empty(), NpmRange.satisfies("1.2.6", "latest"));

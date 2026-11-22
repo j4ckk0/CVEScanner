@@ -72,6 +72,8 @@ class VersionsTest {
         assertEquals("2.0-rc", Ecosystem.MAVEN.nearestFix("2.0-beta", List.of("2.0-rc", "2.1")));
         assertEquals("32.0.0-rc", Ecosystem.MAVEN.nearestFix("31.1-jre", List.of("32.0.0-rc")));
         assertEquals("1.1", Ecosystem.MAVEN.nearestFix("1.0-snapshot", List.of("1.1", "1.2-snapshot")));
+        assertEquals("1.1", Ecosystem.MAVEN.nearestFix("1.0-beta1", List.of("1.1", "2.0-beta1")), "a numbered one too");
+        assertEquals("1.1", Ecosystem.MAVEN.nearestFix("1.0-rc.2", List.of("1.1", "2.0-rc.2")));
     }
 
     @Test

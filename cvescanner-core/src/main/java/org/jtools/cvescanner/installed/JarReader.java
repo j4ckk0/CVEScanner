@@ -108,9 +108,10 @@ public final class JarReader {
 
     /**
      * A jar without Maven coordinates, checked by its name: its artifactId and version from its file name
-     * (log4j-core-2.14.1.jar). Every group's advisories for that artifactId are matched; its OSGi name, when it has
-     * one, tells those of its own group (Dependency.bundle). Its version is the jar's own, not approximate. A file name
-     * without them cannot be checked: said, with its manifest's name and version.
+     * (log4j-core-2.14.1.jar), else the file name without its extension and the manifest's version. Every group's
+     * advisories for that artifactId are matched; its OSGi name, when it has one, tells those of its own group
+     * (Dependency.bundle). Its version is the jar's own, not approximate. A jar with no version in either cannot be
+     * checked: said, with its manifest's name.
      */
     private static void unchecked(Manifest manifest, String shown, String name, DependencyCollector col) {
         String symbolic = null, title = null, manifestVersion = null;
@@ -118,13 +119,13 @@ public final class JarReader {
             var a = manifest.getMainAttributes();
             symbolic = a.getValue("Bundle-SymbolicName") == null ? null : a.getValue("Bundle-SymbolicName").split(";")[0].strip();
             title = first(symbolic, a.getValue("Implementation-Title"));
-            manifestVersion = first(a.getValue("Bundle-Version"), a.getValue("Implementation-Version"));
+            manifestVersion = first(a.getValue("Implementation-Version"), a.getValue("Bundle-Version"));   // the Maven version, before OSGi's
         }
         Matcher m = FILE_NAME.matcher(name);
-        String artifact = m.matches() ? m.group(1) : null;
+        String artifact = m.matches() ? m.group(1) : name.replaceFirst("(?i)\\.(?:jar|war|ear)$", "");
         String version = m.matches() ? m.group(2) : manifestVersion;
-        if (artifact == null || version == null || version.isBlank()) {
-            col.miss(Ecosystem.MAVEN, title != null ? title.strip() : artifact != null ? artifact : name,
+        if (artifact.isBlank() || version == null || version.isBlank()) {
+            col.miss(Ecosystem.MAVEN, title != null ? title.strip() : artifact.isBlank() ? name : artifact,
                     version, shown, Phrase.of("reason.jarNoCoordinates"));
             return;
         }

@@ -57,8 +57,13 @@ public final class InventoryReader {
         String[] f = (text + ",,,").split(",", -1);
         String name = f[0].strip(), version = f[1].strip(), vendor = f[2].strip(), cpe = f[3].strip();
         String id;
-        if (cpe.startsWith("cpe:2.3:")) {
-            String[] parts = Cpe.fields(cpe);
+        String[] parts = cpe.startsWith("cpe:2.3:") ? Cpe.fields(cpe) : null;
+        if (parts != null && (!names(parts[3]) || !names(parts[4]))) {
+            // a CPE without a vendor or a product names no component: said, with what the line gives
+            col.miss(Ecosystem.COTS, name.isEmpty() ? cpe : name, version, file, Phrase.of("reason.cpeNoProduct"));
+            return;
+        }
+        if (parts != null) {
             id = parts[3] + ":" + parts[4];
             if (version.isEmpty() && !parts[5].equals("*") && !parts[5].equals("-")) version = parts[5];
             if (name.isEmpty()) name = parts[4];
@@ -70,5 +75,10 @@ public final class InventoryReader {
         if (name.isEmpty() && cpe.isEmpty()) return;
         if (version.isEmpty()) col.miss(Ecosystem.COTS, id, "", file, Phrase.of("reason.noVersion"));
         else col.add(Ecosystem.COTS, id, version, file, "inventory", false);
+    }
+
+    /** Whether a CPE field names something: not empty, not ANY (*) nor NA (-). */
+    private static boolean names(String field) {
+        return !field.isEmpty() && !field.equals("*") && !field.equals("-");
     }
 }

@@ -110,12 +110,12 @@ class InstalledReadersTest {
         Path versionless = Files.write(root.resolve("tools.jar"),
                 jar("META-INF/MANIFEST.MF", "Manifest-Version: 1.0\nImplementation-Title: Tools\n"));
         Path byManifest = Files.write(root.resolve("helper.jar"),
-                jar("META-INF/MANIFEST.MF", "Manifest-Version: 1.0\nImplementation-Title: helper\nImplementation-Version: 3.1\n"));
+                jar("META-INF/MANIFEST.MF", "Manifest-Version: 1.0\nImplementation-Title: helper\nBundle-Version: 3.1.0.final\nImplementation-Version: 3.1\n"));
         assertEquals(List.of("commons-text 1.9 commons-text-1.9.jar installed org.apache.commons.commons-text",
+                "helper 3.1 helper.jar installed",
                 "log4j-core 2.14.1 log4j-core-2.14.1.jar installed org.apache.logging.log4j.core",
-                "unchecked Tools  tools.jar",
-                "unchecked helper 3.1 helper.jar"), read(List.of(text, log4j, versionless, byManifest)),
-                "no artifactId in its file name, or no version: not checked");
+                "unchecked Tools  tools.jar"), read(List.of(text, log4j, versionless, byManifest)),
+                "no version in its file name: its manifest's; no version anywhere: not checked");
     }
 
     @Test
