@@ -22,7 +22,8 @@ checksums.
   Linux and Windows by a workflow). A version is written as the project wrote it: npm no longer turns an exact version
   into `^`; yarn 1 keeps `^` (on Linux; on Windows it pins, a caret not reaching it intact through `cmd.exe`) and `~`;
   pnpm and yarn 4, which resolve no range offline, pin the version; each pin is said in the plan. Gradle's and npm's
-  caches are found where `GRADLE_USER_HOME` and `npm_config_cache` put them.
+  caches are found where `GRADLE_USER_HOME` and npm's configuration put them: `npm_config_cache`, or the `cache` an
+  npmrc names (the user's, the global one, npm's own), read as npm reads them, without starting npm.
 
 ## 1.2 — 2026-11-21
 

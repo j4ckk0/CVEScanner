@@ -55,8 +55,10 @@ public record Machine(List<Path> path, boolean windows, List<String> pathExt, Pa
             if (!d.isBlank()) dirs.add(Path.of(d.strip()));
         List<String> ext = windows ? List.of(System.getenv().getOrDefault("PATHEXT", ".COM;.EXE;.BAT;.CMD").toLowerCase(Locale.ROOT).split(";"))
                 : List.of("");
-        return new Machine(dirs, windows, ext, Path.of(System.getProperty("user.home")), env("LOCALAPPDATA"), env("GRADLE_USER_HOME"),
-                env("npm_config_cache"));
+        Path home = Path.of(System.getProperty("user.home"));
+        var found = new Machine(dirs, windows, ext, home, env("LOCALAPPDATA"), env("GRADLE_USER_HOME"), null);
+        Path npmCache = NpmConfig.cache(System.getenv(), home, found.program("node"), windows).orElse(null);
+        return new Machine(dirs, windows, ext, home, found.localAppData(), found.gradleUserHome(), npmCache);
     }
 
     private static Path env(String name) {
@@ -103,7 +105,10 @@ public record Machine(List<Path> path, boolean windows, List<String> pathExt, Pa
         return (gradleUserHome != null ? gradleUserHome : home.resolve(".gradle")).resolve("caches").resolve("modules-2").resolve("files-2.1");
     }
 
-    /** npm's content cache: under npm_config_cache when it is set, else ~/.npm/_cacache, %LOCALAPPDATA%\npm-cache\_cacache on Windows. */
+    /**
+     * npm's content cache: under the folder npm's configuration names (npm_config_cache, an npmrc) when it names one,
+     * else ~/.npm/_cacache, %LOCALAPPDATA%\npm-cache\_cacache on Windows.
+     */
     public Path npmCache() {
         if (npmCacheDir != null) return npmCacheDir.resolve("_cacache");
         return windows && localAppData != null ? localAppData.resolve("npm-cache").resolve("_cacache")
