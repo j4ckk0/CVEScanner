@@ -103,6 +103,28 @@ class GradleTransitiveTest {
     }
 
     @Test
+    void theParentsSayTheVersionsGradleChoseALockfilesAreNotRecorded() throws IOException {
+        pom("g", "x", "1", deps("g:y:1"));
+        pom("g", "w", "1", deps("g:y:2"));
+        pom("g", "y", "1", "");
+        pom("g", "y", "2", deps("g:z:1"));
+        pom("g", "z", "1", "");
+        scan("""
+                dependencies {
+                    implementation("g:x:1")
+                    implementation("g:w:1")
+                }""", true);
+        var parents = new TreeMap<String, List<String>>();
+        for (Dependency d : col.deps) parents.put(d.name() + ":" + d.version(), d.parents());
+        assertEquals(Map.of("g:x:1", List.of(), "g:w:1", List.of(), "g:y:2", List.of("g:x@1"), "g:z:1", List.of("g:x@1", "g:y@2")),
+                parents, "y raised to 2 by w: what brings z is y at 2");
+        scan("dependencies {\n    implementation(\"g:x:1\")\n}", false, "gradle.lockfile", "g:x:1=runtimeClasspath\ng:y:1=runtimeClasspath\n");
+        var locked = new TreeMap<String, String>();
+        for (Dependency d : col.deps) locked.put(d.name(), String.valueOf(d.parents()));
+        assertEquals(Map.of("g:x", "[]", "g:y", "null"), locked);
+    }
+
+    @Test
     void aPlatformGivesVersionsAndTakesPartAnEnforcedOneForces() throws IOException {
         pom("g", "bom", "1", "<packaging>pom</packaging><dependencyManagement>" + deps("g:x:3", "g:y:5") + "</dependencyManagement>");
         pom("g", "lib", "1", deps("g:y:4"));

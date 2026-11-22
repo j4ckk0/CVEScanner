@@ -27,6 +27,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeMap;
+import java.util.Map;
 import java.util.TreeSet;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.model.Dependency;
@@ -165,6 +167,61 @@ class PythonProjectReaderTest {
                 "q/requirements.txt", "jinja2==2.11.2\n");
         assertEquals(new TreeSet<>(List.of("q/pyproject.toml flask 2.0.1≈ dependencies", "q/requirements.txt jinja2 2.11.2 requirements")),
                 rows(col));
+    }
+
+    @Test
+    void poetryAndUvLocksSayTheParentsAPipfileLockDoesNot() throws IOException {
+        var col = scan("p/pyproject.toml", "[tool.poetry.dependencies]\nRequests = \"^2.25\"\n",
+                "p/poetry.lock", """
+                        [[package]]
+                        name = "requests"
+                        version = "2.25.0"
+                        [package.dependencies]
+                        urllib3 = ">=1.21.1,<1.27"
+                        idna = ">=2.5,<3"
+
+                        [[package]]
+                        name = "urllib3"
+                        version = "1.26.4"
+
+                        [[package]]
+                        name = "idna"
+                        version = "2.10"
+                        """,
+                "u/pyproject.toml", "[project]\ndependencies = [\"flask\"]\n",
+                "u/uv.lock", """
+                        version = 1
+                        [[package]]
+                        name = "app"
+                        version = "0.1.0"
+                        source = { virtual = "." }
+                        dependencies = [{ name = "flask" }]
+
+                        [[package]]
+                        name = "flask"
+                        version = "2.0.0"
+                        source = { registry = "https://pypi.org/simple" }
+                        dependencies = [{ name = "Jinja2" }]
+
+                        [[package]]
+                        name = "jinja2"
+                        version = "3.0.0"
+                        source = { registry = "https://pypi.org/simple" }
+                        dependencies = [{ name = "markupsafe" }]
+
+                        [[package]]
+                        name = "markupsafe"
+                        version = "2.0.0"
+                        source = { registry = "https://pypi.org/simple" }
+                        """,
+                "f/Pipfile", "[packages]\nrequests = \"*\"\n",
+                "f/Pipfile.lock", "{\"default\": {\"requests\": {\"version\": \"==2.25.0\"}, \"idna\": {\"version\": \"==2.10\"}}}");
+        var parents = new TreeMap<String, String>();
+        for (Dependency d : col.deps) parents.put(d.file() + " " + d.name(), String.valueOf(d.parents()));
+        assertEquals(Map.of(
+                "p/poetry.lock requests", "[]", "p/poetry.lock urllib3", "[requests@2.25.0]", "p/poetry.lock idna", "[requests@2.25.0]",
+                "u/uv.lock flask", "[]", "u/uv.lock jinja2", "[flask@2.0.0]", "u/uv.lock markupsafe", "[flask@2.0.0, jinja2@3.0.0]",
+                "f/Pipfile.lock requests", "[]", "f/Pipfile.lock idna", "null"), parents);
     }
 
     @Test

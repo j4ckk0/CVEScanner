@@ -221,7 +221,8 @@ public final class GradleReader {
         for (var l : lock) {
             if (!inLock.add(l.ga())) continue;
             String scope = declared.contains(l.ga()) ? "direct" : l.testOnly() ? "transitive (test)" : "transitive";
-            col.add(Ecosystem.MAVEN, l.ga(), l.version(), lockfile, scope, false);
+            // a lockfile does not say what brings an entry: its parents not recorded
+            col.add(Ecosystem.MAVEN, l.ga(), l.version(), lockfile, scope, declared.contains(l.ga()) ? List.of() : null);
         }
         for (Decl d : decls) {
             if (d.catalogRef() || inLock.contains(d.ga())) continue;
@@ -274,7 +275,7 @@ public final class GradleReader {
                     catalogVersions.merge(r.ga(), r.version(), GradleReader::higher);
                 continue;
             }
-            col.add(Ecosystem.MAVEN, r.ga(), r.version(), file, MavenTransitive.label(r.scope(), r.via()), false);
+            col.add(Ecosystem.MAVEN, r.ga(), r.version(), file, MavenTransitive.label(r.scope(), r.via()), r.path());
         }
     }
 

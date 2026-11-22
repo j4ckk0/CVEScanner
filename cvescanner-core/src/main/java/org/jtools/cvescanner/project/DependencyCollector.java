@@ -50,6 +50,11 @@ public final class DependencyCollector {
         add(new Dependency(eco, name, version, f, scope, approximate));
     }
 
+    /** A dependency another package brings, with the packages that bring it ("name@version", the declared one first). */
+    public void add(Ecosystem eco, String name, String version, Path file, String scope, List<String> parents) {
+        add(new Dependency(eco, name, version, rel(file), scope, false, null, parents));
+    }
+
     public void add(Dependency d) {
         if (seen.add(List.of(d.ecosystem(), d.name(), d.version(), d.file(), d.scope()))) deps.add(d);
     }
@@ -58,7 +63,7 @@ public final class DependencyCollector {
     public void replaceVersion(Ecosystem eco, String name, String version, Path file, String raised) {
         String f = rel(file);
         deps.replaceAll(d -> d.ecosystem() == eco && d.name().equals(name) && d.version().equals(version) && d.file().equals(f)
-                ? new Dependency(d.ecosystem(), d.name(), raised, d.file(), d.scope(), d.approximate(), d.bundle()) : d);
+                ? new Dependency(d.ecosystem(), d.name(), raised, d.file(), d.scope(), d.approximate(), d.bundle(), d.parents()) : d);
     }
 
     public void miss(Ecosystem eco, String name, String declared, Path file, Phrase reason) {

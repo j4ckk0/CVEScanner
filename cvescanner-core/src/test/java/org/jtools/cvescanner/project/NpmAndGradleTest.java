@@ -79,6 +79,177 @@ class NpmAndGradleTest {
         assertEquals(Map.of("async@2.6.3", "direct", "lodash@4.17.11", "direct", "lodash@4.17.15", "transitive"), scopes);
     }
 
+    /** Each package's parents, "name@version > …", by "name@version"; "?" when the lockfile does not say. */
+    private static Map<String, String> parents(Path dir, String packageJson, String lockName, String lock) throws Exception {
+        Files.writeString(dir.resolve("package.json"), packageJson);
+        Files.writeString(dir.resolve(lockName), lock);
+        var collector = new DependencyCollector(dir);
+        NpmReader.scan(List.of(dir.resolve("package.json")), dir, collector, warning -> { });
+        Map<String, String> out = new TreeMap<>();
+        collector.deps.forEach(d -> out.put(d.name() + "@" + d.version(),
+                d.scope() + " " + (d.parents() == null ? "?" : String.join(" > ", d.parents()))));
+        return out;
+    }
+
+    @Test
+    void aPackageLocksParentsAsNodeFindsThemTheNearestCopyKept(@TempDir Path dir) throws Exception {
+        var found = parents(dir, "{\"dependencies\":{\"express\":\"4.17.1\",\"debug\":\"4.3.1\"}}", "package-lock.json", """
+                {"lockfileVersion": 3, "packages": {
+                  "": {"dependencies": {"express": "4.17.1", "debug": "4.3.1"}},
+                  "node_modules/express": {"version": "4.17.1", "dependencies": {"body-parser": "1", "debug": "2.6.9"}},
+                  "node_modules/body-parser": {"version": "1.19.0", "dependencies": {"debug": "2.6.9"}},
+                  "node_modules/body-parser/node_modules/debug": {"version": "2.6.9", "dependencies": {"ms": "2.0.0"}},
+                  "node_modules/body-parser/node_modules/ms": {"version": "2.0.0"},
+                  "node_modules/express/node_modules/debug": {"version": "2.6.9", "dependencies": {"ms": "2.0.0"}},
+                  "node_modules/express/node_modules/ms": {"version": "2.0.0"},
+                  "node_modules/debug": {"version": "4.3.1", "dependencies": {"ms": "2.1.2"}},
+                  "node_modules/ms": {"version": "2.1.2"}
+                }}""");
+        assertEquals(Map.of(
+                "express@4.17.1", "direct ", "debug@4.3.1", "direct ",
+                "body-parser@1.19.0", "transitive express@4.17.1",
+                "debug@2.6.9", "transitive express@4.17.1",
+                "ms@2.0.0", "transitive express@4.17.1 > debug@2.6.9",
+                "ms@2.1.2", "transitive debug@4.3.1"), found);
+    }
+
+    @Test
+    void yarnLocksParentsV1AndBerryAnotherVersionOfADeclaredNameIsNotDirect(@TempDir Path dir) throws Exception {
+        String pkg = "{\"dependencies\":{\"express\":\"^4.17.1\",\"debug\":\"^4.3.1\"}}";
+        var v1 = parents(dir, pkg, "yarn.lock", """
+                # yarn lockfile v1
+
+                debug@2.6.9:
+                  version "2.6.9"
+                  dependencies:
+                    ms "2.0.0"
+
+                debug@^4.3.1:
+                  version "4.3.1"
+
+                express@^4.17.1:
+                  version "4.17.1"
+                  dependencies:
+                    debug "2.6.9"
+
+                ms@2.0.0:
+                  version "2.0.0"
+                """);
+        var expected = Map.of("express@4.17.1", "direct ", "debug@4.3.1", "direct ",
+                "debug@2.6.9", "transitive express@4.17.1", "ms@2.0.0", "transitive express@4.17.1 > debug@2.6.9");
+        assertEquals(expected, v1);
+        var berry = parents(dir, pkg, "yarn.lock", """
+                __metadata:
+                  version: 8
+
+                "app@workspace:.":
+                  version: 0.0.0-use.local
+                  dependencies:
+                    debug: "npm:^4.3.1"
+                    express: "npm:^4.17.1"
+
+                "debug@npm:2.6.9":
+                  version: 2.6.9
+                  dependencies:
+                    ms: "npm:2.0.0"
+
+                "debug@npm:^4.3.1":
+                  version: 4.3.1
+
+                "express@npm:^4.17.1":
+                  version: 4.17.1
+                  dependencies:
+                    debug: "npm:2.6.9"
+
+                "ms@npm:2.0.0":
+                  version: 2.0.0
+                """);
+        assertEquals(expected, berry, "the project's own entry is no package");
+    }
+
+    @Test
+    void pnpmLocksParentsV9AndV6ThePeersSuffixCut(@TempDir Path dir) throws Exception {
+        String pkg = "{\"dependencies\":{\"react-dom\":\"18.2.0\",\"react\":\"18.2.0\"}}";
+        var expected = Map.of("react-dom@18.2.0", "direct ", "react@18.2.0", "direct ",
+                "scheduler@0.23.0", "transitive react-dom@18.2.0", "loose-envify@1.4.0", "transitive react@18.2.0");
+        assertEquals(expected, parents(dir, pkg, "pnpm-lock.yaml", """
+                lockfileVersion: '9.0'
+
+                importers:
+
+                  .:
+                    dependencies:
+                      react:
+                        specifier: 18.2.0
+                        version: 18.2.0
+                      react-dom:
+                        specifier: 18.2.0
+                        version: 18.2.0(react@18.2.0)
+
+                packages:
+
+                  loose-envify@1.4.0:
+                    resolution: {integrity: sha512-x}
+                  react-dom@18.2.0:
+                    resolution: {integrity: sha512-x}
+                  react@18.2.0:
+                    resolution: {integrity: sha512-x}
+                  scheduler@0.23.0:
+                    resolution: {integrity: sha512-x}
+
+                snapshots:
+
+                  loose-envify@1.4.0: {}
+                  react-dom@18.2.0(react@18.2.0):
+                    dependencies:
+                      loose-envify: 1.4.0
+                      react: 18.2.0
+                      scheduler: 0.23.0
+                  react@18.2.0:
+                    dependencies:
+                      loose-envify: 1.4.0
+                  scheduler@0.23.0:
+                    dependencies:
+                      loose-envify: 1.4.0
+                """));
+        assertEquals(expected, parents(dir, pkg, "pnpm-lock.yaml", """
+                lockfileVersion: '6.0'
+
+                dependencies:
+                  react:
+                    specifier: 18.2.0
+                    version: 18.2.0
+                  react-dom:
+                    specifier: 18.2.0
+                    version: 18.2.0(react@18.2.0)
+
+                packages:
+
+                  /loose-envify@1.4.0:
+                    resolution: {integrity: sha512-x}
+                  /react-dom@18.2.0(react@18.2.0):
+                    dependencies:
+                      loose-envify: 1.4.0
+                      react: 18.2.0
+                      scheduler: 0.23.0
+                  /react@18.2.0:
+                    dependencies:
+                      loose-envify: 1.4.0
+                  /scheduler@0.23.0:
+                    dependencies:
+                      loose-envify: 1.4.0
+                """));
+    }
+
+    @Test
+    void aV1PackageLockDoesNotSayTheParents(@TempDir Path dir) throws Exception {
+        var found = parents(dir, "{\"dependencies\":{\"a\":\"1.0.0\"}}", "package-lock.json", """
+                {"lockfileVersion": 1, "dependencies": {
+                  "a": {"version": "1.0.0", "requires": {"b": "1.0.0"}},
+                  "b": {"version": "1.0.0"}}}""");
+        assertEquals(Map.of("a@1.0.0", "direct ", "b@1.0.0", "transitive ?"), found);
+    }
+
     @Test
     void gradleVariablesOfExtAndGradleProperties() {
         var vars = GradleReader.variables(GradleReader.stripComments("""

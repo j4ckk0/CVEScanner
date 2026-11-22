@@ -79,14 +79,21 @@ final class MavenTransitive {
         Map<String, MavenModel.Managed> managed = module.managed();
         Set<String> declared = new HashSet<>();   // the pom's own, and itself: never overridden by a transitive one
         declared.add(module.groupId() + ":" + module.artifactId());
-        record Node(String group, String artifact, String version, String scope, String via, List<String> exclusions) {}
+        // path: the packages that bring it, "g:a@v", the declared one first
+        record Node(String group, String artifact, String version, String scope, String via, List<String> exclusions, List<String> path) {
+            List<String> below() {
+                var out = new ArrayList<>(path);
+                out.add(group + ":" + artifact + "@" + version);
+                return List.copyOf(out);
+            }
+        }
         Map<String, Node> found = new LinkedHashMap<>();
         Set<String> skipped = new HashSet<>();
         var queue = new ArrayDeque<Node>();
         for (MavenModel.Dep d : module.dependencies()) {
             declared.add(d.ga());
             if (!List.of("compile", "runtime", "provided", "test").contains(d.scope()) || !resolved(d.version())) continue;
-            queue.add(new Node(d.group(), d.artifact(), d.version(), d.scope(), d.ga(), d.exclusions()));
+            queue.add(new Node(d.group(), d.artifact(), d.version(), d.scope(), d.ga(), d.exclusions(), List.of()));
         }
         while (!queue.isEmpty()) {
             Node node = queue.poll();
@@ -105,7 +112,7 @@ final class MavenTransitive {
                 if (seen != null) {
                     // a nearer path gave its version; a wider scope along this one widens it, and what it brings
                     if (rank(scope) > rank(seen.scope())) {
-                        Node wider = new Node(seen.group(), seen.artifact(), seen.version(), scope, node.via(), List.copyOf(exclusions));
+                        Node wider = new Node(seen.group(), seen.artifact(), seen.version(), scope, node.via(), List.copyOf(exclusions), node.below());
                         found.put(d.ga(), wider);
                         queue.add(wider);
                     }
@@ -118,13 +125,13 @@ final class MavenTransitive {
                     skipped.add(d.ga());
                     continue;
                 }
-                Node child = new Node(d.group(), d.artifact(), version, scope, node.via(), List.copyOf(exclusions));
+                Node child = new Node(d.group(), d.artifact(), version, scope, node.via(), List.copyOf(exclusions), node.below());
                 found.put(d.ga(), child);
                 queue.add(child);
             }
         }
         for (Node n : found.values())
-            col.add(Ecosystem.MAVEN, n.group() + ":" + n.artifact(), n.version(), pom.path, label(n.scope(), n.via()), false);
+            col.add(Ecosystem.MAVEN, n.group() + ":" + n.artifact(), n.version(), pom.path, label(n.scope(), n.via()), n.path());
     }
 
     static int rank(String scope) {

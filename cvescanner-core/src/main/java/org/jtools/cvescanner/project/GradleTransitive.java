@@ -48,7 +48,8 @@ final class GradleTransitive {
     }
 
     /** A dependency of the graph: its version once resolved, its scope, the declaration that brings it. */
-    record Resolved(String group, String artifact, String version, String scope, String via) {
+    /** @param path the packages that bring it, "g:a@v", the declared one first; empty for a declaration */
+    record Resolved(String group, String artifact, String version, String scope, String via, List<String> path) {
         String ga() { return group + ":" + artifact; }
     }
 
@@ -100,13 +101,20 @@ final class GradleTransitive {
         for (int pass = 0; pass < MAX_PASSES; pass++) {
             Map<String, String> requested = new HashMap<>();
             reached = new LinkedHashMap<>();
-            record Node(String group, String artifact, String scope, String via, List<String> exclusions) {}
+            // path: the group:artifacts that bring it, the declared one first; their versions are the chosen ones
+            record Node(String group, String artifact, String scope, String via, List<String> exclusions, List<String> path) {
+                List<String> below() {
+                    var out = new ArrayList<>(path);
+                    out.add(group + ":" + artifact);
+                    return List.copyOf(out);
+                }
+            }
             var queue = new ArrayDeque<Node>();
             for (Seed s : seeds) {
                 request(requested, s.ga(), s.version());
                 if (!reached.containsKey(s.ga())) {
-                    reached.put(s.ga(), new Resolved(s.group(), s.artifact(), null, s.scope(), null));
-                    queue.add(new Node(s.group(), s.artifact(), s.scope(), s.ga(), s.exclusions()));
+                    reached.put(s.ga(), new Resolved(s.group(), s.artifact(), null, s.scope(), null, List.of()));
+                    queue.add(new Node(s.group(), s.artifact(), s.scope(), s.ga(), s.exclusions(), List.of()));
                 }
             }
             while (!queue.isEmpty()) {
@@ -132,13 +140,16 @@ final class GradleTransitive {
                     exclusions.addAll(d.exclusions());
                     if (seen != null) {
                         if (MavenTransitive.rank(scope) > MavenTransitive.rank(seen.scope())) {   // widened, and what it brings
-                            reached.put(d.ga(), new Resolved(d.group(), d.artifact(), null, scope, seen.via() == null ? null : node.via()));
-                            queue.add(new Node(d.group(), d.artifact(), scope, node.via(), List.copyOf(exclusions)));
+                            boolean declaration = seen.via() == null;
+                            reached.put(d.ga(), new Resolved(d.group(), d.artifact(), null, scope, declaration ? null : node.via(),
+                                    declaration ? List.of() : node.below()));
+                            queue.add(new Node(d.group(), d.artifact(), scope, node.via(), List.copyOf(exclusions),
+                                    declaration ? List.of() : node.below()));
                         }
                         continue;
                     }
-                    reached.put(d.ga(), new Resolved(d.group(), d.artifact(), null, scope, node.via()));
-                    queue.add(new Node(d.group(), d.artifact(), scope, node.via(), List.copyOf(exclusions)));
+                    reached.put(d.ga(), new Resolved(d.group(), d.artifact(), null, scope, node.via(), node.below()));
+                    queue.add(new Node(d.group(), d.artifact(), scope, node.via(), List.copyOf(exclusions), node.below()));
                 }
             }
             Map<String, String> next = new HashMap<>();
@@ -153,7 +164,10 @@ final class GradleTransitive {
         var out = new LinkedHashMap<String, Resolved>();
         for (var r : reached.values()) {
             String v = chosen.get(r.ga());
-            if (v != null) out.put(r.ga(), new Resolved(r.group(), r.artifact(), v, r.scope(), r.via()));
+            if (v == null) continue;
+            var path = new ArrayList<String>();
+            for (String ga : r.path()) path.add(ga + "@" + chosen.get(ga));
+            out.put(r.ga(), new Resolved(r.group(), r.artifact(), v, r.scope(), r.via(), List.copyOf(path)));
         }
         return out;
     }

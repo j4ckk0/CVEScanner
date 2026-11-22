@@ -40,6 +40,7 @@ class MavenTransitiveTest {
     @TempDir
     Path dir;
     private final List<Phrase> warnings = new ArrayList<>();
+    private DependencyCollector col;
 
     private Path repo() {
         return dir.resolve("repo");
@@ -77,7 +78,7 @@ class MavenTransitiveTest {
             Files.writeString(p, projectPoms[i + 1]);
             paths.add(p);
         }
-        var col = new DependencyCollector(dir.resolve("project"));
+        col = new DependencyCollector(dir.resolve("project"));
         MavenReader.scan(paths, col, warnings::add, new MavenRepository(repo()));
         var out = new TreeMap<String, String>();
         for (Dependency d : col.deps) out.put(d.name() + " @" + d.file(), d.version() + " " + d.scope());
@@ -99,6 +100,19 @@ class MavenTransitiveTest {
                 "g:a @pom.xml", "1 compile", "g:b @pom.xml", "1 compile",
                 "g:c @pom.xml", "1 transitive via g:a", "g:d @pom.xml", "1 transitive via g:b"), found);
         assertTrue(warnings.isEmpty(), warnings.toString());
+    }
+
+    @Test
+    void eachTransitiveDependencyKnowsThePackagesThatBringItTheNearestPath() throws IOException {
+        pom("g", "a", "1", deps(dep("g:b:1")));
+        pom("g", "b", "1", deps(dep("g:c:1")));
+        pom("g", "x", "1", deps(dep("g:c:1")));
+        pom("g", "c", "1", "");
+        scan(".", app(deps(dep("g:a:1"), dep("g:x:1"))));
+        var parents = new TreeMap<String, List<String>>();
+        for (Dependency d : col.deps) parents.put(d.name(), d.parents());
+        assertEquals(Map.of("g:a", List.of(), "g:x", List.of(), "g:b", List.of("g:a@1"), "g:c", List.of("g:x@1")), parents,
+                "c: through x (two levels) rather than a > b (three)");
     }
 
     @Test

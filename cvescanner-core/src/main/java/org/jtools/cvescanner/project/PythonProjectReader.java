@@ -23,6 +23,8 @@ package org.jtools.cvescanner.project;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
+import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -109,9 +111,14 @@ public final class PythonProjectReader {
 
     // ------------------------------------------------------------------------------------------- lockfiles
 
-    /** poetry.lock or uv.lock: [[package]] name and version; uv's own project (its source the folder) left out. */
+    /**
+     * poetry.lock or uv.lock: [[package]] name and version; uv's own project (its source the folder) left out. What each
+     * package depends on gives the packages that bring it, from the declared ones.
+     */
     private static void tomlLock(Path file, boolean uv, Set<String> declared, Set<String> dev, DependencyCollector col) throws IOException {
-        for (Object p : Json.arr(TomlLite.parse(ProjectFiles.readText(file)).get("package"))) {
+        var packages = Json.arr(TomlLite.parse(ProjectFiles.readText(file)).get("package"));
+        Map<String, List<String>> paths = lockPaths(packages, uv, declared);
+        for (Object p : packages) {
             var pkg = Json.obj(p);
             String name = Json.str(pkg, "name"), version = Json.str(pkg, "version");
             if (name == null) continue;
@@ -124,8 +131,43 @@ public final class PythonProjectReader {
             }
             String norm = Ecosystem.pep503(name);
             boolean isDev = dev.contains(norm) || "dev".equals(Json.str(pkg, "category"));
-            col.add(Ecosystem.PYPI, name, version, file, scope(declared.contains(norm), isDev), false);
+            boolean direct = declared.contains(norm);
+            col.add(Ecosystem.PYPI, name, version, file, scope(direct, isDev), direct ? List.of() : paths.get(norm + "@" + version));
         }
+    }
+
+    /** Each locked package's parents, "name@version", by its PEP 503 name and version: the walk from the declared ones. */
+    private static Map<String, List<String>> lockPaths(List<Object> packages, boolean uv, Set<String> declared) {
+        var idOf = new HashMap<String, String>();   // PEP 503 name -> its first "name@version"
+        for (Object p : packages) {
+            var pkg = Json.obj(p);
+            String name = Json.str(pkg, "name"), version = Json.str(pkg, "version");
+            if (name != null && version != null) idOf.putIfAbsent(Ecosystem.pep503(name), Ecosystem.pep503(name) + "@" + version);
+        }
+        var children = new HashMap<String, List<String>>();
+        for (Object p : packages) {
+            var pkg = Json.obj(p);
+            String id = idOf.get(Ecosystem.pep503(Objects.requireNonNullElse(Json.str(pkg, "name"), "")));
+            if (id == null) continue;
+            var names = new ArrayList<String>();
+            if (uv) for (Object d : Json.arr(pkg.get("dependencies"))) names.add(Json.str(Json.obj(d), "name"));
+            else names.addAll(Json.obj(pkg.get("dependencies")).keySet());
+            var kids = children.computeIfAbsent(id, _ -> new ArrayList<>());
+            for (String n : names)
+                if (n != null && idOf.containsKey(Ecosystem.pep503(n))) kids.add(idOf.get(Ecosystem.pep503(n)));
+        }
+        var roots = declared.stream().sorted().map(idOf::get).filter(Objects::nonNull).toList();
+        var paths = DependencyGraph.paths(roots, children);
+        // shown as the lockfile names them, not by their PEP 503 form
+        var shown = new HashMap<String, String>();
+        for (Object p : packages) {
+            var pkg = Json.obj(p);
+            String name = Json.str(pkg, "name"), version = Json.str(pkg, "version");
+            if (name != null && version != null) shown.putIfAbsent(Ecosystem.pep503(name) + "@" + version, name + "@" + version);
+        }
+        var out = new HashMap<String, List<String>>();
+        paths.forEach((id, path) -> out.put(id, path.stream().map(x -> shown.getOrDefault(x, x)).toList()));
+        return out;
     }
 
     /** Pipfile.lock: "default" and "develop", each package's "version": "==1.2.3". */
@@ -138,8 +180,10 @@ public final class PythonProjectReader {
                     col.miss(Ecosystem.PYPI, e.getKey(), version == null ? "" : version, file, Phrase.of("reason.nonRegistry"));
                     continue;
                 }
-                col.add(Ecosystem.PYPI, e.getKey(), version.substring(2).strip(), file,
-                        scope(declared.contains(Ecosystem.pep503(e.getKey())), section.equals("develop")), false);
+                // Pipfile.lock does not say what brings a package: its parents not recorded
+                boolean direct = declared.contains(Ecosystem.pep503(e.getKey()));
+                col.add(Ecosystem.PYPI, e.getKey(), version.substring(2).strip(), file, scope(direct, section.equals("develop")),
+                        direct ? List.of() : null);
             }
     }
 

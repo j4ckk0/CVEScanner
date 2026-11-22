@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.json.Json;
+import org.jtools.cvescanner.model.Dependency;
 import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.project.MavenReader;
 import org.jtools.cvescanner.project.NpmReader;
@@ -124,13 +125,13 @@ public final class FixPlanner {
         // per declaration: a declared one upgraded where written; a transitive Maven one follows a declared pom of its
         // chain (a parent managing it, the module itself), else is pinned in its topmost pom's dependencyManagement;
         // a transitive Gradle one is left (a constraint to write by hand)
-        var declared = r.declarations().stream().filter(d -> !d.scope().startsWith("transitive")).toList();
+        var declared = r.declarations().stream().filter(d -> !Dependency.isTransitive(d.scope())).toList();
         var declaredPoms = new java.util.HashSet<Path>();
         for (var d : declared) if (d.file().getFileName().toString().equals("pom.xml")) declaredPoms.add(d.file().toAbsolutePath().normalize());
         var pins = new LinkedHashMap<Path, List<FixRequest.Declaration>>();
         boolean governed = false, gradleLeft = false;
         for (var d : r.declarations()) {
-            if (!d.scope().startsWith("transitive")) continue;
+            if (!Dependency.isTransitive(d.scope())) continue;
             if (!d.file().getFileName().toString().equals("pom.xml")) {
                 gradleLeft = true;
                 continue;
@@ -277,11 +278,11 @@ public final class FixPlanner {
         String projectNode = null;
         // a folder declaring the package upgrades it there; a folder having it only through others overrides it
         var declaredIn = new HashSet<Path>();
-        for (var d : r.declarations()) if (!d.scope().startsWith("transitive")) declaredIn.add(d.file().getParent());
+        for (var d : r.declarations()) if (!Dependency.isTransitive(d.scope())) declaredIn.add(d.file().getParent());
         for (var d : r.declarations()) {
             if (d.scope().equals("peerDependencies")) return FixPlan.not(r, Phrase.of("fix.reason.peer"));
             Path dir = d.file().getParent();
-            if (d.scope().startsWith("transitive")) {
+            if (Dependency.isTransitive(d.scope())) {
                 if (declaredIn.contains(dir) || steps.containsKey(dir)) continue;
                 var override = override(r, d.file(), pinned);
                 if (override.notApplicable() != null) return FixPlan.not(r, override.notApplicable());
