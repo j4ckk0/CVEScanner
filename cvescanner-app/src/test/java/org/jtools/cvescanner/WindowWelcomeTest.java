@@ -67,7 +67,8 @@ class WindowWelcomeTest {
         w.waitUntil("the findings in place of the welcome", () -> w.find(Component.class, k -> "tabs".equals(k.getName())) != null
                 && w.tabTitle(0).equals("Findings (12)"));
         assertEquals(null, w.find(Component.class, k -> "welcome".equals(k.getName())));
-        w.named("ecosystem");   // the filters, shown with the findings
+        Component filters = w.named("ecosystem").getParent();   // the filters' row, shown with the findings
+        w.waitUntil("no empty rows below the filters", () -> WindowDriver.onEdt(() -> filters.getHeight() == filters.getPreferredSize().height));
         w.named("envCustomise");
         w.click(w.named("recentFolders"));
         assertTrue(w.find(javax.swing.JMenuItem.class, i -> i.getText().equals(SAMPLES.resolve("projects").toString())) != null,

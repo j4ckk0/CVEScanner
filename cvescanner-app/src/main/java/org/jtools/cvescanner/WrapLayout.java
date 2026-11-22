@@ -26,12 +26,31 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Insets;
+import javax.swing.JComponent;
+import javax.swing.SwingUtilities;
 
 /** FlowLayout that wraps onto extra rows (and reports the height for them) when the container is too narrow. */
 final class WrapLayout extends FlowLayout {
     WrapLayout(int align, int hgap, int vgap) { super(align, hgap, vgap); }
 
     @Override public Dimension preferredLayoutSize(Container target) { return size(target, true); }
+
+    /** The width at which a new layout was last asked for (layoutContainer): asked once for each width, never in a loop. */
+    private int askedAt = -1;
+
+    /**
+     * Laid out, then once more when its rows need another height than the one given at this width: a height the panels
+     * around worked out before it had a width (it is shown at last, after the window's first scan) would leave rows of
+     * empty space.
+     */
+    @Override public void layoutContainer(Container target) {
+        super.layoutContainer(target);
+        int width = target.getWidth();
+        if (width > 0 && width != askedAt && size(target, true).height != target.getHeight()) {
+            askedAt = width;
+            SwingUtilities.invokeLater(((JComponent) target)::revalidate);
+        }
+    }
 
     @Override public Dimension minimumLayoutSize(Container target) {
         var d = size(target, false);
