@@ -3,7 +3,7 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
-## 1.3 — not released yet
+## 1.3 — 2026-11-22
 
 - **A CycloneDX SBOM** beside the reports, `bom.cdx.json` (CycloneDX 1.6): every dependency by its package URL, a
   component off-the-shelf with its CPE, and every finding with its base and environmental ratings and its fix; the
