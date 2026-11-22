@@ -33,6 +33,12 @@ trap 'rm -rf "$work"' EXIT
 # run's page shows annotations to anyone and its log only to the repository's members.
 step_log=$work/step.log
 quiet() { "$@" > "$step_log" 2>&1; }
+# An online step tried three times: a registry may refuse a CI runner's address for a while (429 Too Many Requests).
+online() {
+  local pause
+  for pause in 30 90; do quiet "$@" && return 0; echo "  (retrying in ${pause}s: $* failed)"; sleep $pause; done
+  quiet "$@"
+}
 annotate() {   # annotate TITLE TEXT: an error annotation in GitHub Actions, its lines kept
   [ -n "${GITHUB_ACTIONS:-}" ] || return 0
   local text=$2
@@ -61,11 +67,11 @@ check() {   # check DESCRIPTION FILE TEXT [absent]: the file holds the text, or 
 echo "==> Filling the tools' caches (online)"
 mkdir -p "$work/prime"
 cp -a samples/fix-tools/. "$work/prime/"
-(cd "$work/prime/npm" && quiet npm ci --ignore-scripts --no-audit --no-fund && quiet npm cache add lodash@4.17.21)
-(cd "$work/prime/yarn1" && quiet yarn install --frozen-lockfile --ignore-scripts)
-(cd "$work/prime/yarn4" && quiet yarn install --immutable)
-(cd "$work/prime/pnpm" && quiet pnpm install --frozen-lockfile)
-(cd "$work/prime/gradle" && quiet gradle dependencies)
+(cd "$work/prime/npm" && online npm ci --ignore-scripts --no-audit --no-fund && online npm cache add lodash@4.17.21)
+(cd "$work/prime/yarn1" && online yarn install --frozen-lockfile --ignore-scripts)
+(cd "$work/prime/yarn4" && online yarn install --immutable)
+(cd "$work/prime/pnpm" && online pnpm install --frozen-lockfile)
+(cd "$work/prime/gradle" && online gradle dependencies)
 for tool in yarn1 yarn4 pnpm; do   # the fixed version, through a project of its own
   mkdir -p "$work/prime/fixed-$tool"
   manager=$([ $tool = yarn4 ] && echo ', "packageManager": "yarn@4.9.2"' || true)
@@ -74,15 +80,15 @@ for tool in yarn1 yarn4 pnpm; do   # the fixed version, through a project of its
   [ $tool = yarn4 ] && printf 'nodeLinker: node-modules\n' > "$work/prime/fixed-$tool/.yarnrc.yml"
   # a CI runner makes yarn 4 and pnpm refuse to write a lockfile: this project has none yet
   (cd "$work/prime/fixed-$tool" && case $tool in
-     pnpm) quiet pnpm install --no-frozen-lockfile ;;
-     *) YARN_ENABLE_IMMUTABLE_INSTALLS=false quiet yarn install ;;
+     pnpm) online pnpm install --no-frozen-lockfile ;;
+     *) YARN_ENABLE_IMMUTABLE_INSTALLS=false online yarn install ;;
    esac)
 done
 mkdir -p "$work/prime/fixed-gradle"
 cp samples/fix-tools/gradle/settings.gradle "$work/prime/fixed-gradle/"
 sed 's/commons-text:1.9/commons-text:1.10.0/' samples/fix-tools/gradle/build.gradle > "$work/prime/fixed-gradle/build.gradle"
 echo "tasks.register('fetch') { doLast { configurations.runtimeClasspath.files } }" >> "$work/prime/fixed-gradle/build.gradle"
-(cd "$work/prime/fixed-gradle" && quiet gradle fetch)
+(cd "$work/prime/fixed-gradle" && online gradle fetch)
 
 echo "==> Applying the fixes (the tools offline)"
 mkdir -p "$work/run"
