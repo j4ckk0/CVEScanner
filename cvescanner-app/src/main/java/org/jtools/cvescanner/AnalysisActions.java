@@ -35,9 +35,11 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import org.jtools.cvescanner.analysis.AnalysisFile;
+import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.engine.Engine;
 import org.jtools.cvescanner.engine.ScanOptions;
 import org.jtools.cvescanner.i18n.I18n;
+import org.jtools.cvescanner.ignore.Ignores;
 import org.jtools.cvescanner.model.ScanListener;
 import org.jtools.cvescanner.model.ScanResult;
 
@@ -70,12 +72,20 @@ final class AnalysisActions {
 
         /** Where the reports go: the folder the export proposes. */
         Path reportsFolder();
+
+        /** The ignore entries and VEX statements in force now, those added since the scan too: what an export keeps. */
+        Ignores ignores();
+
+        /** The environment and the CVSS version the findings are scored for now: what an export says they were. */
+        Environment environment();
+
+        boolean preferV4();
     }
 
     private final Component owner;
     private final Host host;
     private final JMenuItem exportItem = new JMenuItem(), openItem = new JMenuItem();
-    /** The analysis last read, and its file: a re-check of the same file does not read it again. */
+    /** The analysis last read, as its file holds it, and that file. */
     private ScanResult opened;
     private Path openedFile;
 
@@ -154,14 +164,25 @@ final class AnalysisActions {
         }.execute();
     }
 
-    /** The analysis in this file: the one read last when it is the same file, else read now. */
+    /** The analysis in this file, read anew: the file may have been replaced since. */
     private synchronized ScanResult read(Path file) throws IOException {
         Path normal = file.toAbsolutePath().normalize();
-        if (opened == null || !normal.equals(openedFile)) {
-            opened = AnalysisFile.read(normal);
-            openedFile = normal;
-        }
+        opened = AnalysisFile.read(normal);
+        openedFile = normal;
         return opened;
+    }
+
+    /**
+     * The ignore entries and VEX statements of the analysis last read, as its file holds them: those the window comes
+     * back to when the folder's own ignore file is chosen again, the folder being on the other computer.
+     */
+    synchronized Ignores carried() {
+        return opened == null ? Ignores.NONE : opened.ignores();
+    }
+
+    /** The scan shown as an export writes it: its findings set apart by the entries in force now, those added since the scan too. */
+    static ScanResult forExport(ScanResult shown, Ignores now) {
+        return now == null ? shown : shown.withIgnores(now);
     }
 
     /** The scan shown, written to a file the user picks; the scan's folder and the day proposed as its name. */
@@ -181,7 +202,7 @@ final class AnalysisActions {
             return;
         owner.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         try {
-            AnalysisFile.write(r, file);
+            AnalysisFile.write(forExport(r, host.ignores()), file, host.environment(), host.preferV4());
             Path written = file;
             host.say(() -> I18n.text("analysis.exported", written));
         } catch (IOException e) {

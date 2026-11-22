@@ -40,6 +40,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
+import org.jtools.cvescanner.cvss.Environment;
+import org.jtools.cvescanner.cvss.Reach;
+import org.jtools.cvescanner.cvss.Requirement;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.ignore.Ignores;
@@ -77,12 +80,15 @@ public final class AnalysisFile {
         return folder + "-" + java.time.LocalDate.now(clock) + EXTENSION;
     }
 
-    /** Writes the scan, the file replaced when there is one. */
-    public static void write(ScanResult r, Path file) throws IOException {
-        write(r, file, Instant.now());
+    /**
+     * Writes the scan, the file replaced when there is one, with the environment and the CVSS version its findings are
+     * scored for: where it is opened, they are shown as here.
+     */
+    public static void write(ScanResult r, Path file, Environment environment, boolean preferV4) throws IOException {
+        write(r, file, environment, preferV4, Instant.now());
     }
 
-    static void write(ScanResult r, Path file, Instant now) throws IOException {
+    static void write(ScanResult r, Path file, Environment environment, boolean preferV4, Instant now) throws IOException {
         var m = new LinkedHashMap<String, Object>();
         m.put("format", FORMAT);
         m.put("formatVersion", FORMAT_VERSION);
@@ -93,6 +99,14 @@ public final class AnalysisFile {
         m.put("root", from != null ? from.root() : r.root().toString());
         if (from != null && from.exportedAt() != null) m.put("firstExportedAt", from.exportedAt().toString());
         m.put("rechecked", from != null && from.rechecked());
+        var scoring = new LinkedHashMap<String, Object>();
+        scoring.put("environment", environment.key());
+        scoring.put("reach", environment.reach().name());
+        scoring.put("confidentiality", environment.confidentiality().name());
+        scoring.put("integrity", environment.integrity().name());
+        scoring.put("availability", environment.availability().name());
+        scoring.put("preferV4", preferV4);
+        m.put("scoring", scoring);
         m.put("mode", r.mode().name());
         m.put("directOnly", r.directOnly());
         m.put("gradleLocked", r.gradleLocked());
@@ -189,8 +203,14 @@ public final class AnalysisFile {
                 Json.arr(i.get("vex")).stream().map(AnalysisJson::statement).toList());
         String first = AnalysisJson.text(m, "firstExportedAt");
         Instant exported = Instant.parse(first != null ? first : AnalysisJson.required(m, "exportedAt"));
+        var s = m.get("scoring") == null ? null : Json.obj(m.get("scoring"));
+        Environment environment = s == null ? null : Environment.of(AnalysisJson.enumOf(Reach.class, AnalysisJson.required(s, "reach")),
+                AnalysisJson.enumOf(Requirement.class, AnalysisJson.required(s, "confidentiality")),
+                AnalysisJson.enumOf(Requirement.class, AnalysisJson.required(s, "integrity")),
+                AnalysisJson.enumOf(Requirement.class, AnalysisJson.required(s, "availability")));
         var imported = new ScanResult.Imported(file.toAbsolutePath().normalize().toString(), exported,
-                AnalysisJson.text(m, "program"), rootText, AnalysisJson.flag(m, "rechecked"));
+                AnalysisJson.text(m, "program"), rootText, AnalysisJson.flag(m, "rechecked"), environment,
+                s == null || !Boolean.FALSE.equals(s.get("preferV4")));
         return new ScanResult(path(rootText, folderName(rootText)), findings, dependencies, unresolved, databases, counts, warnings,
                 ignores, AnalysisJson.enumOf(ScanMode.class, AnalysisJson.required(m, "mode")),
                 path(AnalysisJson.text(m, "mavenRepository"), null), path(AnalysisJson.text(m, "gradleCache"), null),

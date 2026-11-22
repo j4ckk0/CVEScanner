@@ -32,6 +32,7 @@ import java.time.LocalDate;
 import java.util.List;
 import javax.swing.JButton;
 import org.jtools.cvescanner.analysis.AnalysisFile;
+import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.engine.Engine;
 import org.jtools.cvescanner.engine.ScanOptions;
 import org.jtools.cvescanner.i18n.I18n;
@@ -65,7 +66,7 @@ class WindowAnalysisTest {
         var scan = Engine.scan(SAMPLES.resolve("projects"), List.of(Path.of(GHSA)),
                 new ScanOptions(null, ScanMode.SOURCES, 0, LocalDate.now()), new ScanListener() { public void status(String m) { } });
         analysis = dir.resolve("elsewhere/projects.cvescan");
-        AnalysisFile.write(scan, analysis);
+        AnalysisFile.write(scan, analysis, Environment.preset("internet"), true);
     }
 
     @AfterEach
@@ -85,6 +86,10 @@ class WindowAnalysisTest {
         findingsShown();
         w.waitUntil("the status naming the analysis", () -> w.text("status").contains("Analysis projects.cvescan")
                 && w.text("status").contains("as it was scanned"));
+        // scored as it was there: for an internet-facing environment
+        w.click(w.named("collapseSettings"));
+        var environment = w.named("environment", javax.swing.JComboBox.class);
+        assertEquals(Environment.preset("internet").toString(), WindowDriver.onEdt(() -> String.valueOf(environment.getSelectedItem())));
         Frame frame = (Frame) javax.swing.SwingUtilities.getWindowAncestor(w.named("tabs"));
         assertTrue(WindowDriver.onEdt(frame::getTitle).endsWith("projects.cvescan"), WindowDriver.onEdt(frame::getTitle));
         var scan = w.named("scan", JButton.class);

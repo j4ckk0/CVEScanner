@@ -176,7 +176,8 @@ public final class Engine {
         var matched = match(deps, dbFiles, options, l);
         var from = analysis.imported();
         var imported = new ScanResult.Imported(from == null ? null : from.file(), from == null ? null : from.exportedAt(),
-                from == null ? null : from.version(), from == null ? analysis.root().toString() : from.root(), true);
+                from == null ? null : from.version(), from == null ? analysis.root().toString() : from.root(), true,
+                from == null ? null : from.environment(), from == null || from.preferV4());
         return new ScanResult(analysis.root(), matched.findings(), deps, analysis.unresolved(), matched.databases(),
                 analysis.fileCounts(), List.copyOf(warnings), ignores, analysis.mode(), analysis.mavenRepository(),
                 analysis.gradleCache(), analysis.gradleLocked(), direct, imported);

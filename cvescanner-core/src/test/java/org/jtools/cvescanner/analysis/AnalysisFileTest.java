@@ -39,9 +39,14 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import org.jtools.cvescanner.cvss.Environment;
+import org.jtools.cvescanner.cvss.Reach;
+import org.jtools.cvescanner.cvss.Requirement;
 import org.jtools.cvescanner.engine.Engine;
 import org.jtools.cvescanner.engine.ScanOptions;
 import org.jtools.cvescanner.i18n.Phrase;
+import org.jtools.cvescanner.ignore.IgnoreFile;
+import org.jtools.cvescanner.ignore.IgnoreRule;
 import org.jtools.cvescanner.model.ScanListener;
 import org.jtools.cvescanner.model.ScanMode;
 import org.jtools.cvescanner.model.ScanResult;
@@ -93,7 +98,7 @@ class AnalysisFileTest {
         assertTrue(scan.warnings().stream().anyMatch(w -> w.key().equals("warning.dbOld")), "a warning with numbers: " + scan.warnings());
         assertTrue(scan.ignores().read() && !scan.ignores().vex().isEmpty(), "the ignore file and the VEX document read");
         Path file = dir.resolve("samples" + AnalysisFile.EXTENSION);
-        AnalysisFile.write(scan, file, EXPORTED);
+        AnalysisFile.write(scan, file, Environment.NONE, true, EXPORTED);
         var back = AnalysisFile.read(file);
 
         assertEquals(scan.findings(), back.findings());
@@ -128,18 +133,49 @@ class AnalysisFileTest {
                 new ScanOptions(null, ScanMode.SOURCES, 0, LocalDate.of(2026, 11, 23)), QUIET);
         assertTrue(scan.dependencies().stream().anyMatch(d -> d.parents() == null), "a Gradle lockfile records no parents");
         Path file = dir.resolve("gradle.cvescan");
-        AnalysisFile.write(scan, file, EXPORTED);
+        AnalysisFile.write(scan, file, Environment.NONE, true, EXPORTED);
         assertEquals(scan.dependencies(), AnalysisFile.read(file).dependencies());
     }
 
     @Test
     void anAnalysisPassedOnKeepsWhereItWasMade() throws Exception {
         Path first = dir.resolve("first.cvescan"), second = dir.resolve("second.cvescan");
-        AnalysisFile.write(samples(), first, EXPORTED);
-        AnalysisFile.write(AnalysisFile.read(first), second, EXPORTED.plusSeconds(3600));
+        AnalysisFile.write(samples(), first, Environment.NONE, true, EXPORTED);
+        AnalysisFile.write(AnalysisFile.read(first), second, Environment.NONE, true, EXPORTED.plusSeconds(3600));
         var back = AnalysisFile.read(second);
         assertEquals(EXPORTED, back.imported().exportedAt(), "when the scan was first exported");
         assertEquals(SAMPLES.resolve("projects").toString(), back.imported().root());
+    }
+
+    @Test
+    void theScoringItWasExportedWithIsKept() throws Exception {
+        var custom = Environment.of(Reach.LOCAL, Requirement.HIGH, Requirement.LOW, Requirement.NOT_DEFINED);
+        Path file = dir.resolve("scored.cvescan");
+        AnalysisFile.write(samples(), file, custom, false, EXPORTED);
+        var from = AnalysisFile.read(file).imported();
+        assertEquals(custom, from.environment());
+        assertFalse(from.preferV4());
+        AnalysisFile.write(samples(), file, Environment.preset("internet"), true, EXPORTED);
+        assertEquals(Environment.preset("internet"), AnalysisFile.read(file).imported().environment());
+        assertTrue(AnalysisFile.read(file).imported().preferV4());
+    }
+
+    @Test
+    void anEntryAddedAfterTheScanIsExported() throws Exception {
+        Path project = Files.createDirectories(dir.resolve("p"));
+        Files.writeString(project.resolve("package.json"), "{\"dependencies\":{\"lodash\":\"4.17.15\"}}");
+        var scan = Engine.scan(project, List.of(SAMPLES.resolve("db/advisory-database-main.zip")),
+                new ScanOptions(null, ScanMode.SOURCES, 0, LocalDate.of(2026, 11, 23)), QUIET);
+        assertFalse(scan.findings().isEmpty());
+        // Ignore this finding…, as the window does it: the folder's own file written, read again
+        var rule = new IgnoreRule(scan.findings().getFirst().id(), "lodash", "", null, "reviewed", 0);
+        IgnoreFile.append(scan.ignores().file(), rule);
+        var now = scan.ignores().reload(_ -> { });
+        Path file = dir.resolve("after.cvescan");
+        AnalysisFile.write(scan.withIgnores(now), file, Environment.NONE, true, EXPORTED);
+        var rules = AnalysisFile.read(file).ignores().rules();
+        assertEquals(1, rules.size());
+        assertEquals(rule.id(), rules.getFirst().id());
     }
 
     @Test

@@ -71,6 +71,9 @@ public final class Cli {
             ScanResult r;
             if (o.fromAnalysis != null) {   // made on another computer: as it was, or checked again against these databases
                 var analysis = AnalysisFile.read(o.fromAnalysis);
+                // scored as it was there, unless the command line says otherwise
+                if (!o.environmentGiven && analysis.imported().environment() != null) o.environment = analysis.imported().environment();
+                if (!o.cvssGiven) o.preferV4 = analysis.imported().preferV4();
                 r = o.asScanned ? analysis : Engine.recheck(analysis, o.dbFiles, o.scanOptions(), l);
             } else {
                 if (!Files.isDirectory(o.scanDir)) throw new IOException(I18n.text("error.scanDirMissing", o.scanDir));
@@ -89,7 +92,7 @@ public final class Cli {
             var written = new java.util.ArrayList<>(Reports.writeAll(r, split, o.outDir, o.filter().describe(), o.environment, o.preferV4,
                     language, o.hideTransitive));
             if (o.exportAnalysis != null) {
-                AnalysisFile.write(r, o.exportAnalysis);
+                AnalysisFile.write(r, o.exportAnalysis, o.environment, o.preferV4);
                 written.add(o.exportAnalysis);
             }
             var counts = Finding.countBySeverity(findings);

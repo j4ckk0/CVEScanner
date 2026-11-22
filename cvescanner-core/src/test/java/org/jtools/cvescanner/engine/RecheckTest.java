@@ -64,7 +64,7 @@ class RecheckTest {
     private ScanResult exported(ScanOptions options, List<Path> databases) throws Exception {
         var scan = Engine.scan(SAMPLES.resolve("projects"), databases, options, QUIET);
         Path file = dir.resolve("projects.cvescan");
-        AnalysisFile.write(scan, file);
+        AnalysisFile.write(scan, file, org.jtools.cvescanner.cvss.Environment.NONE, true);
         return AnalysisFile.read(file);
     }
 

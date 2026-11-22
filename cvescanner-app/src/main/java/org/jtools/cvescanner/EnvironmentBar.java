@@ -173,6 +173,12 @@ final class EnvironmentBar {
         return p;
     }
 
+    /** This environment and CVSS version, as an analysis made elsewhere was scored: shown, kept, the findings scored again. */
+    void use(Environment e, boolean v4) {
+        preferV4 = v4;
+        setEnvironment(e);
+    }
+
     private void setEnvironment(Environment e) {
         environment = e;
         sync();

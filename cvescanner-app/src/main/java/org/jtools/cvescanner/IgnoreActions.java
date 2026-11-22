@@ -59,6 +59,9 @@ final class IgnoreActions {
         /** The file was read again: the findings are to be set apart anew; these are the warnings of reading it. */
         void reread(List<Phrase> warnings);
 
+        /** The ignore entries an analysis from another computer carries: the folder's own file, which is there. */
+        Ignores carried();
+
         void say(Supplier<String> message);
     }
 
@@ -145,7 +148,10 @@ final class IgnoreActions {
         if (result == null) return;
         var warnings = new ArrayList<Phrase>();
         try {
-            ignores = Ignores.load(result.root(), file, warnings::add).withVex(ignores.vex());   // the VEX documents' stay
+            // an analysis from another computer: the folder's own file is there, its entries carried in the analysis
+            Ignores read = file == null && result.imported() != null ? host.carried().withoutVex()
+                    : Ignores.load(result.root(), file, warnings::add);
+            ignores = read.withVex(ignores.vex());   // the VEX documents' stay
         } catch (IOException e) {
             failed(e);
             return;

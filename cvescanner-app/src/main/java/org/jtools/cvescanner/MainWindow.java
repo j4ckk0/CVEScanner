@@ -173,6 +173,7 @@ final class MainWindow extends JFrame {
                 updateStatusTipAfterReread(warnings);
             }
             public void say(Supplier<String> message) { status.say(message); }
+            public Ignores carried() { return analysisActions.carried(); }
         }, opts.ignoreChoice(), this::scanFolder);
         vexDocuments = new VexDocuments(this, labels, settings, opts.vexFiles, this::scanFolder);
         fixActions = new FixActions(this, labels, tables, new FixActions.Host() {
@@ -188,7 +189,10 @@ final class MainWindow extends JFrame {
             public boolean busy() { return busy; }
             public void busy(boolean on) { setBusy(on); }
             public void show(ScanResult r) {
-                if (r.imported() != null) recentFolders.scanned(Path.of(r.imported().file()));
+                var from = r.imported();
+                if (from != null) recentFolders.scanned(Path.of(from.file()));
+                // opened as it was scanned: scored as it was there; a re-check keeps the scoring chosen here
+                if (from != null && !from.rechecked() && from.environment() != null) environmentBar.use(from.environment(), from.preferV4());
                 showResult(r);
             }
             public List<Path> databases() { return databases.files(); }
@@ -196,6 +200,9 @@ final class MainWindow extends JFrame {
             public ScanListener listener() { return statusListener(); }
             public void say(Supplier<String> message) { status.say(message); }
             public Path reportsFolder() { return opts.outDir; }
+            public Ignores ignores() { return ignoreActions.ignores(); }
+            public Environment environment() { return environmentBar.environment(); }
+            public boolean preferV4() { return environmentBar.preferV4(); }
         });
         environmentBar = new EnvironmentBar(this, labels, settings, opts, () -> {
             updateSeverityHeader();
@@ -350,7 +357,10 @@ final class MainWindow extends JFrame {
         boolean v4 = environmentBar.preferV4();
         applyMode(expert);
         if (result == null || busy) return;
-        if (!Objects.equals(ignore, ignoreActions.choice()) || !vex.equals(vexDocuments.files())) startScan();
+        boolean filesChanged = !Objects.equals(ignore, ignoreActions.choice()) || !vex.equals(vexDocuments.files());
+        // an analysis from another computer and no database to re-check it against: shown as it is, not re-checked
+        boolean canScan = !(analysisInField() && databases.files().isEmpty());
+        if (filesChanged && canScan) startScan();
         else if (v4 != environmentBar.preferV4()) rescore();
     }
 

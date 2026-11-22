@@ -58,7 +58,7 @@ class CliAnalysisTest {
     /** The samples scanned with their ignore file, the analysis written beside the reports. */
     private Path exported() throws Exception {
         Path file = dir.resolve("projects.cvescan");
-        assertEquals(0, run("--no-gui", "-d", SAMPLES.resolve("projects").toString(), "--db", GHSA, "--db-max-age", "0",
+        assertEquals(0, run("--no-gui", "-d", SAMPLES.resolve("projects").toString(), "--db", GHSA, "--db-max-age", "0", "--env", "internet",
                 "--ignore", SAMPLES.resolve("ignore/cvescanner-ignore.csv").toString(), "-o", dir.resolve("scanned").toString(),
                 "--export-analysis", file.toString()));
         assertTrue(Files.isRegularFile(file));
@@ -87,7 +87,7 @@ class CliAnalysisTest {
 
     @Test
     void asScannedTheSameReports() throws Exception {
-        Path file = exported();
+        Path file = exported();   // scored for an internet-facing environment; opened without --env, scored the same
         assertEquals(0, run("--no-gui", "--from-analysis", file.toString(), "--as-scanned", "-o", dir.resolve("opened").toString()));
         assertEquals(read("scanned", "findings.csv"), read("opened", "findings.csv"));
         assertEquals(read("scanned", Reports.DEPENDENCIES), read("opened", Reports.DEPENDENCIES));

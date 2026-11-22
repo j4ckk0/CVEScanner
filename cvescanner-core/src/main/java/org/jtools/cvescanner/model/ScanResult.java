@@ -27,6 +27,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.i18n.Phrase;
 import org.jtools.cvescanner.ignore.Ignores;
 
@@ -47,11 +48,19 @@ public record ScanResult(Path root, List<Finding> findings, List<Dependency> dep
 
     /**
      * An analysis made on another computer, opened here: its file, when and by which version it was exported, the folder
-     * scanned as that computer named it.
+     * scanned as that computer named it, the environment and CVSS version its findings were scored for there.
      *
-     * @param rechecked whether its dependencies were matched again here, against this computer's databases
+     * @param rechecked   whether its dependencies were matched again here, against this computer's databases
+     * @param environment the environment it was exported with; null when unknown
      */
-    public record Imported(String file, Instant exportedAt, String version, String root, boolean rechecked) {}
+    public record Imported(String file, Instant exportedAt, String version, String root, boolean rechecked,
+                           Environment environment, boolean preferV4) {}
+
+    /** The same scan, its findings set apart by these ignore entries and VEX statements: those of the window now. */
+    public ScanResult withIgnores(Ignores now) {
+        return new ScanResult(root, findings, dependencies, unresolved, snapshots, fileCounts, warnings, now, mode, mavenRepository,
+                gradleCache, gradleLocked, directOnly, imported);
+    }
 
     public ScanResult(Path root, List<Finding> findings, List<Dependency> dependencies, List<Unresolved> unresolved,
                       Map<String, Phrase> snapshots, Map<String, Integer> fileCounts, List<Phrase> warnings, Ignores ignores,
