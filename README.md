@@ -153,14 +153,20 @@ The table sorts by any column and filters as you type: **Search** (every word mu
 aliases; Ctrl+F, Esc to clear), the **severity** (the coloured counters do the same), the **ecosystem**, *Only with
 CVE ID*, *Hide approximate (≈) versions*, *Hide name matches ⚠*. Its tabs: **Findings**, one row per
 vulnerability and dependency, its details below (the fix, the scores, the match, the links); **Packages to
-upgrade**, one row per package version with the version that fixes all its findings; **Unchecked dependencies**,
+upgrade**, one row per package version with the version that fixes all its findings; **Dependencies**, each file's
+dependencies as a tree, each declared one with the packages it brings below it and the dot of its worst finding (the
+lockfiles that do not record what brings a package, Gradle's and `Pipfile.lock`, list their indirect ones apart);
+**Unchecked dependencies**,
 those whose version could not be known (an external BOM, a dynamic version like `1.+`), and why; **Ignored**, the
 findings the ignore file sets aside (see [Ignoring findings](#ignoring-findings)). A double-click or a right-click
 copies the advisory's link, the CVEs, the package's coordinates; a right-click also ignores a finding. **Export…**
-writes the four reports for the rows shown. *View ▸ Look* offers FlatLaf's looks, light and dark; the language is
+writes the reports for the rows shown. *Hide indirect dependencies* shows only what the projects declare;
+*Direct dependencies only*, beside the scan mode, scans only that. *View ▸ Look* offers FlatLaf's looks, light and dark; the language is
 on the right of the menus. The choices are kept in `cvescanner.properties`, beside the program.
 
 ![Packages to upgrade: one row per package version and the version that fixes its findings, three ticked for Apply fixes](docs/images/packages.png)
+
+![The Dependencies tab: each file's dependencies as a tree, axios with follow-redirects below it, the dot of each one's worst finding](docs/images/dependencies.png)
 
 ![The components off-the-shelf of the examples (FFmpeg, curl, OpenSSL…) matched against NVD, in a dark look: 385 of the 668 findings](docs/images/cots-dark.png)
 
@@ -387,6 +393,8 @@ menus, ou `--lang fr`) :
 ![Les exemples analysés pour un environnement exposé à Internet : 668 résultats, Log4Shell sélectionné](docs/images/fr/findings.png)
 
 ![Les paquets à mettre à jour, trois cochés pour Appliquer les correctifs](docs/images/fr/packages.png)
+
+![L'onglet Dépendances : les dépendances de chaque fichier en arbre, ce que chacune apporte en dessous](docs/images/fr/dependencies.png)
 
 ![Les composants sur étagère des exemples, rapprochés de la NVD, dans un thème sombre](docs/images/fr/cots-dark.png)
 

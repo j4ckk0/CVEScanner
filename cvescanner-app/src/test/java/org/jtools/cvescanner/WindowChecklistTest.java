@@ -80,6 +80,12 @@ class WindowChecklistTest {
         w.clickButton("Clear filters");
         w.waitUntil("every finding shown", () -> w.tabTitle(0).equals("Findings (12)"));
 
+        // Hide indirect dependencies: the lockfile's indirect minimist finding left out, then back
+        w.click(w.named("hideTransitive"));
+        w.waitUntil("the indirect finding hidden", () -> w.tabTitle(0).equals("Findings (11 of 12)"));
+        w.clickButton("Clear filters");
+        w.waitUntil("every finding shown", () -> w.tabTitle(0).equals("Findings (12)"));
+
         // View ▸ Look: the window in a dark look, then back
         w.menu("View", "Look", "FlatLaf Dark");
         w.waitUntil("the dark look", () -> Looks.isDark());
@@ -127,8 +133,8 @@ class WindowChecklistTest {
         assertTrue(w.text("vexField").contains("(from the next scan)"), w.text("vexField"));
         w.scan();
         assertFalse(w.text("vexField").contains("(from the next scan)"), w.text("vexField"));
-        assertTrue(w.tabTitle(3).contains("2"), w.tabTitle(3));
-        w.clickTab(3);
+        assertTrue(w.tabTitle(MainWindow.IGNORED_TAB).contains("2"), w.tabTitle(MainWindow.IGNORED_TAB));
+        w.clickTab(MainWindow.IGNORED_TAB);
         w.clickRow("lodash", 3);
         assertTrue(w.details().contains("stated in the VEX document"), w.details());
 
@@ -142,7 +148,29 @@ class WindowChecklistTest {
         w.scan();
         assertFalse(w.text("status").contains("days old"), w.text("status"));
 
-        // 7. French: the window relabelled
+        // 7. the dependency tree: a lockfile's packages under what brings them; those whose parents it does not record apart
+        w.type(w.named("folder", JTextField.class), SAMPLES.resolve("python-projects").toString());
+        w.scan();
+        w.clickTab(MainWindow.DEPENDENCIES_TAB);
+        var tree = w.treeRows();
+        assertTrue(tree.contains("poetry/poetry.lock"), tree.toString());
+        int jinja = tree.subList(tree.indexOf("poetry/poetry.lock"), tree.size()).indexOf("  jinja2 2.11.2") + tree.indexOf("poetry/poetry.lock");
+        assertTrue(jinja >= 0 && tree.get(jinja + 1).equals("    markupsafe 1.1.1"), "markupsafe under jinja2: " + tree);
+        assertTrue(tree.contains("  ?") && tree.contains("    asgiref 3.3.1"), "Pipfile.lock's indirect ones apart: " + tree);
+        assertTrue(w.tabTitle(MainWindow.DEPENDENCIES_TAB).startsWith("Dependencies ("), w.tabTitle(MainWindow.DEPENDENCIES_TAB));
+        w.click(w.named("hideTransitive"));
+        w.waitUntil("the direct ones only", () -> w.treeRows().stream().noneMatch(r -> r.startsWith("    ")));
+        assertTrue(w.tabTitle(MainWindow.DEPENDENCIES_TAB).contains(" of "), w.tabTitle(MainWindow.DEPENDENCIES_TAB));
+        w.clickButton("Clear filters");
+
+        // 8. Direct dependencies only: the next scan leaves out what the lockfiles add
+        w.click(w.named("directOnly"));
+        w.scan();
+        assertTrue(w.treeRows().stream().noneMatch(r -> r.startsWith("    ")), w.treeRows().toString());
+        assertTrue(w.treeRows().contains("  jinja2 2.11.2") && !w.treeRows().contains("  ?"), w.treeRows().toString());
+        w.click(w.named("directOnly"));
+
+        // 9. French: the window relabelled
         String scanInEnglish = w.text("scan");
         w.choose(w.named("language", JComboBox.class), I18nLanguage.FRENCH.toString());
         w.waitUntil("the window in French", () -> I18n.language() == I18nLanguage.FRENCH);

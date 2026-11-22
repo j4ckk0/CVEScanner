@@ -106,6 +106,10 @@ class ScreenshotsTest {
         w.clickRow("jackson-databind", 3);
         w.screenshot(dir.resolve("packages.png"));
 
+        w.clickTab(MainWindow.DEPENDENCIES_TAB);
+        w.selectTreeRow("lodash");
+        w.screenshot(dir.resolve("dependencies.png"));
+
         w.clickTab(0);
         w.choose(w.named("ecosystem", JComboBox.class), I18n.text("filter.cots"));
         w.menu(I18n.text("menu.view"), I18n.text("menu.look"), "FlatLaf Dark");
@@ -133,7 +137,7 @@ class ScreenshotsTest {
                 List.of("--db", SAMPLES.resolve("db/advisory-database-main.zip").toString()));
         show("folder", "~/CVEScanner/samples/projects");
         show("databases", "~/CVEScanner/samples/db/advisory-database-main.zip");
-        w.clickTab(3);
+        w.clickTab(MainWindow.IGNORED_TAB);
         w.clickRow("lodash", 3);
         w.screenshot(dir.resolve("vex.png"));
         w.close();

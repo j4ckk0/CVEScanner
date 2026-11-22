@@ -195,6 +195,28 @@ final class WindowDriver implements AutoCloseable {
         return onEdt(() -> pane.getDocument().getText(0, pane.getDocument().getLength()));
     }
 
+    /** The Dependencies tab's rows, two spaces per level: the files, then "name version". */
+    List<String> treeRows() throws Exception {
+        var tree = named("dependencyTree", javax.swing.JTree.class);
+        return onEdt(() -> DependencyTreeTab.rows(tree));
+    }
+
+    /** Selects the Dependencies tab's first row shown of a package whose name holds this text. */
+    void selectTreeRow(String name) throws Exception {
+        var tree = named("dependencyTree", javax.swing.JTree.class);
+        boolean found = onEdt(() -> {
+            for (int i = 0; i < tree.getRowCount(); i++)
+                if (((javax.swing.tree.DefaultMutableTreeNode) tree.getPathForRow(i).getLastPathComponent()).getUserObject()
+                        instanceof DependencyTreeTab.DependencyEntry d && d.dependency().name().contains(name)) {
+                    tree.setSelectionRow(i);
+                    tree.scrollRowToVisible(i);
+                    return true;
+                }
+            return false;
+        });
+        if (!found) throw new AssertionError("no row of " + name + " in " + treeRows());
+    }
+
     String tabTitle(int index) throws Exception {
         var tabs = named("tabs", JTabbedPane.class);
         return onEdt(() -> tabs.getTitleAt(index));

@@ -50,7 +50,7 @@ final class DetailsPane {
         void copyLink(String url);
     }
 
-    private static final int FINDINGS = 0, PACKAGES = 1, IGNORED = 3;
+    private static final int FINDINGS = MainWindow.FINDINGS_TAB, PACKAGES = MainWindow.PACKAGES_TAB, IGNORED = MainWindow.IGNORED_TAB;
 
     private final FindingTables tables;
     private final Host host;

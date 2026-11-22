@@ -102,6 +102,9 @@ final class MainWindow extends JFrame {
     /** A scan of the declared dependencies only (--direct-only): for source projects; an installed product has none. */
     private final JCheckBox directOnlyBox = new JCheckBox();
     private final JTabbedPane tabs = new JTabbedPane();
+    /** The tabs, in their order. */
+    static final int FINDINGS_TAB = 0, PACKAGES_TAB = 1, DEPENDENCIES_TAB = 2, UNRESOLVED_TAB = 3, IGNORED_TAB = 4;
+    private final DependencyTreeTab dependencyTab = new DependencyTreeTab(this::showSelected);
 
     private final DatabaseChoice databases;
     private final EnvironmentBar environmentBar;
@@ -189,6 +192,7 @@ final class MainWindow extends JFrame {
         });
         tabs.addTab("", new JScrollPane(tables.findingsTable));
         tabs.addTab("", new JScrollPane(tables.packagesTable));
+        tabs.addTab("", dependencyTab.component());
         tabs.addTab("", new JScrollPane(tables.unresolvedTable));
         tabs.addTab("", new JScrollPane(tables.ignoredTable));
         tabs.addChangeListener(_ -> showSelected());
@@ -212,8 +216,8 @@ final class MainWindow extends JFrame {
         labels.on(this::showSelected);
         labels.on(this::updateSeverityHeader);
         labels.on(scanModeCombo::repaint);
-        labels.on(() -> List.of(tables.findingsTable, tables.packagesTable, tables.unresolvedTable, tables.ignoredTable)
-                .forEach(JComponent::repaint));
+        labels.on(() -> List.of(tables.findingsTable, tables.packagesTable, dependencyTab.tree(), tables.unresolvedTable,
+                tables.ignoredTable).forEach(JComponent::repaint));
         setSize(1480, 940);
         setMinimumSize(new Dimension(1000, 640));
         setLocationRelativeTo(null);
@@ -374,6 +378,7 @@ final class MainWindow extends JFrame {
     /** The filters applied to every table, then the counts; the first finding selected when none is. */
     private void applyFilters() {
         tables.filter(filterBar.facets(), filterBar.searchTerms(), filterBar.ecosystem());
+        dependencyTab.filter(filterBar.ecosystem(), filterBar.searchTerms(), filterBar.facets().hideTransitive());
         updateCounts();
         int shown = tables.findingsTable.getRowCount();
         if (tables.findingsTable.getSelectedRow() < 0 && shown > 0) tables.findingsTable.setRowSelectionInterval(0, 0);
@@ -383,10 +388,11 @@ final class MainWindow extends JFrame {
     /** The tabs' titles and the line saying how many findings are shown. */
     private void updateCounts() {
         int shown = tables.findingsTable.getRowCount(), total = tables.findingsModel.getRowCount();
-        tabs.setTitleAt(0, shown == total ? I18n.text("tab.findings", total) : I18n.text("tab.findings.filtered", shown, total));
-        tabs.setTitleAt(1, I18n.text("tab.packages", tables.packagesTable.getRowCount()));
-        tabs.setTitleAt(2, I18n.text("tab.unresolved", tables.unresolvedTable.getRowCount()));
-        tabs.setTitleAt(3, I18n.text("tab.ignored", tables.ignoredTable.getRowCount()));
+        tabs.setTitleAt(FINDINGS_TAB, shown == total ? I18n.text("tab.findings", total) : I18n.text("tab.findings.filtered", shown, total));
+        tabs.setTitleAt(PACKAGES_TAB, I18n.text("tab.packages", tables.packagesTable.getRowCount()));
+        tabs.setTitleAt(DEPENDENCIES_TAB, dependencyTab.title());
+        tabs.setTitleAt(UNRESOLVED_TAB, I18n.text("tab.unresolved", tables.unresolvedTable.getRowCount()));
+        tabs.setTitleAt(IGNORED_TAB, I18n.text("tab.ignored", tables.ignoredTable.getRowCount()));
         summaryBar.showing(result == null ? " " : shown == total ? I18n.text("showing.all", total) : I18n.text("showing.some", shown, total));
     }
 
@@ -401,7 +407,8 @@ final class MainWindow extends JFrame {
     }
 
     private void showSelected() {
-        details.show(tabs.getSelectedIndex());
+        if (tabs.getSelectedIndex() == DEPENDENCIES_TAB) details.show(dependencyTab.selectedWorstFinding());
+        else details.show(tabs.getSelectedIndex());
     }
 
     // --------------------------------------------------------------------------------- scanning
@@ -506,6 +513,7 @@ final class MainWindow extends JFrame {
         split = ignoreActions.ignores().split(Scoring.applyAll(result.findings(), environmentBar.environment(), environmentBar.preferV4()), LocalDate.now());
         tables.findingsModel.setRows(split.active());
         tables.ignoredModel.setRows(split.ignored());
+        dependencyTab.show(result.dependencies(), split.active());
         updateChips();
         applyFilters();
     }

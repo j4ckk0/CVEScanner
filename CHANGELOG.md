@@ -5,11 +5,27 @@ checksums.
 
 ## 1.5 — not released yet
 
+- **The dependency tree**: each dependency knows the packages that bring it, from Maven's and Gradle's walks and from
+  `package-lock.json` (v2, v3), `yarn.lock` (v1, berry), `pnpm-lock.yaml`, `poetry.lock` and `uv.lock`, each package
+  under its nearest path. Checked against `npm ls`, `pnpm list`, `mvn dependency:tree` and `gradle dependencies`. The
+  window's new **Dependencies** tab shows each file's tree with the worst finding of each dependency;
+  **`dependencies.csv`** puts it in a spreadsheet, a row per dependency with its depth and its path
+  (`jackson-dataformat-yaml 2.14.2 > snakeyaml 1.33`). Gradle's lockfile, `Pipfile.lock` and npm's v1 lockfile do not
+  record what brings a package: their indirect ones are listed apart, with no depth.
+
+- **Direct dependencies only**: `--direct-only` (the old `--no-transitive` its alias) and the toolbar's box scan what
+  the projects declare, at their locked versions: no Maven repository nor Gradle cache read, the lockfiles' indirect
+  packages left out. It replaces *View ▸ Transitive dependencies*. After a full scan, **Hide indirect dependencies**
+  (`--hide-transitive`) leaves them out of the tables, the counts and the reports.
+
+- **Fixed**: in a `yarn.lock` or `pnpm-lock.yaml`, another version of a declared package (debug 2.6.9 under express,
+  debug 4.3.1 declared) was said direct; yarn berry's entry of the project itself was listed as a package.
+
 - **Gradle transitive dependencies**: a build's `gradle.lockfile` gives the versions Gradle resolved, the transitive
   ones included; a build without one gets them from the poms of Gradle's cache, resolved as Gradle does (the highest
   version asked wins, a declared one raised; `platform()` and `enforcedPlatform()`; `exclude` blocks; catalog
   entries followed from the line using them). Version-less declarations a platform gives a version to are now read.
-  `--gradle-cache DIR`; `--no-transitive` and *View ▸ Transitive dependencies* turn off Gradle's cache with Maven's.
+  `--gradle-cache DIR`; `--direct-only` turns off Gradle's cache with Maven's.
   Checked against `gradle dependencies`.
 
 - **Apply fixes for transitive Maven dependencies**: one the project has only through a library is pinned, its fixed
