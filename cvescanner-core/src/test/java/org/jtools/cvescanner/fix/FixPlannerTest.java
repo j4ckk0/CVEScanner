@@ -276,10 +276,26 @@ class FixPlannerTest {
         assertTrue(p.applicable(), String.valueOf(p.notApplicable()));
         assertFalse(p.majorJump(), "1.2.6 within ^1.2.5: nothing to ask");
         var step = p.steps().getFirst();
-        assertEquals(new PackageJsonMembers(root.resolve("a/package.json"), List.of("overrides"), Map.of("minimist@1.2.5", "1.2.6"),
+        // under the dependent using the vulnerable copy: npm 10 ignores a key naming minimist's own version
+        assertEquals(new PackageJsonMembers(root.resolve("a/package.json"), List.of("overrides", "mkdirp@0.5.5"), Map.of("minimist", "1.2.6"),
                 root.resolve("a/package-lock.json")), step.edit());
         assertEquals(List.of("install", "--offline", "--ignore-scripts"), step.command().subList(1, 4));
-        assertEquals("package.json: overrides \"minimist@1.2.5\": \"1.2.6\"", step.edit().shown());
+        assertEquals("package.json: overrides.mkdirp@0.5.5 \"minimist\": \"1.2.6\"", step.edit().shown());
+        // two dependents using it: an override under each, in one edit
+        write("a/package-lock.json", """
+                {"name": "t", "lockfileVersion": 3, "packages": {
+                  "": {"dependencies": {"mkdirp": "0.5.5", "optimist": "0.6.1"}},
+                  "node_modules/mkdirp": {"version": "0.5.5", "dependencies": {"minimist": "^1.2.5"}},
+                  "node_modules/optimist": {"version": "0.6.1", "dependencies": {"minimist": "~1.2.0"}},
+                  "node_modules/minimist": {"version": "1.2.5"}}}""");
+        var two = plan(Ecosystem.NPM, "minimist", "1.2.5", "1.2.6", "a/package-lock.json", "transitive").steps().getFirst().edit();
+        assertEquals("package.json: overrides.mkdirp@0.5.5 \"minimist\": \"1.2.6\", overrides.optimist@0.6.1 \"minimist\": \"1.2.6\"",
+                two.shown());
+        assertEquals(root.resolve("a/package-lock.json"), two.proof());
+        String written = two.apply(Files.readString(root.resolve("a/package.json")));
+        assertEquals(Map.of("mkdirp@0.5.5", Map.of("minimist", "1.2.6"), "optimist@0.6.1", Map.of("minimist", "1.2.6")),
+                org.jtools.cvescanner.json.Json.obj(org.jtools.cvescanner.json.Json.parse(written)).get("overrides"));
+        write("a/package-lock.json", PACKAGE_LOCK.formatted("^1.2.5"));
         // a fix outside what the dependent asks: applied only when ticked, said so
         write("a/package-lock.json", PACKAGE_LOCK.formatted("~1.2.5"));
         fake.npmTarball("minimist", "1.3.0");

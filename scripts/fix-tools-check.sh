@@ -129,7 +129,7 @@ check "pnpm: the old version gone"     "$r/pnpm/pnpm-lock.yaml"   '4.17.20' abse
 check "pnpm: the pin said"             "$work/fixes.log"          'pnpm cannot resolve a range offline'
 check "Gradle: the build file"         "$r/gradle/build.gradle"   'commons-text:1.10.0'
 # minimist, there only through mkdirp: overridden, its vulnerable version only where the tool can say so
-check "npm: minimist overridden"       "$r/npm/package.json"      '"minimist@1.2.5": "1.2.6"'
+check "npm: minimist overridden"       "$r/npm/package.json"      '"mkdirp@0.5.5"'
 check "npm: minimist locked"           "$r/npm/package-lock.json" 'minimist-1.2.6.tgz'
 check "npm: minimist 1.2.5 gone"       "$r/npm/package-lock.json" 'minimist-1.2.5.tgz' absent
 check "yarn 1: minimist resolved"      "$r/yarn1/package.json"    '"minimist": "1.2.6"'

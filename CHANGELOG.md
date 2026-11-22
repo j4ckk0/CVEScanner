@@ -6,8 +6,9 @@ checksums.
 ## 1.4 — not released yet
 
 - **Apply fixes for transitive npm packages**: a package the project has only through others is overridden, its
-  vulnerable version only — npm's `overrides`, pnpm's in `pnpm-workspace.yaml`, yarn 4's `resolutions` by the ranges
-  asked; yarn 1, which overrides every copy, only when the lockfile holds no other version. A fix outside what a
+  vulnerable version only — npm's `overrides` under each dependent using it (npm 10 and 11), pnpm's in
+  `pnpm-workspace.yaml`, yarn 4's `resolutions` by the ranges asked; yarn 1, which overrides every copy, only when the
+  lockfile holds no other version. An override the tool ignores (its lockfile unchanged) is not applied, and said. A fix outside what a
   dependent asks (read from the lockfile; for pnpm from the installed dependents) is applied only once ticked. Checked
   with the real npm, yarn 1, yarn 4 and pnpm by `scripts/fix-tools-check.sh`, on Linux and Windows.
 - **Maven transitive dependencies**: what a project's dependencies bring is checked too, resolved as Maven does (the

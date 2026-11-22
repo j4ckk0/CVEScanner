@@ -300,8 +300,9 @@ public final class FixPlanner {
     private record Override(Step step, Phrase notApplicable, boolean askFirst) {}
 
     /**
-     * The package, transitive in this lockfile's project, overridden to the fixed version: its vulnerable version only
-     * where the tool can say so (npm, pnpm, yarn 2+: its specs), every copy with yarn 1, which cannot. The notes say a
+     * The package, transitive in this lockfile's project, overridden to the fixed version: its vulnerable copy only where
+     * the tool can say so (npm under the dependents using it, pnpm by its version, yarn 2+ by the specs it is locked
+     * under), every copy with yarn 1, which cannot. The notes say a
      * dependent whose range the fixed version leaves, or that the ranges are not known.
      */
     private Override override(FixRequest r, Path lockfile, Set<Phrase> notes) throws IOException {
@@ -348,7 +349,14 @@ public final class FixPlanner {
                 if (npm.isEmpty()) return new Override(null, Phrase.of("fix.reason.notInstalled", "npm"), false);
                 if (!NodeEngines.tarballCached(machine, r.pkg(), r.to()))
                     return new Override(null, Phrase.of("fix.reason.notCachedNpm", r.to()), false);
-                step = new Step(new PackageJsonMembers(packageJson, List.of("overrides"), Map.of(selector, r.to()), lockfile),
+                // under each dependent using the vulnerable copy, "mkdirp@0.5.5": {"minimist": "1.2.6"}: npm 10 ignores a
+                // key naming the overridden package's own version once a lockfile is there
+                var edits = new ArrayList<Step.Edit>();
+                for (var asked : found.asked())
+                    if (asked.by() != null && edits.stream().noneMatch(e -> ((PackageJsonMembers) e).path().contains(asked.by())))
+                        edits.add(new PackageJsonMembers(packageJson, List.of("overrides", asked.by()), Map.of(r.pkg(), r.to()), lockfile));
+                if (edits.isEmpty()) edits.add(new PackageJsonMembers(packageJson, List.of("overrides"), Map.of(r.pkg(), r.to()), lockfile));
+                step = new Step(edits.size() == 1 ? edits.getFirst() : new EditAll(edits),
                         List.of(npm.get().toString(), "install", "--offline", "--ignore-scripts"), dir, NPM_OFFLINE,
                         List.of(packageJson, lockfile, dir.resolve("npm-shrinkwrap.json")));
             }

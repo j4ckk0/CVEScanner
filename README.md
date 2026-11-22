@@ -275,7 +275,8 @@ so. **A fix is not applied** when:
 - its version is written in a way no tool can change.
 
 A **transitive npm package** — one the project has only through others — is **overridden**: its vulnerable version
-only, `"overrides": {"minimist@1.2.5": "1.2.6"}` for npm, `overrides` in `pnpm-workspace.yaml` for pnpm (in
+only: under each dependent using it for npm, `"overrides": {"mkdirp@0.5.5": {"minimist": "1.2.6"}}` (npm 10 ignores a
+key naming the package's own version once a lockfile is there), `overrides` in `pnpm-workspace.yaml` for pnpm (in
 `package.json`'s `pnpm` when the project keeps its settings there), `"resolutions"` keyed by the ranges asked for yarn 4,
 and every copy of it for yarn 1, which cannot say a version. The lockfile tells which ranges its dependents ask (for
 pnpm, their `package.json` in `node_modules`, once the project is installed): a fix outside one of them, or when they
