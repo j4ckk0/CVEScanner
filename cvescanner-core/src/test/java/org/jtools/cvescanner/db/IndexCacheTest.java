@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import org.jtools.cvescanner.engine.Engine;
@@ -106,6 +107,8 @@ class IndexCacheTest {
     @Test
     void aChangedZipOrAnUnreadableCacheIsReadAgain() throws IOException {
         Path db = copy("db/advisory-database-main.zip");
+        // a minute's start: the 2 seconds added below leave the date the description shows, to the minute, as it was
+        Files.setLastModifiedTime(db, FileTime.from(Instant.parse("2026-11-20T10:00:00Z")));
         Path cache = dir.resolve("cache");
         Path project = SAMPLES.resolve("projects/npm-lock");
         String first = said(scan(project, List.of(db), cache));
