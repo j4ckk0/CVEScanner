@@ -67,6 +67,23 @@ class DependenciesCsvTest {
                 npm,q,3.0.0,x/package-lock.json,transitive,,q 3.0.0,0,,
                 """, Reports.dependenciesCsv(deps, findings),
                 "files in order; b's row before c's though c found later; q, its parents not recorded, last");
+        // one package version in two scopes of one file (managed, and used): two rows, each with its own findings
+        var twice = List.of(dep("j", "2.9.8", "pom.xml", "dependencyManagement", List.of()), dep("j", "2.9.8", "pom.xml", "compile", List.of()),
+                dep("k", "1.0", "pom.xml", "transitive via j", List.of("j@2.9.8")));
+        var managed = finding("j", "2.9.8", "pom.xml", Severity.HIGH, "GHSA-m");
+        var used = new Finding(Severity.LOW, managed.score(), Ecosystem.NPM, "j", "2.9.8", false, "compile", "pom.xml", "GHSA-u",
+                List.of(), List.of(), "", "s", "d", "", "https://example.org/u", MatchBasis.ADVISORY, Phrase.of("match.note.advisory"),
+                new Rating(Severity.LOW, null, null, null));
+        managed = new Finding(Severity.HIGH, managed.score(), Ecosystem.NPM, "j", "2.9.8", false, "dependencyManagement", "pom.xml", "GHSA-m",
+                List.of(), List.of(), "", "s", "d", "", "https://example.org/m", MatchBasis.ADVISORY, Phrase.of("match.note.advisory"),
+                new Rating(Severity.HIGH, null, null, null));
+        assertEquals("""
+                ecosystem,package,version,file,scope,depth,path,findings,worst_severity,advisories
+                npm,j,2.9.8,pom.xml,dependencyManagement,0,j 2.9.8,1,HIGH,GHSA-m
+                npm,k,1.0,pom.xml,transitive via j,1,j 2.9.8 > k 1.0,0,,
+                npm,j,2.9.8,pom.xml,compile,0,j 2.9.8,1,LOW,GHSA-u
+                """, Reports.dependenciesCsv(twice, List.of(managed, used)));
+
         // b left out (a filter): c goes under a, its nearest parent listed, its path still in full
         String withoutB = Reports.dependenciesCsv(deps.stream().filter(d -> !d.name().equals("b")).toList(), findings);
         assertEquals("npm,c,1.0.0,x/package-lock.json,transitive,2,a 1.0.0 > b 1.0.0 > c 1.0.0,2,CRITICAL,GHSA-1;GHSA-2",

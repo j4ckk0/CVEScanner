@@ -76,30 +76,32 @@ public final class NpmReader {
     }
 
     public static void scan(List<Path> packageJsons, Path root, DependencyCollector col, Consumer<Phrase> warn) {
-        var doneLocks = new HashSet<Path>();
+        var manifests = new LinkedHashMap<Path, Map<String, String[]>>();   // each package.json read: what it declares
+        var byLock = new HashMap<Path, Map<String, String[]>>();   // a lockfile shared by workspaces: what any of them declares
         for (Path pkgPath : packageJsons) {
-            Map<String, Object> pkg;
             try {
-                pkg = Json.obj(Json.parse(ProjectFiles.readText(pkgPath)));
+                var declared = declared(Json.obj(Json.parse(ProjectFiles.readText(pkgPath))));
+                manifests.put(pkgPath, declared);
+                Path lock = findLock(pkgPath.getParent(), root);
+                if (lock != null) declared.forEach(byLock.computeIfAbsent(lock, _ -> new LinkedHashMap<>())::putIfAbsent);
             } catch (IOException | IllegalArgumentException e) {
                 warn.accept(Phrase.of("warning.skipped", col.rel(pkgPath), e.getMessage()));
-                continue;
             }
-            var declared = new LinkedHashMap<String, String[]>();   // name -> {spec, section}
-            for (String sec : List.of("dependencies", "devDependencies", "optionalDependencies", "peerDependencies"))
-                Json.obj(pkg.get(sec)).forEach((n, spec) -> {
-                    if (spec instanceof String s) declared.putIfAbsent(n, new String[]{s, sec});
-                });
-
+        }
+        var doneLocks = new HashSet<Path>();
+        for (var manifest : manifests.entrySet()) {
+            Path pkgPath = manifest.getKey();
+            var declared = manifest.getValue();
             Path lock = findLock(pkgPath.getParent(), root);
             if (lock != null) {
                 if (!doneLocks.add(lock)) continue;   // workspace member, already covered by the root lockfile
+                var lockDeclared = byLock.get(lock);
                 try {
                     String base = lock.getFileName().toString();
                     var entries = switch (base) {
-                        case "yarn.lock" -> yarnLock(lock, declared);
-                        case "pnpm-lock.yaml" -> pnpmLock(lock, declared.keySet());
-                        default -> packageLock(lock, declared.keySet());
+                        case "yarn.lock" -> yarnLock(lock, lockDeclared);
+                        case "pnpm-lock.yaml" -> pnpmLock(lock, lockDeclared.keySet());
+                        default -> packageLock(lock, lockDeclared.keySet());
                     };
                     for (var e : entries) {
                         if (!Versions.isSemver(e.version())) {
@@ -129,6 +131,16 @@ public final class NpmReader {
         }
     }
 
+    /** What a package.json declares: name -> {spec, section}, the first section naming it. */
+    private static Map<String, String[]> declared(Map<String, Object> pkg) {
+        var declared = new LinkedHashMap<String, String[]>();
+        for (String sec : List.of("dependencies", "devDependencies", "optionalDependencies", "peerDependencies"))
+            Json.obj(pkg.get(sec)).forEach((n, spec) -> {
+                if (spec instanceof String s) declared.putIfAbsent(n, new String[]{s, sec});
+            });
+        return declared;
+    }
+
     private static Path findLock(Path dir, Path root) {
         for (Path d = dir.toAbsolutePath().normalize(); d != null; d = d.getParent()) {
             for (String name : LOCKFILES) {
@@ -152,9 +164,11 @@ public final class NpmReader {
                 String keyName = key.substring(key.lastIndexOf("node_modules/") + "node_modules/".length());
                 String name = Objects.requireNonNullElse(Json.str(info, "name"), keyName);
                 String version = Json.str(info, "version");
+                // direct: what the project or one of its workspaces depends on, as installed for it
+                var parents = paths.get(key);
+                boolean direct = declared.contains(keyName) && (parents != null ? parents.isEmpty() : key.equals("node_modules/" + keyName));
                 if (version != null)
-                    out.add(new LockEntry(name, version, Boolean.TRUE.equals(info.get("dev")),
-                            key.equals("node_modules/" + keyName) && declared.contains(keyName), shownPath(paths.get(key), packages)));
+                    out.add(new LockEntry(name, version, Boolean.TRUE.equals(info.get("dev")), direct, shownPath(parents, packages)));
             });
             return nearest(out);
         }
@@ -185,7 +199,8 @@ public final class NpmReader {
             String from = Boolean.TRUE.equals(info.get("link")) && Json.str(info, "resolved") != null ? Json.str(info, "resolved") : key;
             var kids = new ArrayList<String>();
             for (String section : List.of("dependencies", "optionalDependencies", "peerDependencies", "devDependencies")) {
-                if (section.equals("devDependencies") && !key.isEmpty()) continue;   // a package's own are not installed
+                // an installed package's own devDependencies are not installed; the project's and its workspaces' are
+                if (section.equals("devDependencies") && key.contains("node_modules/")) continue;
                 for (String n : Json.obj(Json.obj(packages.get(from)).get(section)).keySet()) {
                     String found = installed(packages, from, n);
                     if (found != null && !kids.contains(found)) kids.add(found);
@@ -202,8 +217,11 @@ public final class NpmReader {
                 children.put(key, List.of(target));
             }
         });
-        // the root is not a package: the walk starts at what it depends on
-        return DependencyGraph.paths(children.getOrDefault("", List.of()), children);
+        // the root and its workspaces are no packages: the walk starts at what they depend on
+        var roots = new ArrayList<String>(children.getOrDefault("", List.of()));
+        packages.keySet().stream().filter(k -> !k.isEmpty() && !k.contains("node_modules/"))
+                .forEach(k -> roots.addAll(children.getOrDefault(k, List.of())));
+        return DependencyGraph.paths(roots, children);
     }
 
     /** Where Node finds package n required from the package at this key: the nearest node_modules up to the root. */
@@ -323,12 +341,16 @@ public final class NpmReader {
             if (id != null) roots.add(id);
         });
         var paths = DependencyGraph.paths(roots, children);
+        var resolvedNames = new HashSet<String>();
+        for (String id : roots) resolvedNames.add(id.substring(0, id.lastIndexOf('@')));
         var out = new ArrayList<LockEntry>();
         for (var e : entries) {
             if (e.version == null) continue;
-            // direct: the version a declaration resolves to, not another version of a declared name
+            // direct: the version a declaration resolves to, not another version of a declared name; by its name when the
+            // declaration resolves to no entry (a resolutions or patch: spec)
             boolean declaredOne = roots.contains(e.id());
-            e.names.forEach((n, named) -> out.add(new LockEntry(n, e.version, false, named && declaredOne, paths.get(e.id()))));
+            e.names.forEach((n, named) -> out.add(new LockEntry(n, e.version, false,
+                    named && (declaredOne || !resolvedNames.contains(n)), paths.get(e.id()))));
         }
         return out;
     }
@@ -343,7 +365,7 @@ public final class NpmReader {
 
     /**
      * pnpm-lock.yaml (v5 to v9): its packages at their versions, their parents from what each needs, from the root
-     * project's dependencies (importer "." or, before importers, the top-level ones).
+     * project's and its workspaces' dependencies (the importers or, before importers, the top-level ones).
      */
     private static List<LockEntry> pnpmLock(Path path, Set<String> declared) throws IOException {
         var found = new LinkedHashMap<String, String[]>();   // id "name@version" -> {name, version}
@@ -378,11 +400,11 @@ public final class NpmReader {
                     importer = unquote(content.substring(0, Math.max(content.indexOf(':'), 0)));
                 } else if (indent == 4) {
                     inImporterDeps = content.matches("(dependencies|devDependencies|optionalDependencies):");
-                } else if (indent == 6 && inImporterDeps && ".".equals(importer)) {
+                } else if (indent == 6 && inImporterDeps && importer != null) {   // the project's and each workspace's
                     rootDep = content;
                     String id = pnpmNeed(content);   // v5's "name: version" on one line
                     if (id != null) roots.add(id);
-                } else if (indent == 8 && inImporterDeps && ".".equals(importer) && rootDep != null && content.startsWith("version:")) {
+                } else if (indent == 8 && inImporterDeps && importer != null && rootDep != null && content.startsWith("version:")) {
                     String id = pnpmNeed(rootDep.substring(0, rootDep.indexOf(':')) + ": " + content.substring(8).strip());
                     if (id != null) roots.add(id);
                 }
@@ -399,9 +421,12 @@ public final class NpmReader {
         }
         var paths = DependencyGraph.paths(roots, children);
         var out = new ArrayList<LockEntry>();
-        // direct: the version the project's declaration resolves to, not another version of a declared name
+        // direct: the version a declaration resolves to, not another version of a declared name; by its name when no
+        // declaration of that name resolves to an entry
+        var resolvedNames = new HashSet<String>();
+        for (String id : roots) resolvedNames.add(id.substring(0, id.lastIndexOf('@')));
         found.forEach((id, nv) -> out.add(new LockEntry(nv[0], nv[1], false,
-                declared.contains(nv[0]) && (roots.contains(id) || roots.isEmpty()), paths.get(id))));
+                declared.contains(nv[0]) && (roots.contains(id) || !resolvedNames.contains(nv[0])), paths.get(id))));
         return out;
     }
 

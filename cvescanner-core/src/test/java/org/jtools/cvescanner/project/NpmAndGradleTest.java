@@ -241,6 +241,82 @@ class NpmAndGradleTest {
                 """));
     }
 
+    /** A workspace: the root's package.json and a member's, one lockfile; each package's scope and parents. */
+    private static Map<String, String> workspace(Path parent, String lockName, String lock) throws Exception {
+        Path dir = Files.createDirectories(parent.resolve(lockName + ".d"));   // a folder each: one lockfile in it
+        Files.writeString(dir.resolve("package.json"), "{\"workspaces\":[\"packages/*\"],\"devDependencies\":{\"minimist\":\"1.2.5\"}}");
+        Files.createDirectories(dir.resolve("packages/a"));
+        Files.writeString(dir.resolve("packages/a/package.json"), "{\"name\":\"a\",\"dependencies\":{\"express\":\"4.17.1\"}}");
+        Files.writeString(dir.resolve(lockName), lock);
+        var collector = new DependencyCollector(dir);
+        NpmReader.scan(List.of(dir.resolve("package.json"), dir.resolve("packages/a/package.json")), dir, collector, warning -> { });
+        Map<String, String> out = new TreeMap<>();
+        collector.deps.forEach(d -> out.put(d.name() + "@" + d.version(),
+                d.scope() + " " + (d.parents() == null ? "?" : String.join(" > ", d.parents()))));
+        return out;
+    }
+
+    @Test
+    void whatAWorkspaceDeclaresIsDirectItsOwnDependenciesUnderIt(@TempDir Path dir) throws Exception {
+        var expected = Map.of("minimist@1.2.5", "direct ", "express@4.17.1", "direct ", "debug@2.6.9", "transitive express@4.17.1");
+        assertEquals(Map.of("minimist@1.2.5", "direct (dev) ", "express@4.17.1", "direct ", "debug@2.6.9", "transitive express@4.17.1"),
+                workspace(dir, "package-lock.json", """
+                {"lockfileVersion": 3, "packages": {
+                  "": {"workspaces": ["packages/*"], "devDependencies": {"minimist": "1.2.5"}},
+                  "node_modules/a": {"resolved": "packages/a", "link": true},
+                  "packages/a": {"version": "1.0.0", "dependencies": {"express": "4.17.1"}},
+                  "node_modules/express": {"version": "4.17.1", "dependencies": {"debug": "2.6.9"}},
+                  "node_modules/debug": {"version": "2.6.9"},
+                  "node_modules/minimist": {"version": "1.2.5", "dev": true}
+                }}"""));
+        assertEquals(expected, workspace(dir, "pnpm-lock.yaml", """
+                lockfileVersion: '9.0'
+
+                importers:
+
+                  .:
+                    devDependencies:
+                      minimist:
+                        specifier: 1.2.5
+                        version: 1.2.5
+
+                  packages/a:
+                    dependencies:
+                      express:
+                        specifier: 4.17.1
+                        version: 4.17.1
+
+                packages:
+
+                  debug@2.6.9:
+                    resolution: {integrity: sha512-x}
+                  express@4.17.1:
+                    resolution: {integrity: sha512-x}
+                  minimist@1.2.5:
+                    resolution: {integrity: sha512-x}
+
+                snapshots:
+
+                  debug@2.6.9: {}
+                  express@4.17.1:
+                    dependencies:
+                      debug: 2.6.9
+                  minimist@1.2.5: {}
+                """), "pnpm's lock read without its dev marks");
+    }
+
+    @Test
+    void aDeclarationResolvingToNoEntryIsDirectByItsName(@TempDir Path dir) throws Exception {
+        // yarn's resolutions: the entry is keyed by the resolution's spec, not by what package.json says
+        var found = parents(dir, "{\"dependencies\":{\"lodash\":\"^4.17.0\"},\"resolutions\":{\"lodash\":\"4.17.21\"}}", "yarn.lock", """
+                # yarn lockfile v1
+
+                lodash@4.17.21:
+                  version "4.17.21"
+                """);
+        assertEquals(Map.of("lodash@4.17.21", "direct "), found);
+    }
+
     @Test
     void aV1PackageLockDoesNotSayTheParents(@TempDir Path dir) throws Exception {
         var found = parents(dir, "{\"dependencies\":{\"a\":\"1.0.0\"}}", "package-lock.json", """

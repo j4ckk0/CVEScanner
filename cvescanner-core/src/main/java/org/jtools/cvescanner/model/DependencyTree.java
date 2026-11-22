@@ -21,9 +21,9 @@ package org.jtools.cvescanner.model;
  */
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,14 +54,18 @@ public record DependencyTree(String file, List<Node> roots, List<Dependency> unr
     }
 
     private static DependencyTree tree(String file, List<Dependency> deps) {
-        var nodes = new HashMap<String, Node>();   // "name@version" -> its node, the first of that id
-        for (Dependency d : deps) nodes.putIfAbsent(id(d), new Node(d, new ArrayList<>()));
+        // a node per dependency: a package version in two scopes of one file (managed and used) is two rows
+        var all = new ArrayList<Node>();
+        var nodes = new HashMap<String, Node>();   // "name@version" -> the first node of that id, what brings its children
+        for (Dependency d : deps) {
+            var node = new Node(d, new ArrayList<>());
+            all.add(node);
+            nodes.putIfAbsent(id(d), node);
+        }
         var roots = new ArrayList<Node>();
         var unrecorded = new ArrayList<Dependency>();
-        Set<Node> placed = Collections.newSetFromMap(new IdentityHashMap<>());   // a node's children grow: by identity
-        for (Dependency d : deps) {
-            Node node = nodes.get(id(d));
-            if (node.dependency() != d || !placed.add(node)) continue;
+        for (Node node : all) {
+            Dependency d = node.dependency();
             if (d.parents() == null) {
                 unrecorded.add(d);
                 continue;
@@ -106,18 +110,19 @@ public record DependencyTree(String file, List<Node> roots, List<Dependency> unr
         return rows().size();
     }
 
-    /** The findings of each dependency, by its ecosystem, name, version and file. */
+    /** The findings of each dependency, by its ecosystem, name, version, file and scope: a finding is a dependency's. */
     public static Map<String, List<Finding>> findingsBy(List<Finding> findings) {
         var out = new HashMap<String, List<Finding>>();
-        for (Finding f : findings) out.computeIfAbsent(key(f.ecosystem(), f.pkg(), f.version(), f.file()), _ -> new ArrayList<>()).add(f);
+        for (Finding f : findings)
+            out.computeIfAbsent(key(f.ecosystem(), f.pkg(), f.version(), f.file(), f.scope()), _ -> new ArrayList<>()).add(f);
         return out;
     }
 
     public static String key(Dependency d) {
-        return key(d.ecosystem(), d.name(), d.version(), d.file());
+        return key(d.ecosystem(), d.name(), d.version(), d.file(), d.scope());
     }
 
-    private static String key(Ecosystem e, String name, String version, String file) {
-        return e.id() + "\u0001" + name + "\u0001" + version + "\u0001" + file;
+    private static String key(Ecosystem e, String name, String version, String file, String scope) {
+        return String.join("\u0001", e.id(), name, version, file, scope);
     }
 }
