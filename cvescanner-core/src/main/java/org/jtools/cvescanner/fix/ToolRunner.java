@@ -67,13 +67,18 @@ public final class ToolRunner {
                 return new FixOutcome(plan, false, failure, log.toString());
             }
         }
-        // an override the tool ignored changed package.json alone: its lockfile, the proof, as it was
-        boolean ignored = plan.steps().stream().map(Step::edit).filter(e -> e != null && e.proof() != null)
-                .anyMatch(e -> {
-                    var proof = new java.util.HashMap<Path, byte[]>();   // null for a lockfile not there before
-                    proof.put(e.proof(), kept.get(e.proof()));
-                    return unchanged(proof);
-                });
+        // an override the tool ignored changed package.json alone: its lockfile, the proof, as it was; said in the log
+        boolean ignored = false;
+        for (Step step : plan.steps()) {
+            var e = step.edit();
+            if (e == null || e.proof() == null) continue;
+            var proof = new java.util.HashMap<Path, byte[]>();   // null for a lockfile not there before
+            proof.put(e.proof(), kept.get(e.proof()));
+            if (unchanged(proof)) {
+                ignored = true;
+                log.append("! ").append(e.proof()).append(": unchanged after ").append(program(step)).append('\n');
+            }
+        }
         if (ignored || unchanged(kept)) {
             if (ignored) restore(kept, log);
             return new FixOutcome(plan, false, Phrase.of("fix.outcome.unchanged"), log.toString());

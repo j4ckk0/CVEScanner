@@ -125,6 +125,7 @@ class ToolRunnerTest {
                 List.of(ignoring.toString()), dir, Map.of(), List.of(file, lock))), _ -> { });
         assertFalse(outcome.applied());
         assertEquals("fix.outcome.unchanged", outcome.reason().key());
+        assertTrue(outcome.log().contains(lock + ": unchanged after ignoring"), outcome.log());
         assertEquals("{ \"name\": \"t\" }\n", Files.readString(file), "the override taken back out");
         // the tool that writes its lockfile: applied
         Path writing = tool("writing", "printf '{\"v\":2}' > package-lock.json");
