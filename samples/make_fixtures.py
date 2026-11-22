@@ -6,6 +6,7 @@ Writes in OUTDIR:
   projects/  Maven, Gradle, npm, yarn            cots-projects/  inventory, SBOMs, manifests, binaries
   ignore/    an ignore file                      db/  OSV.dev exports, GitHub Advisory Database, CVE List, NVD
   m2/        a local Maven repository, its poms only (--maven-repo)
+  gradle-cache/  Gradle's cache, its poms only (--gradle-cache)    projects-gradle-lock/  a build with its lockfile
 The results expected are the golden files: cvescanner-core/src/test/resources/org/jtools/cvescanner/cli/golden/.
 """
 import io, json, os, sys, zipfile
@@ -411,5 +412,42 @@ m2_pom("org.yaml", "snakeyaml", "1.33", "")
 m2_pom("com.fasterxml.jackson.core", "jackson-databind", "2.9.8", m2_deps(
     m2_dep("com.fasterxml.jackson.core", "jackson-annotations", "2.9.0"),
     m2_dep("com.fasterxml.jackson.core", "jackson-core", "2.9.8")))
+
+# ------------------------------------------------------------------ Gradle's cache (gradle-cache/), for --gradle-cache
+# what projects/gradle's declarations bring: guava raises snakeyaml to 2.0 (the highest asked wins) and brings
+# jackson-databind 2.9.8; checker-qual's pom and commons-text's are missing
+def gradle_pom(g, a, v, body=""):
+    write(f"gradle-cache/files-2.1/{g}/{a}/{v}/5f1c0b2e9d8a7c6b5a4f3e2d1c0b9a8f7e6d5c4b/{a}-{v}.pom",
+          f'<project xmlns="http://maven.apache.org/POM/4.0.0">\n  <modelVersion>4.0.0</modelVersion>\n'
+          f'  <groupId>{g}</groupId><artifactId>{a}</artifactId><version>{v}</version>\n{body}</project>\n')
+
+gradle_pom("com.google.guava", "guava", "31.1-jre", m2_deps(
+    m2_dep("com.google.guava", "failureaccess", "1.0.1"),
+    m2_dep("org.checkerframework", "checker-qual", "3.12.0"),
+    m2_dep("org.yaml", "snakeyaml", "2.0"),
+    m2_dep("com.fasterxml.jackson.core", "jackson-databind", "2.9.8")))
+gradle_pom("com.google.guava", "failureaccess", "1.0.1")
+gradle_pom("org.yaml", "snakeyaml", "1.33")
+gradle_pom("org.yaml", "snakeyaml", "2.0")
+gradle_pom("com.fasterxml.jackson.core", "jackson-databind", "2.9.8")
+
+# a locked Gradle build (projects-gradle-lock/): its gradle.lockfile gives the versions, the transitive ones included
+write("projects-gradle-lock/build.gradle", """plugins { id 'java' }
+dependencies {
+    implementation 'org.apache.logging.log4j:log4j-core:2.14.1'
+    testImplementation 'junit:junit:4.13'
+}
+dependencyLocking { lockAllConfigurations() }
+""")
+write("projects-gradle-lock/gradle.lockfile", """# This is a Gradle generated file for dependency locking.
+# Manual edits can break the build and are not advised.
+# This file is expected to be part of source control.
+junit:junit:4.13.2=testCompileClasspath,testRuntimeClasspath
+org.apache.logging.log4j:log4j-api:2.14.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.apache.logging.log4j:log4j-core:2.14.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hamcrest:hamcrest-core:1.3=testCompileClasspath,testRuntimeClasspath
+org.yaml:snakeyaml:1.33=runtimeClasspath,testRuntimeClasspath
+empty=annotationProcessor,testAnnotationProcessor
+""")
 
 print("fixtures written to", out)

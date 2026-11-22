@@ -1,0 +1,1 @@
+-d projects-gradle-lock --db db/advisory-database-main.zip

@@ -48,6 +48,7 @@ import org.jtools.cvescanner.model.ScanListener;
 import org.jtools.cvescanner.model.ScanMode;
 import org.jtools.cvescanner.model.ScanResult;
 import org.jtools.cvescanner.project.DependencyCollector;
+import org.jtools.cvescanner.project.GradleCache;
 import org.jtools.cvescanner.project.GradleReader;
 import org.jtools.cvescanner.project.MavenReader;
 import org.jtools.cvescanner.project.MavenRepository;
@@ -112,8 +113,8 @@ public final class Engine {
         var col = new DependencyCollector(root);
         MavenReader.scan(files.poms, col, l::warn,
                 options.mavenRepository() == null ? null : new MavenRepository(options.mavenRepository()));
-        GradleReader.scan(files.gradle, files.gradleProps, col);
-        GradleReader.scanCatalogs(files.catalogs, col);
+        GradleReader.scan(files.gradle, files.gradleProps, files.catalogs, files.gradleLocks, col, l::warn,
+                options.gradleCache() == null ? null : new GradleCache(options.gradleCache()));
         NpmReader.scan(files.packageJsons, root, col, l::warn);
         InventoryReader.scan(files.cotsInventories, col, l::warn);
         SbomReader.scan(files.sboms, col, l::warn);
@@ -166,6 +167,7 @@ public final class Engine {
         if (manifests > 0) counts.put("files.manifests", manifests);
         if (!files.binaries.isEmpty()) counts.put("files.binaries", files.binaries.size());
         return new ScanResult(root, List.copyOf(findings), List.copyOf(col.deps), List.copyOf(col.unresolved),
-                index.sources, counts, List.copyOf(warnings), ignores, mode, mode == ScanMode.SOURCES ? options.mavenRepository() : null);
+                index.sources, counts, List.copyOf(warnings), ignores, mode, mode == ScanMode.SOURCES ? options.mavenRepository() : null,
+                mode == ScanMode.SOURCES && !files.gradle.isEmpty() ? options.gradleCache() : null, !files.gradleLocks.isEmpty());
     }
 }

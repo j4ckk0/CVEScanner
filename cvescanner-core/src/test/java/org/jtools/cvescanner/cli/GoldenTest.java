@@ -73,15 +73,14 @@ class GoldenTest {
         String[] given = Files.readString(golden.resolve("args.txt")).trim().split("\\s+");
         for (int i = 0; i < given.length; i++) {
             args.add(given[i]);
-            if (List.of("--db", "-d", "--ignore", "--vex", "--maven-repo").contains(given[i]) && i + 1 < given.length) {
+            if (List.of("--db", "-d", "--ignore", "--vex", "--maven-repo", "--gradle-cache").contains(given[i]) && i + 1 < given.length) {
                 args.add(SAMPLES.resolve(given[++i]).toString());
             }
         }
-        // the machine's own ~/.m2 never read: a case reads the samples' repository, or none
-        if (!args.contains("--maven-repo")) args.add("--no-transitive");
 
         var options = Options.parse(args.toArray(String[]::new));
         options.today = TODAY;
+        options.homeCaches = false;   // the machine's own ~/.m2 and ~/.gradle never read: a case names the samples', or none
         int exit = Cli.run(options);
 
         assertEquals(Integer.parseInt(Files.readString(golden.resolve("exit.txt")).trim()), exit, "exit code");

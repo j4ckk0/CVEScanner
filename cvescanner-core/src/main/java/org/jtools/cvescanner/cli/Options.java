@@ -42,6 +42,7 @@ import org.jtools.cvescanner.ignore.Ignores;
 import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.FindingFilter;
 import org.jtools.cvescanner.model.ScanMode;
+import org.jtools.cvescanner.project.GradleCache;
 import org.jtools.cvescanner.project.MavenRepository;
 
 public final class Options {
@@ -87,10 +88,14 @@ public final class Options {
     public int dbMaxAgeDays = ScanOptions.DEFAULT_DB_MAX_AGE_DAYS;
     /** --maven-repo DIR: the local Maven repository read for the transitive dependencies; null for the home folder's. */
     public Path mavenRepository;
-    /** --no-transitive: no local Maven repository read, the poms' declared dependencies only. */
+    /** --gradle-cache DIR: Gradle's cache (files-2.1) read for the builds' transitive dependencies; null for the home folder's. */
+    public Path gradleCache;
+    /** --no-transitive: neither the local Maven repository nor Gradle's cache read, the declared dependencies only. */
     public boolean noTransitive;
     /** The day the scan counts from: today, a fixed one in the tests. */
     LocalDate today = LocalDate.now();
+    /** Whether the home folder's Maven repository and Gradle cache are read when none is named: never in the tests. */
+    boolean homeCaches = true;
 
     public static Options parse(String[] args) {
         var o = new Options();
@@ -120,6 +125,7 @@ public final class Options {
                 case "--vex" -> o.vexFiles.add(Path.of(value(args, ++i, a)));
                 case "--maven-repo" -> o.mavenRepository = Path.of(value(args, ++i, a));
                 case "--no-transitive" -> o.noTransitive = true;
+                case "--gradle-cache" -> o.gradleCache = Path.of(value(args, ++i, a));
                 case "--installed" -> o.installed = true;
                 case "--min-severity" -> {
                     o.minSeverity = Severity.fromRating(value(args, ++i, a));
@@ -169,7 +175,8 @@ public final class Options {
             }
         }
         if (o.noIgnore && o.ignoreFile != null) throw new IllegalArgumentException(I18n.text("option.ignoreBoth"));
-        if (o.noTransitive && o.mavenRepository != null) throw new IllegalArgumentException(I18n.text("option.mavenRepoBoth"));
+        if (o.noTransitive && (o.mavenRepository != null || o.gradleCache != null))
+            throw new IllegalArgumentException(I18n.text("option.mavenRepoBoth"));
         long edits = (o.ignoreAdd != null ? 1 : 0) + (o.ignoreRemove != null ? 1 : 0) + (o.ignoreList ? 1 : 0);
         if (edits > 1 || (edits == 1 && o.noIgnore)) throw new IllegalArgumentException(I18n.text("option.ignoreEdit"));
         if (o.ignoreAdd != null && (o.ignoreReason == null || o.ignoreReason.isBlank()))
@@ -222,12 +229,22 @@ public final class Options {
     public Path mavenRepository() {
         if (noTransitive) return null;
         if (mavenRepository != null) return mavenRepository;
+        if (!homeCaches) return null;
         Path home = MavenRepository.locate(Path.of(System.getProperty("user.home")));
         return java.nio.file.Files.isDirectory(home) ? home : null;   // no Maven here: none read, the reports saying so
     }
 
+    /** Gradle's cache a scan reads: --gradle-cache's, else the home folder's (GRADLE_USER_HOME) if there is one; null with --no-transitive. */
+    public Path gradleCache() {
+        if (noTransitive) return null;
+        if (gradleCache != null) return gradleCache;
+        if (!homeCaches) return null;
+        Path home = GradleCache.locate(Path.of(System.getProperty("user.home")), System.getenv("GRADLE_USER_HOME"));
+        return java.nio.file.Files.isDirectory(home) ? home : null;
+    }
+
     public ScanOptions scanOptions() {
-        return new ScanOptions(ignoreChoice(), mode(), dbMaxAgeDays, today, vexFiles, mavenRepository());
+        return new ScanOptions(ignoreChoice(), mode(), dbMaxAgeDays, today, vexFiles, mavenRepository(), gradleCache());
     }
 
     public ScanMode mode() {

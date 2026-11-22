@@ -37,7 +37,7 @@ to install, a Java runtime is inside: unpack it anywhere, drop a database zip in
 ## How it works
 
 1. **It finds your dependencies** in the folder you give it, sub-folders included:
-   - `pom.xml` files, with their properties and parents; Gradle build files and version catalogs; `package.json`
+   - `pom.xml` files, with their properties and parents; Gradle build files, version catalogs and lockfiles; `package.json`
      files, with their lockfile (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`) for the npm packages they pull in;
    - the native components named by a component inventory (`cots.csv`), an SBOM (CycloneDX, SPDX), a C/C++ build
      manifest (pkg-config, vcpkg, Conan), or the binaries themselves (a DLL's version resource, a file name).
@@ -72,9 +72,9 @@ to install, a Java runtime is inside: unpack it anywhere, drop a database zip in
 
 ## No network
 
-The program reads the folder it scans, the database zips it is given and, for the transitive dependencies of a Maven
-project, the poms of the local Maven repository (`~/.m2`; `--no-transitive` or *View ▸ Maven transitive dependencies*
-turns that off); it writes its reports and its settings beside it — and the ignore file, when you ask the window to
+The program reads the folder it scans, the database zips it is given and, for the transitive dependencies of Maven and
+Gradle projects, the poms of the local Maven repository (`~/.m2`) and of Gradle's cache (`~/.gradle/caches`;
+`--no-transitive` or *View ▸ Transitive dependencies* turns both off); it writes its reports and its settings beside it — and the ignore file, when you ask the window to
 ignore a finding; that is all. No download, no update
 check, no browser, no file manager: a link is copied to the clipboard, to open elsewhere, and after an export the
 folder's path is offered to copy. **The one program it starts** is the scanned project's own build tool, when you
@@ -184,7 +184,8 @@ cvescanner-cli.bat --no-gui -d C:\src\my-app --fail-on HIGH               (Windo
 | `--vex FILE` | a CycloneDX VEX document to read (repeatable), besides the folder's `*.vex.json` (see [Ignoring findings](#ignoring-findings)) |
 | `--db-max-age DAYS` | warn of a database whose newest record is older (default 30; 0: never) |
 | `--maven-repo DIR` | the local Maven repository read for the transitive dependencies of the poms (default: the one `~/.m2/settings.xml` names, else `~/.m2/repository`) |
-| `--no-transitive` | read no local Maven repository: the poms' declared dependencies only |
+| `--gradle-cache DIR` | Gradle's cache (its `files-2.1` folder) read for the transitive dependencies of builds without a lockfile (default: under `GRADLE_USER_HOME`, else `~/.gradle`) |
+| `--no-transitive` | read neither the local Maven repository nor Gradle's cache: the declared dependencies only |
 | `--installed` | scan an installed product from what it ships, rather than source projects (see [Installed products](#installed-products)) |
 | `--min-severity LEVEL`, `--ecosystem LIST`, `--hide-approximate`, `--hide-name-matches`, `--search "WORDS"` | the window's filters: the reports, the counts and `--fail-on` keep only what they keep, and `report.md` says them |
 | `--apply-fixes` [`--yes`] [`--allow-major`] [`--fix-packages LIST`] | the window's *Apply fixes* (see [Applying fixes](#applying-fixes)): the plan of each package the report keeps is said, and nothing changes without `--yes`; then the folder is scanned again before the reports are written |
@@ -332,8 +333,13 @@ any other.
   from the poms of the local Maven repository, a sibling module's from its own pom. A dependency whose pom is not
   there is checked, not what it brings: the scan says which, in one warning — building the project once fills the
   repository. The *Scope* column says `transitive via` the dependency the project declares that brings it.
-- **Gradle** results cover the **declared** dependencies only: run `gradle dependencies`, or enable Gradle's
-  dependency locking.
+- **Gradle** results: a build with a **lockfile** (`gradle.lockfile`, or `gradle/dependency-locks/*.lockfile`) gives the
+  versions Gradle resolved, the transitive ones included, the declared ones said `direct`. A build without one gets
+  its **transitive** dependencies from the poms of Gradle's cache, resolved as Gradle does: the highest version asked
+  anywhere wins, a declared one raised too, a `platform()` giving its versions (an `enforcedPlatform()` forcing them),
+  an `exclude` block followed. Checked against `gradle dependencies` on a project with all of those: the same versions.
+  A dependency whose pom is not in the cache is said in one warning; a version-less declaration no platform resolves
+  is listed among the unchecked.
 - A finding means the version is in an advisory's affected range; whether the vulnerable code is used by your
   application still needs a human eye.
 

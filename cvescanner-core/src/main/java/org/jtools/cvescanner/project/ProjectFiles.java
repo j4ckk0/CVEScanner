@@ -44,6 +44,8 @@ public final class ProjectFiles {
     static final Set<String> SKIP_DIRS = Set.of("node_modules", "target", "build", "dist", "out", "bower_components", "vendor");
     public final List<Path> poms = new ArrayList<>(), gradle = new ArrayList<>(), catalogs = new ArrayList<>(),
             gradleProps = new ArrayList<>(), packageJsons = new ArrayList<>();
+    /** Gradle's lockfiles: gradle.lockfile, and the older gradle/dependency-locks/*.lockfile. */
+    public final List<Path> gradleLocks = new ArrayList<>();
     /** What names components off-the-shelf: inventories, SBOMs, binaries, pkg-config files, vcpkg and Conan manifests. */
     public final List<Path> cotsInventories = new ArrayList<>(), sboms = new ArrayList<>(), binaries = new ArrayList<>(),
             pkgConfigs = new ArrayList<>(), vcpkgManifests = new ArrayList<>(), conanFiles = new ArrayList<>();
@@ -89,6 +91,7 @@ public final class ProjectFiles {
                     case "pom.xml" -> f.poms.add(file);
                     case "build.gradle", "build.gradle.kts" -> f.gradle.add(file);
                     case "gradle.properties" -> f.gradleProps.add(file);
+                    case "gradle.lockfile" -> f.gradleLocks.add(file);
                     case "package.json" -> f.packageJsons.add(file);
                     case "cots.csv" -> f.cotsInventories.add(file);
                     case "bom.json" -> f.sboms.add(file);
@@ -97,6 +100,8 @@ public final class ProjectFiles {
                     default -> {
                         String lower = n.toLowerCase(Locale.ROOT);
                         if (n.endsWith(".versions.toml")) f.catalogs.add(file);
+                        else if (lower.endsWith(".lockfile") && file.getParent() != null && file.getParent().getFileName() != null
+                                && file.getParent().getFileName().toString().equals("dependency-locks")) f.gradleLocks.add(file);
                         else if (lower.endsWith(".cots.csv")) f.cotsInventories.add(file);
                         else if (lower.endsWith(".cdx.json") || lower.endsWith(".spdx.json")) f.sboms.add(file);
                         else if (lower.endsWith(".pc")) f.pkgConfigs.add(file);
@@ -109,7 +114,7 @@ public final class ProjectFiles {
             @Override
             public FileVisitResult visitFileFailed(Path file, IOException e) { return FileVisitResult.CONTINUE; }
         });
-        for (var list : List.of(f.poms, f.gradle, f.catalogs, f.gradleProps, f.packageJsons, f.cotsInventories, f.sboms,
+        for (var list : List.of(f.poms, f.gradle, f.catalogs, f.gradleProps, f.gradleLocks, f.packageJsons, f.cotsInventories, f.sboms,
                 f.binaries, f.pkgConfigs, f.vcpkgManifests, f.conanFiles, f.jars, f.installedPackageJsons, f.pythonMetadata, f.vexFiles))
             Collections.sort(list);
         return f;

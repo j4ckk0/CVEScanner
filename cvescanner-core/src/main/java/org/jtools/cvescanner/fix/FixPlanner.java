@@ -123,7 +123,10 @@ public final class FixPlanner {
         OptionalInt target = OptionalInt.empty();
         // a transitive one follows its direct one, upgraded where declared; none declared, nothing to edit
         var declared = r.declarations().stream().filter(d -> !d.scope().startsWith("transitive")).toList();
-        if (declared.isEmpty()) return FixPlan.not(r, Phrase.of("fix.reason.transitiveMaven"));
+        if (declared.isEmpty()) {
+            boolean gradle = r.declarations().stream().noneMatch(d -> d.file().getFileName().toString().equals("pom.xml"));
+            return FixPlan.not(r, Phrase.of(gradle ? "fix.reason.transitiveGradle" : "fix.reason.transitiveMaven"));
+        }
         boolean someTransitive = declared.size() < r.declarations().size();
         for (var d : declared) {
             String name = d.file().getFileName().toString();
@@ -148,14 +151,23 @@ public final class FixPlanner {
                 steps.putIfAbsent(pom + " " + site.get().property(), new Step(null, command, pom.getParent(), Map.of(), List.of(pom)));
                 t = poms().javaTarget(d.file());
             } else {
-                Step.TextEdit edit = GradleEdit.of(d.file(), d.scope(), group, artifact, r.from(), r.to());
-                if (edit == null) return FixPlan.not(r, Phrase.of("fix.reason.versionNotFound", rel(d.file())));
+                // a version a lockfile gives is written in the build file beside it, the lockfile then written again
+                Path lockfile = name.endsWith(".lockfile") ? d.file() : null;
+                Path buildFile = lockfile == null ? d.file() : buildFileFor(lockfile);
+                if (buildFile == null) return FixPlan.not(r, Phrase.of("fix.reason.versionNotFound", rel(d.file())));
+                Step.TextEdit edit = GradleEdit.of(buildFile, lockfile == null ? d.scope() : "implementation", group, artifact, r.from(), r.to());
+                if (edit == null) return FixPlan.not(r, Phrase.of("fix.reason.versionNotFound", rel(buildFile)));
                 if (!edit.before().contains(r.pkg())) shared(r, edit.file() + " " + edit.before());
-                Path project = gradleProject(d.file());
+                Path project = gradleProject(buildFile);
                 Optional<Path> gradle = machine.program("gradle");
                 if (gradle.isEmpty()) return FixPlan.not(r, Phrase.of("fix.reason.notInstalled", "gradle"));
-                var command = List.of(gradle.get().toString(), "--offline", "-q", "-p", project.toString(), "dependencies");
-                steps.putIfAbsent(edit.file() + " " + edit.before(), new Step(edit, command, project, Map.of(), List.of(edit.file())));
+                var command = new ArrayList<>(List.of(gradle.get().toString(), "--offline", "-q", "-p", project.toString(), "dependencies"));
+                var touched = new ArrayList<>(List.of(edit.file()));
+                if (lockfile != null) {
+                    command.add("--write-locks");
+                    touched.add(lockfile);
+                }
+                steps.putIfAbsent(edit.file() + " " + edit.before(), new Step(edit, command, project, Map.of(), touched));
                 t = GradleEdit.javaTarget(project);
             }
             if (t.isPresent() && (target.isEmpty() || t.getAsInt() < target.getAsInt())) target = t;
@@ -203,6 +215,16 @@ public final class FixPlanner {
     }
 
     /** The Gradle project a build file or a catalog belongs to: the nearest folder up with a settings file, else its own. */
+    /** The build file a lockfile locks: build.gradle(.kts) in its folder, or two folders up from gradle/dependency-locks. */
+    private static Path buildFileFor(Path lockfile) {
+        Path dir = lockfile.getParent();
+        if (dir != null && dir.getFileName() != null && dir.getFileName().toString().equals("dependency-locks"))
+            dir = dir.getParent() == null ? null : dir.getParent().getParent();
+        if (dir == null) return null;
+        for (String n : List.of("build.gradle.kts", "build.gradle")) if (Files.isRegularFile(dir.resolve(n))) return dir.resolve(n);
+        return null;
+    }
+
     private Path gradleProject(Path file) {
         Path own = file.getParent();
         if (file.getFileName().toString().endsWith(".versions.toml") && own.getFileName() != null

@@ -54,6 +54,13 @@ public final class DependencyCollector {
         if (seen.add(List.of(d.ecosystem(), d.name(), d.version(), d.file(), d.scope()))) deps.add(d);
     }
 
+    /** A dependency the build resolves higher than declared (Gradle: the highest version asked wins): its row raised. */
+    public void replaceVersion(Ecosystem eco, String name, String version, Path file, String raised) {
+        String f = rel(file);
+        deps.replaceAll(d -> d.ecosystem() == eco && d.name().equals(name) && d.version().equals(version) && d.file().equals(f)
+                ? new Dependency(d.ecosystem(), d.name(), raised, d.file(), d.scope(), d.approximate(), d.bundle()) : d);
+    }
+
     public void miss(Ecosystem eco, String name, String declared, Path file, Phrase reason) {
         miss(eco, name, declared, rel(file), reason);
     }

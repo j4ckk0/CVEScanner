@@ -3,6 +3,15 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
+## 1.5 — not released yet
+
+- **Gradle transitive dependencies**: a build's `gradle.lockfile` gives the versions Gradle resolved, the transitive
+  ones included; a build without one gets them from the poms of Gradle's cache, resolved as Gradle does (the highest
+  version asked wins, a declared one raised; `platform()` and `enforcedPlatform()`; `exclude` blocks; catalog
+  entries followed from the line using them). Version-less declarations a platform gives a version to are now read.
+  `--gradle-cache DIR`; `--no-transitive` and *View ▸ Transitive dependencies* turn off Gradle's cache with Maven's.
+  Checked against `gradle dependencies`.
+
 ## 1.4 — 2026-11-22
 
 - **Apply fixes for transitive npm packages**: a package the project has only through others is overridden, its

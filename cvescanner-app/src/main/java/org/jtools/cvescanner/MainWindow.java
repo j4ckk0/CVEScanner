@@ -77,6 +77,7 @@ import org.jtools.cvescanner.model.ScanListener;
 import org.jtools.cvescanner.model.ScanMode;
 import org.jtools.cvescanner.model.ScanResult;
 import org.jtools.cvescanner.model.Scoring;
+import org.jtools.cvescanner.project.GradleCache;
 import org.jtools.cvescanner.project.MavenRepository;
 
 /**
@@ -412,10 +413,11 @@ final class MainWindow extends JFrame {
         }
         setBusy(true);
         var dbFiles = databases.files();
-        Path home = MavenRepository.locate(Path.of(System.getProperty("user.home")));
-        Path mavenRepository = viewMenu.mavenTransitive() && Files.isDirectory(home) ? home : null;
+        Path userHome = Path.of(System.getProperty("user.home"));
+        Path m2 = MavenRepository.locate(userHome), gradle = GradleCache.locate(userHome, System.getenv("GRADLE_USER_HOME"));
+        boolean transitive = viewMenu.mavenTransitive();
         var options = new ScanOptions(ignoreActions.choice(), scanMode(), viewMenu.dbMaxAge(), LocalDate.now(), vexDocuments.filesForScan(),
-                mavenRepository);
+                transitive && Files.isDirectory(m2) ? m2 : null, transitive && Files.isDirectory(gradle) ? gradle : null);
         new SwingWorker<ScanResult, Void>() {
             @Override
             protected ScanResult doInBackground() throws Exception {

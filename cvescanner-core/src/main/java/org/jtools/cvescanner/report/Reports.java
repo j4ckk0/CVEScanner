@@ -89,9 +89,37 @@ public final class Reports {
     private static final Pattern MARKDOWN_SPECIAL = Pattern.compile("[\\\\`*_\\[\\]<>|&!#~]");
 
     /** Text of a project or a database in a code span, where HTML is not read: no backquote to end it, no cell's pipe. */
-    /** What the transitive Maven resolution could not follow, as the scan warned of it. */
-    private static List<Phrase> mavenWarnings(ScanResult r) {
-        return r.warnings().stream().filter(w -> w.key().equals("warning.mavenPomsMissing") || w.key().equals("warning.mavenUnresolved")).toList();
+    /** The scan's warnings of these keys: what a transitive resolution could not follow. */
+    private static List<Phrase> warnings(ScanResult r, String... keys) {
+        var wanted = List.of(keys);
+        return r.warnings().stream().filter(w -> wanted.contains(w.key())).toList();
+    }
+
+    /**
+     * The notes' lines on the transitive dependencies: whether Maven's and Gradle's were followed, from where, and what
+     * could not be. A scan that read neither keeps the one line it always had.
+     */
+    private static void transitiveNotes(StringBuilder sb, ScanResult r, I18nLanguage language) {
+        boolean gradle = r.gradleCache() != null || r.gradleLocked();
+        if (r.mavenRepository() == null && !gradle) {
+            sb.append(I18n.text(language, "markdown.notes.maven")).append('\n');
+            return;
+        }
+        if (r.mavenRepository() == null) sb.append(I18n.text(language, "markdown.notes.mavenDeclared")).append('\n');
+        else {
+            sb.append(I18n.text(language, gradle ? "markdown.notes.mavenTransitiveOnly" : "markdown.notes.mavenTransitive",
+                    "`" + code(r.mavenRepository().toString().replace('\\', '/')) + "`")).append('\n');
+            for (Phrase w : warnings(r, "warning.mavenPomsMissing", "warning.mavenUnresolved"))
+                sb.append("  - ").append(md(w.text(language))).append('\n');
+        }
+        if (!gradle) return;
+        if (r.gradleLocked()) sb.append(I18n.text(language, "markdown.notes.gradleLocked")).append('\n');
+        if (r.gradleCache() != null) {
+            sb.append(I18n.text(language, "markdown.notes.gradleTransitive", "`" + code(r.gradleCache().toString().replace('\\', '/')) + "`"))
+                    .append('\n');
+            for (Phrase w : warnings(r, "warning.gradlePomsMissing", "warning.gradleUnresolved"))
+                sb.append("  - ").append(md(w.text(language))).append('\n');
+        } else sb.append(I18n.text(language, "markdown.notes.gradleDeclared")).append('\n');   // locked builds, the others declared only
     }
 
     static String code(String s) {
@@ -198,11 +226,7 @@ public final class Reports {
         }
         if (split.ignores().said()) ignored(sb, split, language);
         sb.append("## ").append(I18n.text(language, "markdown.notes")).append("\n\n");
-        // the Maven line says whether the transitive dependencies were followed, from which local repository
-        sb.append(r.mavenRepository() == null ? I18n.text(language, "markdown.notes.maven")
-                : I18n.text(language, "markdown.notes.mavenTransitive", "`" + code(r.mavenRepository().toString().replace('\\', '/')) + "`")).append('\n');
-        // and what it could not follow: the poms not there, the versions not resolved
-        for (Phrase w : mavenWarnings(r)) sb.append("  - ").append(md(w.text(language))).append('\n');
+        transitiveNotes(sb, r, language);
         sb.append(I18n.text(language, "markdown.notes.text")).append('\n');
         // how components off-the-shelf are found and matched: said when the report holds some
         if (findings.stream().anyMatch(f -> f.ecosystem() == Ecosystem.COTS)
@@ -290,8 +314,15 @@ public final class Reports {
         root.put("scoring", scoring);
         if (r.mavenRepository() != null) {
             root.put("maven_repository", r.mavenRepository().toString().replace('\\', '/'));
-            root.put("maven_unchecked", mavenWarnings(r).stream().map(w -> w.text(I18nLanguage.ENGLISH)).toList());
+            root.put("maven_unchecked", warnings(r, "warning.mavenPomsMissing", "warning.mavenUnresolved").stream()
+                    .map(w -> w.text(I18nLanguage.ENGLISH)).toList());
         }
+        if (r.gradleCache() != null) {
+            root.put("gradle_cache", r.gradleCache().toString().replace('\\', '/'));
+            root.put("gradle_unchecked", warnings(r, "warning.gradlePomsMissing", "warning.gradleUnresolved").stream()
+                    .map(w -> w.text(I18nLanguage.ENGLISH)).toList());
+        }
+        if (r.gradleLocked()) root.put("gradle_lockfiles", true);
         root.put("findings", findings.stream().map(Reports::json).toList());
         // in a fixed order, as every other object of the file: two scans of the same projects write the same JSON
         root.put("unresolved_dependencies", r.unresolved().stream().map(u -> {

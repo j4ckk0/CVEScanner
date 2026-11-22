@@ -42,13 +42,13 @@ final class MavenTransitive {
 
     private static final int SAID = 5;   // the poms named in a warning, the others counted
 
-    private final MavenRepository repository;
+    private final PomSource repository;
     private final MavenReader.PomIndex index;
     private final Set<String> missing = new LinkedHashSet<>();
     private final Set<String> unresolved = new LinkedHashSet<>();
     private final Map<MavenReader.Pom, MavenModel> models = new HashMap<>();
 
-    MavenTransitive(MavenRepository repository, MavenReader.PomIndex index) {
+    MavenTransitive(PomSource repository, MavenReader.PomIndex index) {
         this.repository = repository;
         this.index = index;
     }
@@ -127,7 +127,7 @@ final class MavenTransitive {
             col.add(Ecosystem.MAVEN, n.group() + ":" + n.artifact(), n.version(), pom.path, label(n.scope(), n.via()), false);
     }
 
-    private static int rank(String scope) {
+    static int rank(String scope) {
         return switch (scope) {
             case "compile" -> 4;
             case "runtime" -> 3;
@@ -140,21 +140,21 @@ final class MavenTransitive {
     List<Phrase> warnings() {
         var out = new ArrayList<Phrase>();
         if (!missing.isEmpty())
-            out.add(Phrase.of("warning.mavenPomsMissing", missing.size(), repository.root().toString().replace('\\', '/'), named(missing)));
+            out.add(Phrase.of("warning.mavenPomsMissing", missing.size(), repository.shown(), named(missing)));
         if (!unresolved.isEmpty()) out.add(Phrase.of("warning.mavenUnresolved", unresolved.size(), named(unresolved)));
         return out;
     }
 
-    private static String named(Set<String> coordinates) {
+    static String named(Set<String> coordinates) {
         var first = coordinates.stream().limit(SAID).toList();
         return String.join(", ", first) + (coordinates.size() > SAID ? ", …" : "");
     }
 
-    private static boolean resolved(String version) {
+    static boolean resolved(String version) {
         return version != null && !version.isBlank() && !version.contains("${") && !version.startsWith("[") && !version.startsWith("(");
     }
 
-    private static boolean excluded(MavenModel.Dep d, List<String> exclusions) {
+    static boolean excluded(MavenModel.Dep d, List<String> exclusions) {
         for (String x : exclusions) {
             int colon = x.indexOf(':');
             String g = x.substring(0, colon), a = x.substring(colon + 1);
@@ -164,7 +164,7 @@ final class MavenTransitive {
     }
 
     /** Maven's scope of a dependency's dependency: test and provided stay so, runtime wins over compile. */
-    private static String scope(String parent, String child) {
+    static String scope(String parent, String child) {
         return switch (parent) {
             case "test", "provided" -> parent;
             case "runtime" -> "runtime";
@@ -173,7 +173,7 @@ final class MavenTransitive {
     }
 
     /** As the tables show it: "transitive via g:a", its scope said when not compile. */
-    private static String label(String scope, String via) {
+    static String label(String scope, String via) {
         return (scope.equals("compile") ? "transitive" : "transitive (" + scope + ")") + " via " + via;
     }
 }

@@ -34,10 +34,18 @@ import org.jtools.cvescanner.ignore.Ignores;
  * are scored), the dependencies, those that could not be checked, the databases read, the files counted, the warnings.
  *
  * @param mavenRepository the local Maven repository read for the poms' transitive dependencies; null when none was
+ * @param gradleCache  Gradle's cache read for the builds' transitive dependencies; null when none was
+ * @param gradleLocked whether Gradle lockfiles gave the builds' versions
  */
 public record ScanResult(Path root, List<Finding> findings, List<Dependency> dependencies, List<Unresolved> unresolved,
                   Map<String, Phrase> snapshots, Map<String, Integer> fileCounts, List<Phrase> warnings, Ignores ignores,
-                  ScanMode mode, Path mavenRepository) {
+                  ScanMode mode, Path mavenRepository, Path gradleCache, boolean gradleLocked) {
+
+    public ScanResult(Path root, List<Finding> findings, List<Dependency> dependencies, List<Unresolved> unresolved,
+                      Map<String, Phrase> snapshots, Map<String, Integer> fileCounts, List<Phrase> warnings, Ignores ignores,
+                      ScanMode mode, Path mavenRepository) {
+        this(root, findings, dependencies, unresolved, snapshots, fileCounts, warnings, ignores, mode, mavenRepository, null, false);
+    }
 
     public ScanResult(Path root, List<Finding> findings, List<Dependency> dependencies, List<Unresolved> unresolved,
                       Map<String, Phrase> snapshots, Map<String, Integer> fileCounts, List<Phrase> warnings, Ignores ignores,

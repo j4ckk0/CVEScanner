@@ -33,7 +33,7 @@ import javax.xml.parsers.DocumentBuilder;
  * the dependency management it imports. Only read, never written; a pom not there is not fetched (README, "No
  * network"). Each pom is read once.
  */
-public final class MavenRepository {
+public final class MavenRepository implements PomSource {
 
     private static final Pattern LOCAL_REPOSITORY = Pattern.compile("<localRepository>\\s*([^<]+?)\\s*</localRepository>");
 
@@ -63,8 +63,13 @@ public final class MavenRepository {
         return root;
     }
 
-    /** The pom of group:artifact:version; empty when the repository does not hold it, or it cannot be read. */
-    Optional<MavenReader.Pom> pom(String group, String artifact, String version) {
+    @Override
+    public String shown() {
+        return root.toString().replace('\\', '/');
+    }
+
+    @Override
+    public Optional<MavenReader.Pom> pom(String group, String artifact, String version) {
         if (group == null || artifact == null || version == null || !safe(group) || !safe(artifact) || !safe(version))
             return Optional.empty();
         Path file = root.resolve(group.replace('.', '/')).resolve(artifact).resolve(version).resolve(artifact + "-" + version + ".pom");
@@ -79,8 +84,8 @@ public final class MavenRepository {
         });
     }
 
-    /** A coordinate that stays inside the repository: no separator, no dot at an end nor two together, nothing unresolved. */
-    private static boolean safe(String part) {
+    /** A coordinate that stays inside the repository (or Gradle's cache): no separator, no dot at an end nor two together, nothing unresolved. */
+    static boolean safe(String part) {
         return !part.isBlank() && !part.contains("/") && !part.contains("\\") && !part.contains("..") && !part.startsWith(".")
                 && !part.endsWith(".") && !part.contains("${") && !part.contains(":");
     }
