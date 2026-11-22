@@ -194,6 +194,13 @@ public final class Reports {
 
     public static String scoringText(boolean preferV4) { return scoringText(preferV4, I18n.language()); }
 
+    /** An analysis file's name, without the folder it was opened from on this computer. */
+    private static String fileName(String path) {
+        if (path == null) return "?";
+        int slash = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+        return path.substring(slash + 1);
+    }
+
     /** A severity in a report's table, in capitals: CRITICAL, CRITIQUE. */
     private static String severity(Severity s, I18nLanguage language) {
         return s.label(language).toUpperCase(language.locale());
@@ -207,6 +214,13 @@ public final class Reports {
         sb.append("# ").append(I18n.text(language, "markdown.title")).append("\n\n");
         sb.append("- **").append(I18n.text(language, "markdown.generated")).append(":** ").append(ScanResult.TIMESTAMP_UTC.format(Instant.now())).append('\n');
         sb.append("- **").append(I18n.text(language, "markdown.scanned")).append(":** `").append(code(r.root().toString())).append("`\n");
+        var from = r.imported();
+        if (from != null)   // made on another computer: what of it is that scan's, what was checked here
+            sb.append("- **").append(I18n.text(language, "markdown.imported")).append(":** ")
+                    .append(I18n.text(language, from.rechecked() ? "markdown.imported.rechecked" : "markdown.imported.asScanned",
+                            "`" + code(fileName(from.file())) + "`",
+                            from.exportedAt() == null ? "?" : ScanResult.TIMESTAMP_UTC.format(from.exportedAt()),
+                            from.version() == null ? "?" : from.version())).append('\n');
         if (r.mode() == ScanMode.INSTALLED)
             sb.append("- **").append(I18n.text(language, "markdown.scanMode")).append(":** ").append(I18n.text(language, "markdown.scanMode.installed")).append('\n');
         r.snapshots().forEach((file, desc) -> sb.append("- **").append(I18n.text(language, "markdown.database")).append(":** `")
@@ -355,6 +369,14 @@ public final class Reports {
         var root = new LinkedHashMap<String, Object>();
         root.put("generated", ScanResult.TIMESTAMP_UTC.format(Instant.now()));
         root.put("scanned_directory", r.root().toString());
+        if (r.imported() != null) {
+            var from = new LinkedHashMap<String, Object>();
+            from.put("file", fileName(r.imported().file()));
+            from.put("exported", r.imported().exportedAt() == null ? null : ScanResult.TIMESTAMP_UTC.format(r.imported().exportedAt()));
+            from.put("program_version", r.imported().version());
+            from.put("rechecked", r.imported().rechecked());
+            root.put("imported_analysis", from);
+        }
         if (r.mode() == ScanMode.INSTALLED) root.put("scan_mode", "installed");
         var databases = new LinkedHashMap<String, Object>();
         r.snapshots().forEach((file, desc) -> databases.put(file, desc.text(I18nLanguage.ENGLISH)));

@@ -69,6 +69,7 @@ import javax.swing.SwingWorker;
 import org.jtools.cvescanner.cli.Options;
 import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.engine.Engine;
+import org.jtools.cvescanner.analysis.AnalysisFile;
 import org.jtools.cvescanner.engine.ScanOptions;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
@@ -114,6 +115,8 @@ final class MainWindow extends JFrame {
     private final EnvironmentBar environmentBar;
     private final FixActions fixActions;
     private final IgnoreActions ignoreActions;
+    /** An analysis carried from another computer: exported, opened, re-checked. */
+    private final AnalysisActions analysisActions;
     private final VexDocuments vexDocuments;
     private final FilterBar filterBar;
     private final SummaryBar summaryBar;
@@ -156,8 +159,9 @@ final class MainWindow extends JFrame {
         this.settings = settings;
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         nameForTests();
-        labels.bind(this::setTitle, "window.title");
-        dirField.setText(startFolder(opts, settings).toString());
+        labels.on(this::updateTitle);
+        updateTitle();
+        dirField.setText(opts.fromAnalysis != null ? opts.fromAnalysis.toString() : startFolder(opts, settings).toString());
         status = new StatusLine(labels);
         databases = new DatabaseChoice(this, labels, settings, opts.dbFiles, opts.dbDir);
         recentFolders = new RecentFolders(labels, settings, this::scanFolder);
@@ -178,6 +182,20 @@ final class MainWindow extends JFrame {
             public void rescan() { startScan(); }
             public void busy(boolean on) { setBusy(on); }
             public boolean scanning() { return busy; }
+        });
+        analysisActions = new AnalysisActions(this, labels, new AnalysisActions.Host() {
+            public ScanResult result() { return result; }
+            public boolean busy() { return busy; }
+            public void busy(boolean on) { setBusy(on); }
+            public void show(ScanResult r) {
+                if (r.imported() != null) recentFolders.scanned(Path.of(r.imported().file()));
+                showResult(r);
+            }
+            public List<Path> databases() { return databases.files(); }
+            public ScanOptions options() { return scanOptions(); }
+            public ScanListener listener() { return statusListener(); }
+            public void say(Supplier<String> message) { status.say(message); }
+            public Path reportsFolder() { return opts.outDir; }
         });
         environmentBar = new EnvironmentBar(this, labels, settings, opts, () -> {
             updateSeverityHeader();
@@ -269,7 +287,8 @@ final class MainWindow extends JFrame {
             public void changedUpdate(javax.swing.event.DocumentEvent e) { updateReady(); }
         });
         labels.on(this::updateReady);
-        if (opts.dirGiven) SwingUtilities.invokeLater(this::startScan);
+        if (opts.fromAnalysis != null) SwingUtilities.invokeLater(() -> analysisActions.open(opts.fromAnalysis));
+        else if (opts.dirGiven) SwingUtilities.invokeLater(this::startScan);
     }
 
     // ------------------------------------------------------------------------------------ standard, expert
@@ -366,9 +385,10 @@ final class MainWindow extends JFrame {
      * one outlined in red, the button saying why.
      */
     private void updateReady() {
+        boolean analysis = analysisInField();
         boolean folder;
         try {
-            folder = !dirField.getText().isBlank() && Files.isDirectory(scanFolder());
+            folder = analysis ? Files.isRegularFile(scanFolder()) : !dirField.getText().isBlank() && Files.isDirectory(scanFolder());
         } catch (java.nio.file.InvalidPathException _) {
             folder = false;
         }
@@ -376,16 +396,39 @@ final class MainWindow extends JFrame {
         dirField.putClientProperty("JComponent.outline", folder ? null : "error");
         databases.outline(!database);
         boolean ready = folder && database;
+        // an analysis file in the field: Scan matches its dependencies again, with the databases chosen here
+        scanButton.setText(I18n.text(analysis ? "toolbar.recheck" : "toolbar.scan"));
         scanButton.setEnabled(!busy && ready);
-        scanButton.setToolTipText(ready ? null : I18n.text("toolbar.scan.needs"));
+        scanButton.setToolTipText(!ready ? I18n.text("toolbar.scan.needs") : analysis ? I18n.text("toolbar.recheck.tip") : null);
+        scanModeCombo.setEnabled(!analysis);
         welcome.ready(ready);
     }
 
-    /** Scans this folder: one picked among the recent ones, dropped on the window, the examples. */
+    /** Whether the folder field names an analysis file (AnalysisFile) rather than a folder. */
+    private boolean analysisInField() {
+        try {
+            return AnalysisFile.named(scanFolder());
+        } catch (java.nio.file.InvalidPathException _) {
+            return false;
+        }
+    }
+
+    /** The window's title, with the analysis file shown when it is one carried from another computer. */
+    private void updateTitle() {
+        String title = I18n.text("window.title");
+        if (result != null && result.imported() != null) title += " — " + Path.of(result.imported().file()).getFileName();
+        setTitle(title);
+    }
+
+    /**
+     * Scans this folder: one picked among the recent ones, dropped on the window, the examples. An analysis file is
+     * opened instead, as it was scanned.
+     */
     private void scanFolder(Path folder) {
         if (busy) return;
         dirField.setText(folder.toString());
-        startScan();
+        if (AnalysisFile.named(folder)) analysisActions.open(folder);
+        else startScan();
     }
 
     /** The examples beside the program (its folder, else the working one); null when absent. */
@@ -402,6 +445,9 @@ final class MainWindow extends JFrame {
         JMenuItem exit = labels.menu(new JMenuItem(), "menu.file.exit");
         exit.addActionListener(_ -> dispose());
         file.add(export);
+        file.addSeparator();
+        file.add(analysisActions.exportItem());
+        file.add(analysisActions.openItem());
         file.addSeparator();
         file.add(exit);
         JMenuBar bar = new JMenuBar();
@@ -592,6 +638,10 @@ final class MainWindow extends JFrame {
 
     private void startScan() {
         Path dir = scanFolder();
+        if (analysisInField()) {
+            analysisActions.recheck(dir);
+            return;
+        }
         if (!Files.isDirectory(dir)) {
             JOptionPane.showMessageDialog(this, SwingText.plain(I18n.text("scan.notAFolder", dir)), I18n.text("scan.notAFolder.title"),
                     JOptionPane.WARNING_MESSAGE);
@@ -601,17 +651,12 @@ final class MainWindow extends JFrame {
         settings.set(Settings.LAST_FOLDER, dir.toAbsolutePath().normalize().toString());
         setBusy(true);
         var dbFiles = databases.files();
-        // the Maven and Gradle caches the command line names, else the home folder's; none for a direct-only scan
-        boolean direct = directOnlyBox.isSelected();
-        var options = new ScanOptions(ignoreActions.choice(), scanMode(), viewMenu.dbMaxAge(), LocalDate.now(), vexDocuments.filesForScan(),
-                direct ? null : opts.mavenRepositoryFound(), direct ? null : opts.gradleCacheFound(), opts.cacheDir(), direct);
+        var options = scanOptions();
+        var listener = statusListener();
         new SwingWorker<ScanResult, Void>() {
             @Override
             protected ScanResult doInBackground() throws Exception {
-                return Engine.scan(dir, dbFiles, options, new ScanListener() {
-                    public void status(String m) { SwingUtilities.invokeLater(() -> { if (busy) status.say(() -> m); }); }
-                    public void progress(double f) { SwingUtilities.invokeLater(() -> { if (busy) status.progress(f); }); }
-                });
+                return Engine.scan(dir, dbFiles, options, listener);
             }
 
             @Override
@@ -631,6 +676,21 @@ final class MainWindow extends JFrame {
         }.execute();
     }
 
+    /** What a scan reads, as the toolbar sets it: the Maven and Gradle caches the command line names, else the home folder's; none direct-only. */
+    private ScanOptions scanOptions() {
+        boolean direct = directOnlyBox.isSelected();
+        return new ScanOptions(ignoreActions.choice(), scanMode(), viewMenu.dbMaxAge(), LocalDate.now(), vexDocuments.filesForScan(),
+                direct ? null : opts.mavenRepositoryFound(), direct ? null : opts.gradleCacheFound(), opts.cacheDir(), direct);
+    }
+
+    /** A scan's progress, said on the status line while it runs. */
+    private ScanListener statusListener() {
+        return new ScanListener() {
+            public void status(String m) { SwingUtilities.invokeLater(() -> { if (busy) status.say(() -> m); }); }
+            public void progress(double f) { SwingUtilities.invokeLater(() -> { if (busy) status.progress(f); }); }
+        };
+    }
+
     private void setBusy(boolean busy) {
         this.busy = busy;
         updateReady();
@@ -638,10 +698,13 @@ final class MainWindow extends JFrame {
         status.busy(busy);
         setCursor(busy ? Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR) : Cursor.getDefaultCursor());
         fixActions.update();
+        analysisActions.update();
     }
 
     private void showResult(ScanResult r) {
         result = r;
+        updateTitle();
+        analysisActions.update();
         boolean first = !centre.isShowing();
         ((CardLayout) centreCards.getLayout()).show(centreCards, "results");
         showBlocks();
@@ -659,6 +722,10 @@ final class MainWindow extends JFrame {
         int files = r.fileCounts().values().stream().mapToInt(Integer::intValue).sum();
         status.say(() -> {
             String scanned = I18n.text("scan.done", files, r.dependencies().size(), r.findings().size());
+            var from = r.imported();
+            if (from != null)   // carried from another computer: which file, when it was exported, whether matched again here
+                scanned = I18n.text(from.rechecked() ? "scan.done.rechecked" : "scan.done.imported", Path.of(from.file()).getFileName(),
+                        from.exportedAt() == null ? "?" : ScanResult.TIMESTAMP_UTC.format(from.exportedAt())) + "  ·  " + scanned;
             if (!r.snapshots().isEmpty()) scanned += "  ·  " + I18n.text("scan.done.databases", String.join(", ", r.snapshots().keySet()));
             int warnings = r.warnings().size() + split.warnings().size();
             if (warnings > 0) scanned += "  ·  " + I18n.text("scan.done.warnings", warnings);

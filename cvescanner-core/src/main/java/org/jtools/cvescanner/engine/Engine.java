@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.jtools.cvescanner.cots.BinaryReader;
 import org.jtools.cvescanner.cots.InventoryReader;
 import org.jtools.cvescanner.cots.ManifestReader;
@@ -100,11 +102,7 @@ public final class Engine {
         ScanMode mode = options.mode();
         Path root = dir.toAbsolutePath().normalize();
         var warnings = new ArrayList<Phrase>();
-        ScanListener l = new ScanListener() {
-            public void status(String m) { listener.status(m); }
-            public void progress(double f) { listener.progress(f); }
-            public void warn(Phrase m) { warnings.add(m); listener.warn(m); }
-        };
+        ScanListener l = recording(listener, warnings);
 
         var ignores = Ignores.load(root, ignoreFile, l::warn);
         for (Path named : options.vexFiles())   // as the ignore file: a document named that is not there stops the scan, before any search
@@ -130,37 +128,7 @@ public final class Engine {
         PythonProjectReader.scan(files.pythonProjects, col, l::warn);
         if (direct) col.deps.removeIf(Dependency::transitive);   // the lockfiles' indirect packages: what the project declares only
 
-        var wanted = VulnDb.Wanted.of(col.deps);
-        var index = new VulnDb.Index();
-        if (!col.deps.isEmpty()) {
-            if (dbFiles.isEmpty())
-                throw new IOException(I18n.text("error.noDatabase"));
-            index = VulnDb.load(dbFiles, wanted, l, options.cacheDir());
-        }
-        // the dependencies of an ecosystem none of the databases covers: said, as no finding would say it
-        var unchecked = new java.util.TreeSet<Ecosystem>();
-        for (Dependency d : col.deps)
-            if (d.ecosystem() == Ecosystem.COTS ? !index.components : !index.packages) unchecked.add(d.ecosystem());
-        if (!col.deps.isEmpty() && !unchecked.isEmpty())
-            l.warn(Phrase.of("warning.noDatabaseFor", String.join(", ", unchecked.stream().map(Ecosystem::id).toList())));
-        // how old each database is: the NVD feeds as one, by their newest record (a fresh 2003 feed may not have changed for weeks)
-        var ages = new LinkedHashMap<Object, LocalDate>();
-        for (var e : index.newest.entrySet()) {
-            if (index.nvdFeeds.contains(e.getKey()) && index.nvdFeeds.size() > 1)
-                ages.merge(Phrase.of("database.nvdFeeds", index.nvdFeeds.size()), e.getValue(), (a, b) -> a.isAfter(b) ? a : b);
-            else ages.put(e.getKey(), e.getValue());
-        }
-        ages.forEach((database, newest) -> {
-            long days = ChronoUnit.DAYS.between(newest, options.today());
-            if (options.dbMaxAgeDays() > 0 && days > options.dbMaxAgeDays())
-                l.warn(Phrase.of("warning.dbOld", database, newest.toString(), days, options.dbMaxAgeDays()));
-        });
-
-        l.status(I18n.text("status.matching", col.deps.size()));
-        l.progress(-1);
-        var findings = new ArrayList<Finding>();
-        for (var d : col.deps) findings.addAll(Matcher.findings(d, index));
-        findings.sort(Finding.ORDER);
+        var matched = match(col.deps, dbFiles, options, l);
         var counts = new LinkedHashMap<String, Integer>();
         if (mode == ScanMode.SOURCES) {
             counts.put("files.pom", files.poms.size());
@@ -179,8 +147,89 @@ public final class Engine {
         int manifests = files.pkgConfigs.size() + files.vcpkgManifests.size() + files.conanFiles.size();
         if (manifests > 0) counts.put("files.manifests", manifests);
         if (!files.binaries.isEmpty()) counts.put("files.binaries", files.binaries.size());
-        return new ScanResult(root, List.copyOf(findings), List.copyOf(col.deps), List.copyOf(col.unresolved),
-                index.sources, counts, List.copyOf(warnings), ignores, mode, mode == ScanMode.SOURCES ? m2 : null,
+        return new ScanResult(root, matched.findings(), List.copyOf(col.deps), List.copyOf(col.unresolved),
+                matched.databases(), counts, List.copyOf(warnings), ignores, mode, mode == ScanMode.SOURCES ? m2 : null,
                 mode == ScanMode.SOURCES && !files.gradle.isEmpty() ? gradleCache : null, !direct && !files.gradleLocks.isEmpty(), direct);
+    }
+
+    /** The warnings of the databases a scan read: an analysis re-checked here says those of this computer's instead. */
+    private static final Set<String> DATABASE_WARNINGS = Set.of("warning.noRecords", "warning.noDatabaseFor", "warning.dbOld");
+
+    /**
+     * An analysis made on another computer (AnalysisFile) matched again against these databases: its dependencies as
+     * that computer read them, its unchecked ones, its warnings but its databases'. Its ignore entries apply, unless
+     * options name another ignore file (Ignores.DISABLED: none); its VEX statements apply, and those of the documents
+     * options name. With directOnly, the indirect dependencies of its projects are left out.
+     */
+    public static ScanResult recheck(ScanResult analysis, List<Path> dbFiles, ScanOptions options, ScanListener listener) throws IOException {
+        boolean otherIgnores = options.ignoreFile() != null;
+        var warnings = new ArrayList<Phrase>();
+        for (Phrase w : analysis.warnings())
+            if (!DATABASE_WARNINGS.contains(w.key()) && !(otherIgnores && w.key().startsWith("ignore."))) warnings.add(w);
+        ScanListener l = recording(listener, warnings);
+        Ignores ignores = otherIgnores ? Ignores.load(analysis.root(), options.ignoreFile(), l::warn) : analysis.ignores().withoutVex();
+        for (Path named : options.vexFiles())
+            if (!Files.isRegularFile(named)) throw new IOException(I18n.text("error.vexMissing", named));
+        ignores = withVex(ignores.withVex(analysis.ignores().vex()), analysis.root(), List.of(), options.vexFiles(), l);
+        boolean direct = analysis.directOnly() || options.directOnly() && analysis.mode() == ScanMode.SOURCES;
+        var deps = direct ? analysis.dependencies().stream().filter(d -> !d.transitive()).toList() : analysis.dependencies();
+        var matched = match(deps, dbFiles, options, l);
+        var from = analysis.imported();
+        var imported = new ScanResult.Imported(from == null ? null : from.file(), from == null ? null : from.exportedAt(),
+                from == null ? null : from.version(), from == null ? analysis.root().toString() : from.root(), true);
+        return new ScanResult(analysis.root(), matched.findings(), deps, analysis.unresolved(), matched.databases(),
+                analysis.fileCounts(), List.copyOf(warnings), ignores, analysis.mode(), analysis.mavenRepository(),
+                analysis.gradleCache(), analysis.gradleLocked(), direct, imported);
+    }
+
+    /** A listener passing everything on, the warnings kept too. */
+    private static ScanListener recording(ScanListener listener, List<Phrase> warnings) {
+        return new ScanListener() {
+            public void status(String m) { listener.status(m); }
+            public void progress(double f) { listener.progress(f); }
+            public void warn(Phrase m) { warnings.add(m); listener.warn(m); }
+        };
+    }
+
+    /** What matching the dependencies found: the findings, in Finding.ORDER, and the databases read (ScanResult.snapshots). */
+    private record Matched(List<Finding> findings, Map<String, Phrase> databases) {}
+
+    /**
+     * The dependencies matched against the databases: loaded (none when there is nothing to match), said when they cover
+     * none of an ecosystem's dependencies, or when they are old.
+     */
+    private static Matched match(List<Dependency> deps, List<Path> dbFiles, ScanOptions options, ScanListener l) throws IOException {
+        var wanted = VulnDb.Wanted.of(deps);
+        var index = new VulnDb.Index();
+        if (!deps.isEmpty()) {
+            if (dbFiles.isEmpty())
+                throw new IOException(I18n.text("error.noDatabase"));
+            index = VulnDb.load(dbFiles, wanted, l, options.cacheDir());
+        }
+        // the dependencies of an ecosystem none of the databases covers: said, as no finding would say it
+        var unchecked = new java.util.TreeSet<Ecosystem>();
+        for (Dependency d : deps)
+            if (d.ecosystem() == Ecosystem.COTS ? !index.components : !index.packages) unchecked.add(d.ecosystem());
+        if (!deps.isEmpty() && !unchecked.isEmpty())
+            l.warn(Phrase.of("warning.noDatabaseFor", String.join(", ", unchecked.stream().map(Ecosystem::id).toList())));
+        // how old each database is: the NVD feeds as one, by their newest record (a fresh 2003 feed may not have changed for weeks)
+        var ages = new LinkedHashMap<Object, LocalDate>();
+        for (var e : index.newest.entrySet()) {
+            if (index.nvdFeeds.contains(e.getKey()) && index.nvdFeeds.size() > 1)
+                ages.merge(Phrase.of("database.nvdFeeds", index.nvdFeeds.size()), e.getValue(), (a, b) -> a.isAfter(b) ? a : b);
+            else ages.put(e.getKey(), e.getValue());
+        }
+        ages.forEach((database, newest) -> {
+            long days = ChronoUnit.DAYS.between(newest, options.today());
+            if (options.dbMaxAgeDays() > 0 && days > options.dbMaxAgeDays())
+                l.warn(Phrase.of("warning.dbOld", database, newest.toString(), days, options.dbMaxAgeDays()));
+        });
+
+        l.status(I18n.text("status.matching", deps.size()));
+        l.progress(-1);
+        var findings = new ArrayList<Finding>();
+        for (var d : deps) findings.addAll(Matcher.findings(d, index));
+        findings.sort(Finding.ORDER);
+        return new Matched(List.copyOf(findings), index.sources);
     }
 }

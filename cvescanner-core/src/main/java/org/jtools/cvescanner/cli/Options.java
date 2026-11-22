@@ -30,6 +30,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import org.jtools.cvescanner.analysis.AnalysisFile;
 import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.cvss.Reach;
 import org.jtools.cvescanner.cvss.Requirement;
@@ -99,6 +100,12 @@ public final class Options {
     public boolean noCache;
     /** --direct-only (alias --no-transitive): the declared dependencies only, no Maven repository nor Gradle cache read. */
     public boolean directOnly;
+    /** --export-analysis FILE: the scan also written as an analysis file, to open on another computer; null for none. */
+    public Path exportAnalysis;
+    /** --from-analysis FILE (or a DIR ending in .cvescan): an analysis made elsewhere, re-checked here, instead of a folder. */
+    public Path fromAnalysis;
+    /** --as-scanned: the analysis's findings as that scan found them, no database read. */
+    public boolean asScanned;
     /** The day the scan counts from: today, a fixed one in the tests. */
     LocalDate today = LocalDate.now();
     /** Whether the home folder's Maven repository and Gradle cache are read when none is named: never in the tests. */
@@ -112,7 +119,10 @@ public final class Options {
         for (int i = 0; i < args.length; i++) {
             String a = args[i];
             switch (a) {
-                case "-d", "--dir" -> { o.scanDir = Path.of(value(args, ++i, a)); o.dirGiven = true; }
+                case "-d", "--dir" -> o.folderOrAnalysis(Path.of(value(args, ++i, a)));
+                case "--export-analysis" -> o.exportAnalysis = Path.of(value(args, ++i, a));
+                case "--from-analysis" -> o.fromAnalysis = Path.of(value(args, ++i, a));
+                case "--as-scanned" -> o.asScanned = true;
                 case "-o", "--out" -> o.outDir = Path.of(value(args, ++i, a));
                 case "--db" -> o.dbFiles.add(Path.of(value(args, ++i, a)));
                 case "--db-dir" -> o.dbDir = Path.of(value(args, ++i, a));
@@ -179,8 +189,7 @@ public final class Options {
                 case "-h", "--help" -> o.help = true;
                 default -> {
                     if (a.startsWith("-")) throw new IllegalArgumentException(I18n.text("option.unknown", a));
-                    o.scanDir = Path.of(a);
-                    o.dirGiven = true;
+                    o.folderOrAnalysis(Path.of(a));
                 }
             }
         }
@@ -197,6 +206,12 @@ public final class Options {
             throw new IllegalArgumentException(I18n.text("option.ignoreFields"));
         if (!o.applyFixes && (o.yes || o.allowMajor || !o.fixPackages.isEmpty()))
             throw new IllegalArgumentException(I18n.text("option.fixNeedsApply"));
+        if (o.fromAnalysis != null && o.dirGiven) throw new IllegalArgumentException(I18n.text("option.analysisAndDir"));
+        if (o.fromAnalysis != null && (o.applyFixes || o.installed || o.mavenRepository != null || o.gradleCache != null || edits > 0))
+            throw new IllegalArgumentException(I18n.text("option.notWithAnalysis"));
+        if (o.asScanned && o.fromAnalysis == null) throw new IllegalArgumentException(I18n.text("option.asScannedAlone"));
+        if (o.asScanned && (o.ignoreFile != null || o.noIgnore || !o.vexFiles.isEmpty() || o.directOnly))
+            throw new IllegalArgumentException(I18n.text("option.asScannedRecheck"));
         o.environment = reach == null && cr == null && ir == null && ar == null ? preset
                 : Environment.of(reach != null ? reach : preset.reach(), cr != null ? cr : preset.confidentiality(),
                                  ir != null ? ir : preset.integrity(), ar != null ? ar : preset.availability());
@@ -209,6 +224,16 @@ public final class Options {
             }
         }
         return o;
+    }
+
+    /** The folder to scan, or an analysis file (by its extension) to re-check. */
+    private void folderOrAnalysis(Path p) {
+        if (AnalysisFile.named(p)) {
+            fromAnalysis = p;
+        } else {
+            scanDir = p;
+            dirGiven = true;
+        }
     }
 
     /**

@@ -65,6 +65,11 @@ public record Ignores(Path file, String shown, List<IgnoreRule> rules, boolean r
         return new Ignores(file, shown, rules, read, all);
     }
 
+    /** The same ignore file's entries, without the VEX statements. */
+    public Ignores withoutVex() {
+        return new Ignores(file, shown, rules, read, List.of());
+    }
+
     /** Whether the reports speak of what is set aside: an ignore file was read, or VEX documents were. */
     public boolean said() {
         return read || !vex.isEmpty();

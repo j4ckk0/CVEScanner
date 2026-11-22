@@ -3,6 +3,20 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
+## Unreleased
+
+- **An analysis moved to another computer**: *File ▸ Export analysis…* (or `--export-analysis FILE`) keeps the scan
+  in a `.cvescan` file: its dependencies, the findings with their CVSS vectors, the ignore entries and VEX statements,
+  the databases read. On a computer that cannot reach the folder, *File ▸ Open analysis…* (or dropping the file, or
+  `cvescanner.sh FILE.cvescan`) shows it as it was scanned, with no database; **Re-check** (Scan, the file in the
+  folder field; `--from-analysis FILE` on the command line) matches its dependencies against that computer's
+  databases. `--as-scanned` writes the reports from its findings as they were. *Apply fixes* and *Ignore this
+  finding…* wait for the projects themselves, or for an ignore file chosen there.
+- **Examples of command lines** at the end of `--help`, of *Help ▸ Command line…* and of the manual: a folder with a
+  database and a reports folder, every database of a folder, a CI job, an installed product, an analysis carried
+  from one computer to another.
+- The README's pictures show the window as it is after a scan, its settings collapsed.
+
 ## 1.8 — 2026-11-22
 
 - After the welcome the settings are **collapsed at each start**, whatever was chosen the time before; ▾ shows them

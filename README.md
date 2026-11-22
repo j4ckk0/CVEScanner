@@ -66,6 +66,7 @@ to install, a Java runtime is inside: unpack it anywhere, drop a database zip in
 | You ship native components | [**Components off-the-shelf**](#components-off-the-shelf): GDAL, FFmpeg, OpenSSL… from an inventory, an SBOM, a build manifest, the binaries |
 | You run a product | [**Installed products**](#installed-products): what an installation ships, read from its jars, `node_modules`, `site-packages`, native libraries |
 | You fix them | [**Applying fixes**](#applying-fixes): tick the packages to upgrade, the project's own build tool does it, offline |
+| You scan on one computer, read on another | [**Moving an analysis**](#moving-an-analysis-to-another-computer): the scan kept in a `.cvescan` file, opened where the folder is not, re-checked against that computer's databases |
 | You review the findings | [**Ignoring findings**](#ignoring-findings): those reviewed and accepted set aside in `cvescanner-ignore.csv`, why and until when |
 | You read the results | [**Understanding the results**](#understanding-the-results) and [**CVSS scores and environments**](#cvss-scores-and-environments) |
 | You want it on your machine | [**Build and run**](#build-and-run) and [**Packaging**](#packaging): self-contained archives for Windows and Linux |
@@ -230,6 +231,7 @@ prints them too); on Linux `cvescanner.sh --man` shows the manual, `cvescanner.1
 | `--no-cache` | read the databases from their zips at every scan |
 | `--installed` | scan an installed product from what it ships, rather than source projects (see [Installed products](#installed-products)) |
 | `--min-severity LEVEL`, `--ecosystem LIST`, `--hide-approximate`, `--hide-name-matches`, `--hide-transitive`, `--search "WORDS"` | the window's filters: the reports, the counts and `--fail-on` keep only what they keep, and `report.md` says them |
+| `--export-analysis FILE`, `--from-analysis FILE` [`--as-scanned`] | the scan also written as an analysis file; an analysis file re-checked (or, `--as-scanned`, its findings as they were) instead of a folder (see [Moving an analysis](#moving-an-analysis-to-another-computer)) |
 | `--apply-fixes` [`--yes`] [`--allow-major`] [`--fix-packages LIST`] | the window's *Apply fixes* (see [Applying fixes](#applying-fixes)): the plan of each package the report keeps is said, and nothing changes without `--yes`; then the folder is scanned again before the reports are written |
 
 Exit codes: `0`, `1` on an error (and when `--ignore-remove` finds no entry to remove), `2` past `--fail-on`, `3` when
@@ -245,6 +247,36 @@ and `Pipfile.lock`), and `bom.cdx.json`, a [CycloneDX](https://cyclonedx.org/) 1
 (`pkg:maven/…`, `pkg:npm/…`, `pkg:pypi/…`; a component off-the-shelf with its CPE), and every finding reported with
 its base and environmental CVSS ratings and the version that fixes it; the findings the ignore file sets aside are
 there too, analysed `not_affected` with the entry's reason. The same scan writes the same SBOM, its time aside.
+
+## Moving an analysis to another computer
+
+The folder is on one computer, the review on another, and neither reaches the other: the scan travels in a file.
+
+1. **On the computer that has the folder**, scan it, then *File ▸ Export analysis…*; or on the command line,
+   `--export-analysis my-app.cvescan` beside the reports. The `.cvescan` file (a zip) holds the dependencies found,
+   with what brings each, those that could not be checked, the findings with their CVSS vectors, the ignore file's
+   entries and the VEX statements, the databases read and the warnings: a few hundred KB for the examples' 668
+   findings. It holds the folder's paths and its dependencies' names, nothing of their code.
+2. **On the other computer**, *File ▸ Open analysis…*, drop the file on the window, or `cvescanner.sh my-app.cvescan`:
+   the findings as that scan found them, with its databases, and no database needed here. The status line and the
+   title name the file; the environment re-scores them, the filters, the tree, the details and *Export…* work as
+   after a scan.
+3. **Re-check**: with the file in the folder field, *Scan* reads *Re-check* and matches the same dependencies against
+   the databases chosen here, newer perhaps, as if this computer had scanned the folder; the reports say
+   "re-checked here". The analysis's ignore entries apply, unless an ignore file is chosen (expert mode); *Direct
+   dependencies only* and the VEX documents chosen apply too.
+
+What needs the projects themselves is not offered: *Apply fixes*, and *Ignore this finding…* until an ignore file is
+chosen here. On the command line:
+
+```
+cvescanner.sh --no-gui -d ~/src/my-app --db-dir ~/cve-db -o ~/cve-reports --export-analysis ~/my-app.cvescan   (computer A)
+cvescanner.sh --no-gui --from-analysis my-app.cvescan --db-dir ~/cve-db -o ~/cve-reports                        (computer B)
+cvescanner.sh --no-gui --from-analysis my-app.cvescan --as-scanned -o ~/cve-reports                              (as scanned)
+```
+
+A file written by a later version is refused, said so; a re-checked analysis exported again keeps where and when it
+was first made.
 
 ## Ignoring findings
 
@@ -517,9 +549,10 @@ Two Maven modules, each a jar and a Java module, built in this order by the pare
 | `cvescanner-core/…/cvss/` | `Cvss` (vectors, the 3.x formulas, the 4.0 macrovectors), `Severity`, `Environment`, `Reach`, `Requirement`, `Rating`, `Score` |
 | `cvescanner-core/…/model/` | what a scan finds: `Finding`, `Dependency` (its `Ecosystem`: Maven, npm, PyPI, COTS), `Unresolved`, `PackageSummary`, `ScanResult`, `MatchBasis`; `Scoring` (a finding scored for an environment), `ScanListener` (a scan's progress) |
 | `cvescanner-core/…/ignore/` | the findings set aside: `IgnoreFile` (cvescanner-ignore.csv, read and edited), `VexFile` (VEX documents), `Ignores` (the findings split) |
+| `cvescanner-core/…/analysis/` | `AnalysisFile` (a scan kept in a `.cvescan` file, read back), `AnalysisJson` (its records as JSON); `Engine.recheck` matches its dependencies again |
 | `cvescanner-core/…/report/`, `…/cli/` | `Reports` (report.md, findings.csv, dependencies.csv, findings.json, the packages to upgrade), `CycloneDx` (bom.cdx.json); `Options` and `Cli` (the command line) |
 | `cvescanner-core/…/json/`, `…/version/`, `…/i18n/` | `Json` (a small parser and writer), `JsonStream` (a large array's elements one at a time); `Versions` (Maven's, npm's and Python's version order); the languages: `I18n`, `I18nLanguage`, `I18nTexts`, `Phrase` |
-| `cvescanner-app/…/` | `Launcher` (the entry point), `MainWindow`, `FindingTables`, `EnvironmentBar`, `IgnoreActions` and `FixActions` with `FixDialog`, `FindingDetails` (a finding's page, escaped), the table's `Column`, `ListTableModel` and renderers, `Settings`, `Looks`, `HelpMenu`, `I18nLabels` and `I18nLanguageBox`, `NoNetworkResolver` |
+| `cvescanner-app/…/` | `Launcher` (the entry point), `MainWindow`, `FindingTables`, `EnvironmentBar`, `IgnoreActions` and `FixActions` with `FixDialog`, `AnalysisActions` (export, open, re-check an analysis), `FindingDetails` (a finding's page, escaped), the table's `Column`, `ListTableModel` and renderers, `Settings`, `Looks`, `HelpMenu`, `I18nLabels` and `I18nLanguageBox`, `NoNetworkResolver` |
 | `cvescanner-app/src/dist/`, `…/src/assembly/` | the distributions' launchers, the manual (`cvescanner.1`), the `database/` folder, FlatLaf's licence, and what goes in each archive |
 | `*/src/test/` | core: `GoldenTest` (the samples' reports, case by case), `FrenchReportTest`, `CvssReferenceTest` (9,000 vectors scored by another implementation), `HostileReportTest`, the rules' unit tests, `PomParserTest`, `CoreTextsTest`; app: `NoNetworkTest`, `NoNetworkResolverTest`, `HostileAdvisoryTest`, `AppTextsTest` |
 | `examples/` | Maven, Gradle, npm and yarn projects declaring real packages at vulnerable versions, to scan with a real database; in the distributions too |

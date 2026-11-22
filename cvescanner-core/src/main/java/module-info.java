@@ -26,6 +26,7 @@
 module org.jtools.cvescanner.core {
     requires java.xml;
 
+    exports org.jtools.cvescanner.analysis;
     exports org.jtools.cvescanner.cli;
     exports org.jtools.cvescanner.cots;
     exports org.jtools.cvescanner.cvss;

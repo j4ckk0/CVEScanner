@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import javax.swing.TransferHandler;
+import org.jtools.cvescanner.analysis.AnalysisFile;
 
 /**
  * A folder dropped on the window: scanned. A file dropped stands for its folder. File managers give a file list, or on
@@ -59,7 +60,7 @@ final class FolderDrop extends TransferHandler {
         return folder.isPresent();
     }
 
-    /** The folder a drop gives: its first entry, a file's folder for a file. */
+    /** The folder a drop gives: its first entry, a file's folder for a file; an analysis file itself (AnalysisFile). */
     static Optional<Path> folder(Transferable t) {
         try {
             Path first = null;
@@ -70,6 +71,7 @@ final class FolderDrop extends TransferHandler {
                 first = fromUriList((String) t.getTransferData(URI_LIST)).orElse(null);
             }
             if (first == null) return Optional.empty();
+            if (AnalysisFile.named(first) && Files.isRegularFile(first)) return Optional.of(first);   // opened, not its folder scanned
             return Optional.of(Files.isDirectory(first) ? first : first.getParent()).filter(Files::isDirectory);
         } catch (Exception _) {   // a drop that cannot be read: nothing scanned
             return Optional.empty();

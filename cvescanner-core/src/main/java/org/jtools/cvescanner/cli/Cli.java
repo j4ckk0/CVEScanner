@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import org.jtools.cvescanner.analysis.AnalysisFile;
 import org.jtools.cvescanner.cvss.Severity;
 import org.jtools.cvescanner.engine.Engine;
 import org.jtools.cvescanner.i18n.I18n;
@@ -56,6 +57,8 @@ public final class Cli {
      * fix confirmed by --yes could not be applied. The findings the ignore file sets aside, and those the filters drop,
      * are out of the counts and of --fail-on. With --apply-fixes and --yes, the reports are those of a new scan.
      * --ignore-add, --ignore-remove and --ignore-list edit or list the ignore file instead, and scan nothing.
+     * --from-analysis re-checks an analysis made elsewhere instead of scanning (--as-scanned: its findings as they were);
+     * --export-analysis writes the scan as one too.
      */
     public static int run(Options o) {
         if (o.ignoreEdit()) return CliIgnore.run(o, System.out, System.err);
@@ -65,8 +68,14 @@ public final class Cli {
             public void warn(Phrase m) { System.err.println(I18n.text("cli.warning", m)); }
         };
         try {
-            if (!Files.isDirectory(o.scanDir)) throw new IOException(I18n.text("error.scanDirMissing", o.scanDir));
-            var r = Engine.scan(o.scanDir, o.dbFiles, o.scanOptions(), l);
+            ScanResult r;
+            if (o.fromAnalysis != null) {   // made on another computer: as it was, or checked again against these databases
+                var analysis = AnalysisFile.read(o.fromAnalysis);
+                r = o.asScanned ? analysis : Engine.recheck(analysis, o.dbFiles, o.scanOptions(), l);
+            } else {
+                if (!Files.isDirectory(o.scanDir)) throw new IOException(I18n.text("error.scanDirMissing", o.scanDir));
+                r = Engine.scan(o.scanDir, o.dbFiles, o.scanOptions(), l);
+            }
             var split = split(o, r, l);
             CliFixes.Result fixes = null;
             if (o.applyFixes) {
@@ -77,7 +86,12 @@ public final class Cli {
                 }
             }
             var findings = split.active();
-            var written = Reports.writeAll(r, split, o.outDir, o.filter().describe(), o.environment, o.preferV4, language, o.hideTransitive);
+            var written = new java.util.ArrayList<>(Reports.writeAll(r, split, o.outDir, o.filter().describe(), o.environment, o.preferV4,
+                    language, o.hideTransitive));
+            if (o.exportAnalysis != null) {
+                AnalysisFile.write(r, o.exportAnalysis);
+                written.add(o.exportAnalysis);
+            }
             var counts = Finding.countBySeverity(findings);
             System.out.println("\n" + "=".repeat(60) + "\n " + I18n.text("cli.complete") + "\n" + "=".repeat(60));
             System.out.printf("  %-11s: %s%n", I18n.text("cli.scoring"), Reports.scoringText(o.preferV4, language));

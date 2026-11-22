@@ -10,6 +10,9 @@ cvescanner \- which known vulnerabilities apply to a project's dependencies, off
 .B cvescanner.sh \-\-no\-gui
 [\fIoptions\fR] [\fIDIR\fR]
 .br
+.B cvescanner.sh \-\-no\-gui \-\-from\-analysis
+\fIFILE\fR.cvescan [\fIoptions\fR]
+.br
 .B cvescanner.sh \-\-man
 .SH DESCRIPTION
 CVEScanner tells which known vulnerabilities apply to the dependencies of Maven, Gradle, npm and Python projects, to
@@ -102,6 +105,20 @@ path), findings.json and bom.cdx.json (a CycloneDX SBOM).
 .TP
 \fB\-\-fail\-on\fR \fILEVEL\fR
 With \fB\-\-no\-gui\fR: exit 2 when a finding is at or above LOW, MEDIUM, HIGH or CRITICAL.
+.SS An analysis moved to another computer
+.TP
+\fB\-\-export\-analysis\fR \fIFILE\fR
+Also write the scan as an analysis file (.cvescan): its dependencies, its findings, its ignore entries and VEX
+statements, the databases it read. It holds the folder's paths and the dependencies' names.
+.TP
+\fB\-\-from\-analysis\fR \fIFILE\fR
+Instead of a folder: an analysis file made elsewhere, its dependencies checked again against these databases. A
+\fIDIR\fR ending in .cvescan does the same. \fB\-\-ignore\fR replaces its ignore entries, \fB\-\-no\-ignore\fR
+drops them; \fB\-\-apply\-fixes\fR, \fB\-\-installed\fR, \fB\-\-maven\-repo\fR and \fB\-\-gradle\-cache\fR need
+the folder itself.
+.TP
+\fB\-\-as\-scanned\fR
+With \fB\-\-from\-analysis\fR: its findings as that scan found them, no database read.
 .SS Filters (the reports, the counts and \-\-fail\-on keep only what they keep)
 .TP
 \fB\-\-min\-severity\fR \fILEVEL\fR
@@ -189,17 +206,68 @@ The window's settings (under $XDG_CONFIG_HOME when it is set).
 .TP
 .I cvescanner-ignore.csv
 A scanned folder's own ignore file.
+.TP
+.I *.cvescan
+An analysis file (\fB\-\-export\-analysis\fR, File > Export analysis), to open on another computer.
 .SH EXAMPLES
-Scan a project in a CI job, failing on a high finding:
+Scan a folder with a database, the reports written in another folder:
 .PP
 .RS
-cvescanner.sh \-\-no\-gui \-d ~/src/my\-app \-\-fail\-on HIGH
+.nf
+cvescanner.sh \-\-no\-gui \-d ~/src/my\-app \-\-db ~/cve\-db/Maven\-all.zip \-o ~/cve\-reports
+.fi
+.RE
+.PP
+~/cve\-reports then holds report.md, findings.csv, dependencies.csv, findings.json and bom.cdx.json. The launcher
+also loads the zips of its \fIdatabase\fR folder; \fB\-\-db\-dir\fR \fIDIR\fR loads those of \fIDIR\fR instead.
+On Windows, cvescanner\-cli.bat takes the same options:
+.PP
+.RS
+.nf
+cvescanner\-cli.bat \-\-no\-gui \-d C:\esrc\emy\-app \-\-db C:\ecve\-db\eMaven\-all.zip \-o C:\ecve\-reports
+.fi
+.RE
+.PP
+Every database of a folder, several ecosystems at once:
+.PP
+.RS
+.nf
+cvescanner.sh \-\-no\-gui \-d ~/src/my\-app \-\-db\-dir ~/cve\-db \-o ~/cve\-reports
+.fi
+.RE
+.PP
+Scan a project in a CI job, failing on a high finding (exit status 2):
+.PP
+.RS
+.nf
+cvescanner.sh \-\-no\-gui \-d . \-\-db\-dir /opt/cve\-db \-o cve\-report \-\-fail\-on HIGH
+.fi
 .RE
 .PP
 Scan an installed product for an internet-facing environment:
 .PP
 .RS
-cvescanner.sh \-\-no\-gui \-\-installed \-d /opt/shop \-\-env internet
+.nf
+cvescanner.sh \-\-no\-gui \-\-installed \-d /opt/shop \-\-env internet \-o ~/cve\-reports
+.fi
+.RE
+.PP
+On computer A, keep the scan in a file; on computer B, which cannot reach the folder, check its dependencies against
+B's databases:
+.PP
+.RS
+.nf
+cvescanner.sh \-\-no\-gui \-d ~/src/my\-app \-\-db\-dir ~/cve\-db \-o ~/cve\-reports \-\-export\-analysis ~/my\-app.cvescan
+cvescanner.sh \-\-no\-gui \-\-from\-analysis my\-app.cvescan \-\-db\-dir ~/cve\-db \-o ~/cve\-reports
+.fi
+.RE
+.PP
+Open the window on a folder, scanning it:
+.PP
+.RS
+.nf
+cvescanner.sh ~/src/my\-app
+.fi
 .RE
 .SH SEE ALSO
 The README beside the program, and https://github.com/j4ckk0/CVEScanner

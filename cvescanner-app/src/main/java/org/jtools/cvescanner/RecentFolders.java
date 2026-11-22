@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import javax.swing.JButton;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
+import org.jtools.cvescanner.analysis.AnalysisFile;
 
 /** The folders scanned last, newest first, kept in the settings: a ▾ button beside the folder lists them to scan again. */
 final class RecentFolders {
@@ -62,11 +63,12 @@ final class RecentFolders {
         return button;
     }
 
-    /** The folders kept that are still there, newest first. */
+    /** The folders kept that are still there, and the analysis files opened (AnalysisFile), newest first. */
     List<Path> folders() {
         String kept = settings.get(Settings.RECENT_FOLDERS, "");
         if (kept.isBlank()) return List.of();
-        return Arrays.stream(kept.split(Pattern.quote(File.pathSeparator))).map(Path::of).filter(Files::isDirectory).toList();
+        return Arrays.stream(kept.split(Pattern.quote(File.pathSeparator))).map(Path::of)
+                .filter(p -> Files.isDirectory(p) || AnalysisFile.named(p) && Files.isRegularFile(p)).toList();
     }
 
     /** This folder first in the list, once. */

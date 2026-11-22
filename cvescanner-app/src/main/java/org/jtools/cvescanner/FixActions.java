@@ -90,7 +90,10 @@ final class FixActions {
     void update() {
         int n = tables.ticked.size();
         button.setText(I18n.text("toolbar.applyFixes", n));
-        button.setEnabled(n > 0 && host.result() != null && !running && !host.scanning());
+        // an analysis made on another computer: its projects are there, not here
+        boolean imported = host.result() != null && host.result().imported() != null;
+        button.setEnabled(n > 0 && host.result() != null && !imported && !running && !host.scanning());
+        button.setToolTipText(imported ? I18n.text("toolbar.applyFixes.imported") : null);
     }
 
     private void apply() {

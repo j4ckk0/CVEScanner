@@ -22,6 +22,7 @@ package org.jtools.cvescanner.model;
 
 
 import java.nio.file.Path;
+import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -37,10 +38,27 @@ import org.jtools.cvescanner.ignore.Ignores;
  * @param gradleCache  Gradle's cache read for the builds' transitive dependencies; null when none was
  * @param gradleLocked whether Gradle lockfiles gave the builds' versions
  * @param directOnly   whether the projects' declared dependencies only were read (ScanOptions.directOnly)
+ * @param imported     where it comes from when it was opened from an analysis file (AnalysisFile); null for a scan here
  */
 public record ScanResult(Path root, List<Finding> findings, List<Dependency> dependencies, List<Unresolved> unresolved,
                   Map<String, Phrase> snapshots, Map<String, Integer> fileCounts, List<Phrase> warnings, Ignores ignores,
-                  ScanMode mode, Path mavenRepository, Path gradleCache, boolean gradleLocked, boolean directOnly) {
+                  ScanMode mode, Path mavenRepository, Path gradleCache, boolean gradleLocked, boolean directOnly,
+                  Imported imported) {
+
+    /**
+     * An analysis made on another computer, opened here: its file, when and by which version it was exported, the folder
+     * scanned as that computer named it.
+     *
+     * @param rechecked whether its dependencies were matched again here, against this computer's databases
+     */
+    public record Imported(String file, Instant exportedAt, String version, String root, boolean rechecked) {}
+
+    public ScanResult(Path root, List<Finding> findings, List<Dependency> dependencies, List<Unresolved> unresolved,
+                      Map<String, Phrase> snapshots, Map<String, Integer> fileCounts, List<Phrase> warnings, Ignores ignores,
+                      ScanMode mode, Path mavenRepository, Path gradleCache, boolean gradleLocked, boolean directOnly) {
+        this(root, findings, dependencies, unresolved, snapshots, fileCounts, warnings, ignores, mode, mavenRepository, gradleCache,
+                gradleLocked, directOnly, null);
+    }
 
     public ScanResult(Path root, List<Finding> findings, List<Dependency> dependencies, List<Unresolved> unresolved,
                       Map<String, Phrase> snapshots, Map<String, Integer> fileCounts, List<Phrase> warnings, Ignores ignores,

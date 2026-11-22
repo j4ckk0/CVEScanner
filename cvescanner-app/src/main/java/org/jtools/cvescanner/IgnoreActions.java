@@ -165,10 +165,7 @@ final class IgnoreActions {
 
     /** Asks how to set this finding aside, writes the entry, sets the findings apart again; false when nothing was written. */
     boolean ignore(Finding f) {
-        if (ignores.file() == null) {
-            JOptionPane.showMessageDialog(owner, I18n.text("ignore.disabled"), I18n.text("ignore.dialog.title"), JOptionPane.INFORMATION_MESSAGE);
-            return false;
-        }
+        if (noFile(I18n.text("ignore.dialog.title"))) return false;
         var rule = IgnoreDialog.ask(owner, f, ignores.file().toString(),
                 r -> (int) host.split().active().stream().filter(r::matches).count());
         if (rule.isEmpty()) return false;
@@ -196,6 +193,7 @@ final class IgnoreActions {
         if (others > 0 && JOptionPane.showConfirmDialog(owner, SwingText.plain(I18n.text("ignore.stop.others", others, i.rule().line())),
                 I18n.text("ignore.stop.title"), JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE) != JOptionPane.OK_OPTION)
             return;
+        if (noFile(I18n.text("ignore.stop.title"))) return;
         boolean removed;
         try {
             removed = IgnoreFile.remove(ignores.file(), i.rule());
@@ -208,6 +206,18 @@ final class IgnoreActions {
                     JOptionPane.WARNING_MESSAGE);
         reread();
         if (removed) host.say(() -> I18n.text("ignore.stopped", others + 1));
+    }
+
+    /**
+     * Whether there is no ignore file to write, said: none read (--no-ignore), or an analysis made on another computer,
+     * whose file is there.
+     */
+    private boolean noFile(String title) {
+        if (ignores.file() != null) return false;
+        boolean imported = host.result() != null && host.result().imported() != null;
+        JOptionPane.showMessageDialog(owner, SwingText.plain(I18n.text(imported ? "ignore.imported" : "ignore.disabled")), title,
+                JOptionPane.INFORMATION_MESSAGE);
+        return true;
     }
 
     /** The ignore file read again, once the window wrote it (or someone edited it), and the findings set apart again. */
