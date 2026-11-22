@@ -13,8 +13,9 @@ checksums.
 - The severity box is gone from the filters: the coloured counters set the lowest severity shown, for every tab and
   the export, as it did.
 - Every column of the tables can be narrowed or widened by hand; a header's ▾ is drawn inside its own column.
-- **The settings collapse**: ▴ at the end of the folder's row hides the databases, the scan and the environment rows,
-  leaving more room to the findings and their details; ▾ shows them again, and the choice is kept.
+- **The settings collapse**: once the first scan's findings are shown, the databases, the scan and the environment
+  rows are collapsed to the folder's row, and the findings' table shows 8 rows, the details having the rest; ▾ at the
+  end of the folder's row shows the settings again, ▴ collapses them, and the choice is kept.
 - `samples/db/examples.zip`: made-up advisories for every vulnerable package of the examples, so that each shows its
   findings when the program runs from the repository without a real database.
 

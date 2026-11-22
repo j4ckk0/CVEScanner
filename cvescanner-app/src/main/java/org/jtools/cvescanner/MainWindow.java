@@ -134,8 +134,12 @@ final class MainWindow extends JFrame {
     private final JButton collapseButton = new JButton();
     /** The toolbar's grid: Apply fixes moves to the folder's row when the settings are collapsed. */
     private JPanel toolbarRows;
-    /** The settings collapsed to the folder's row, the room left to the tables and the details (Settings). */
+    /** The settings collapsed to the folder's row once there are findings, the room left to the tables and the details (Settings). */
     private boolean collapsed;
+    /** The findings' table above, the details below. */
+    private JSplitPane centre;
+    /** The findings rows the table shows when the first scan's findings appear; the details have the rest. */
+    static final int ROWS_SHOWN = 8;
     private boolean expert;
 
     private ScanResult result;
@@ -223,8 +227,8 @@ final class MainWindow extends JFrame {
         tabs.addTab("", new JScrollPane(tables.ignoredTable));
         tabs.addChangeListener(_ -> showSelected());
         tabs.setPreferredSize(new Dimension(400, 420));
-        var centre = new JSplitPane(JSplitPane.VERTICAL_SPLIT, tabs, details.component());
-        centre.setResizeWeight(0.6);
+        centre = new JSplitPane(JSplitPane.VERTICAL_SPLIT, tabs, details.component());
+        centre.setResizeWeight(0);   // the window made taller or shorter: the details, the table keeping its rows
         centre.setDividerSize(10);
         centre.setBorder(BorderFactory.createEmptyBorder(0, 16, 0, 16));
         Path examples = examplesFolder();
@@ -258,7 +262,7 @@ final class MainWindow extends JFrame {
         setSize(1480, 940);
         setMinimumSize(new Dimension(1000, 640));
         setLocationRelativeTo(null);
-        collapsed = Boolean.parseBoolean(settings.get(Settings.SETTINGS_COLLAPSED, "false"));
+        collapsed = Boolean.parseBoolean(settings.get(Settings.SETTINGS_COLLAPSED, "true"));
         applyMode(viewMenu.expert());
         if (opts.dirGiven) SwingUtilities.invokeLater(this::startScan);
     }
@@ -285,10 +289,12 @@ final class MainWindow extends JFrame {
      * the counters from the first scan.
      */
     private void showBlocks() {
+        boolean collapsed = this.collapsed && result != null;   // before the first scan, the folder and the database to choose
         collapsible.forEach(c -> c.setVisible(!collapsed));
         expertRows.forEach(c -> c.setVisible(expert && !collapsed));
         environment.forEach(c -> c.setVisible(result != null && !collapsed));
         afterScan.forEach(c -> c.setVisible(result != null));
+        collapseButton.setVisible(result != null);
         collapseButton.setText(collapsed ? "▾" : "▴");
         var fix = new GridBagConstraints();
         fix.insets = new Insets(5, 6, 5, 6);
@@ -299,6 +305,13 @@ final class MainWindow extends JFrame {
         collapseButton.setToolTipText(I18n.text(collapsed ? "toolbar.expand" : "toolbar.collapse"));
         getContentPane().revalidate();
         getContentPane().repaint();
+    }
+
+    /** The divider set for the findings' table to show ROWS_SHOWN rows, the details below having the rest. */
+    private void showRows() {
+        var viewport = (javax.swing.JViewport) tables.findingsTable.getParent();
+        int delta = ROWS_SHOWN * tables.findingsTable.getRowHeight() - viewport.getExtentSize().height;
+        centre.setDividerLocation(Math.max(0, centre.getDividerLocation() + delta));
     }
 
     /** ▴ / ▾ at the end of the folder's row: the settings collapsed or shown again, kept for the next time. */
@@ -604,8 +617,10 @@ final class MainWindow extends JFrame {
 
     private void showResult(ScanResult r) {
         result = r;
+        boolean first = !centre.isShowing();
         ((CardLayout) centreCards.getLayout()).show(centreCards, "results");
         showBlocks();
+        if (first) SwingUtilities.invokeLater(this::showRows);   // once laid out
         ignoreActions.scanned(r.ignores());
         tables.findingsTable.clearSelection();
         tables.ignoredTable.clearSelection();

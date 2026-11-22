@@ -75,6 +75,15 @@ class WindowChecklistTest {
         assertTrue(status.startsWith("Scanned 7 files, 13 dependencies → 12 findings"), status);
         assertTrue(w.tabTitle(0).contains("12"), w.tabTitle(0));
 
+        // just after the welcome: the settings collapsed to the folder's row, the findings' table showing 8 rows; ▾ shows
+        // the settings again
+        assertEquals(null, w.find(Component.class, k -> "databases".equals(k.getName())), "the settings collapsed after the welcome");
+        JTable list = w.table();
+        w.waitUntil("8 rows shown", () -> WindowDriver.onEdt(() ->
+                ((javax.swing.JViewport) list.getParent()).getExtentSize().height == MainWindow.ROWS_SHOWN * list.getRowHeight()));
+        w.click(w.named("collapseSettings"));
+        w.named("databases");
+
         // the critical chip shows the critical findings only; Clear filters shows them all again
         w.click(w.find(javax.swing.JLabel.class, l -> l.getText() != null && l.getText().startsWith("Critical")));
         w.waitUntil("the critical findings only", () -> !w.tabTitle(0).equals("Findings (12)"));

@@ -84,6 +84,7 @@ class ScreenshotsTest {
     private void open(I18nLanguage language, String folder, Path settingsFolder, List<String> more) throws Exception {
         var args = new ArrayList<>(List.of("-d", folder));
         args.addAll(more);
+        Settings.in(settingsFolder).set(Settings.SETTINGS_COLLAPSED, "false");   // the pictures show every setting
         w = WindowDriver.start(settingsFolder, args.toArray(String[]::new));
         SwingUtilities.invokeAndWait(() -> w.window.setSize(SIZE));
         if (language != I18nLanguage.ENGLISH) {

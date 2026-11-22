@@ -60,7 +60,7 @@ final class Settings {
     static final String DIRECT_ONLY = "directOnly";
     /** The folders scanned last, newest first, separated by the system's path separator (RecentFolders). */
     static final String RECENT_FOLDERS = "recentFolders";
-    /** "true" when the toolbar's settings are collapsed to the folder's row (▴ at its end). */
+    /** "true", the default, when the toolbar's settings are collapsed to the folder's row once there are findings (▴, ▾). */
     static final String SETTINGS_COLLAPSED = "settingsCollapsed";
     /** "true" when the window shows the expert's settings too: the ignore file, the VEX documents, the CVSS version (View ▸ Mode). */
     static final String EXPERT = "expert";

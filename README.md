@@ -170,9 +170,10 @@ findings the ignore file sets aside (see [Ignoring findings](#ignoring-findings)
 copies the advisory's link, the CVEs, the package's coordinates; a right-click also ignores a finding. The buttons
 above the details do the same for the finding shown. **Export…**
 writes the reports for the rows shown. *Hide indirect dependencies* shows only what the projects declare;
-*Direct dependencies only*, beside the scan mode, scans only that. The ▴ at the end of the folder's row collapses the
-settings (the databases, the scan, the environment) to that row, leaving more room to the findings and their details;
-▾ shows them again. *View ▸ Mode*: **Standard**, the first time,
+*Direct dependencies only*, beside the scan mode, scans only that. Once the first scan's findings are shown, the settings
+(the databases, the scan, the environment) are collapsed to the folder's row and the table shows 8 rows, leaving the
+rest to the details; ▾ at the end of the folder's row shows the settings again, ▴ collapses them, and the choice is
+kept. *View ▸ Mode*: **Standard**, the first time,
 leaves out the *Ignore file* and *VEX documents* rows and the CVSS version's choice, and scans as the command line
 does by default (the folder's own ignore file and `*.vex.json`, CVSS 4.0 first); **Expert** shows them, and gets back
 what was chosen in them. A command line naming `--ignore`, `--no-ignore`, `--vex` or `--cvss` opens the window in

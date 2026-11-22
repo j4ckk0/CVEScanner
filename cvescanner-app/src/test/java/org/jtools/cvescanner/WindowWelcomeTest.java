@@ -34,8 +34,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * The window opened without a folder: the welcome alone, below the toolbar; its Scan, then the findings with the
- * environment, the search and the filters; the folder among the recent ones. Only with -Dcvescanner.windowTest=true,
+ * The window opened without a folder: the welcome alone, below the toolbar; its Scan, then the findings with the search
+ * and the filters, the settings collapsed until ▾ shows them with the environment; the folder among the recent ones. Only with -Dcvescanner.windowTest=true,
  * on a virtual display (scripts/window-check.sh).
  */
 class WindowWelcomeTest {
@@ -69,7 +69,9 @@ class WindowWelcomeTest {
         assertEquals(null, w.find(Component.class, k -> "welcome".equals(k.getName())));
         Component filters = w.named("ecosystem").getParent();   // the filters' row, shown with the findings
         w.waitUntil("no empty rows below the filters", () -> WindowDriver.onEdt(() -> filters.getHeight() == filters.getPreferredSize().height));
-        w.named("envCustomise");
+        assertEquals(null, w.find(Component.class, k -> "envCustomise".equals(k.getName())), "the settings collapsed after the welcome");
+        w.click(w.named("collapseSettings"));
+        w.named("envCustomise");   // the environment, shown with the settings
         w.click(w.named("recentFolders"));
         assertTrue(w.find(javax.swing.JMenuItem.class, i -> i.getText().equals(SAMPLES.resolve("projects").toString())) != null,
                 "the folder among the recent ones");
