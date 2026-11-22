@@ -3,7 +3,7 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
-## Unreleased
+## 1.8 — 2026-11-22
 
 - After the welcome the settings are **collapsed at each start**, whatever was chosen the time before; ▾ shows them
   for the session.
