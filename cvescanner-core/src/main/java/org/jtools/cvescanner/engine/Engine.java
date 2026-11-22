@@ -43,6 +43,7 @@ import org.jtools.cvescanner.ignore.VexStatement;
 import org.jtools.cvescanner.installed.InstalledNpmReader;
 import org.jtools.cvescanner.installed.JarReader;
 import org.jtools.cvescanner.installed.PythonReader;
+import org.jtools.cvescanner.model.Dependency;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.ScanListener;
 import org.jtools.cvescanner.model.ScanMode;
@@ -112,10 +113,11 @@ public final class Engine {
         var files = ProjectFiles.find(root, mode);
         ignores = withVex(ignores, root, files.vexFiles, options.vexFiles(), l);
         var col = new DependencyCollector(root);
-        MavenReader.scan(files.poms, col, l::warn,
-                options.mavenRepository() == null ? null : new MavenRepository(options.mavenRepository()));
+        boolean direct = options.directOnly() && mode == ScanMode.SOURCES;
+        Path m2 = direct ? null : options.mavenRepository(), gradleCache = direct ? null : options.gradleCache();
+        MavenReader.scan(files.poms, col, l::warn, m2 == null ? null : new MavenRepository(m2));
         GradleReader.scan(files.gradle, files.gradleProps, files.catalogs, files.gradleLocks, col, l::warn,
-                options.gradleCache() == null ? null : new GradleCache(options.gradleCache()));
+                gradleCache == null ? null : new GradleCache(gradleCache));
         NpmReader.scan(files.packageJsons, root, col, l::warn);
         InventoryReader.scan(files.cotsInventories, col, l::warn);
         SbomReader.scan(files.sboms, col, l::warn);
@@ -125,6 +127,7 @@ public final class Engine {
         InstalledNpmReader.scan(files.installedPackageJsons, col, l::warn);
         PythonReader.scan(files.pythonMetadata, col, l::warn);
         PythonProjectReader.scan(files.pythonProjects, col, l::warn);
+        if (direct) col.deps.removeIf(Dependency::transitive);   // the lockfiles' indirect packages: what the project declares only
 
         var wanted = VulnDb.Wanted.of(col.deps);
         var index = new VulnDb.Index();
@@ -170,7 +173,7 @@ public final class Engine {
         if (manifests > 0) counts.put("files.manifests", manifests);
         if (!files.binaries.isEmpty()) counts.put("files.binaries", files.binaries.size());
         return new ScanResult(root, List.copyOf(findings), List.copyOf(col.deps), List.copyOf(col.unresolved),
-                index.sources, counts, List.copyOf(warnings), ignores, mode, mode == ScanMode.SOURCES ? options.mavenRepository() : null,
-                mode == ScanMode.SOURCES && !files.gradle.isEmpty() ? options.gradleCache() : null, !files.gradleLocks.isEmpty());
+                index.sources, counts, List.copyOf(warnings), ignores, mode, mode == ScanMode.SOURCES ? m2 : null,
+                mode == ScanMode.SOURCES && !files.gradle.isEmpty() ? gradleCache : null, !direct && !files.gradleLocks.isEmpty(), direct);
     }
 }

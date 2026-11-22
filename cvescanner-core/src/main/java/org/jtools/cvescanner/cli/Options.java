@@ -67,10 +67,13 @@ public final class Options {
     public boolean noIgnore;
     /** --installed: an installed product, read from what it ships, rather than source projects. */
     public boolean installed;
-    /** The report's filters, the window's own: --min-severity, --ecosystem, --hide-approximate, --hide-name-matches, --search. */
+    /**
+     * The report's filters, the window's own: --min-severity, --ecosystem, --hide-approximate, --hide-name-matches,
+     * --hide-transitive, --search.
+     */
     public Severity minSeverity;
     public final Set<Ecosystem> ecosystems = new LinkedHashSet<>();
-    public boolean hideApproximate, hideNameMatches;
+    public boolean hideApproximate, hideNameMatches, hideTransitive;
     public final List<String> searchWords = new ArrayList<>();
     /** --apply-fixes: the fixes planned and said; applied with --yes, a major version change only with --allow-major. */
     public boolean applyFixes, yes, allowMajor;
@@ -94,12 +97,12 @@ public final class Options {
     public Path cacheDir;
     /** --no-cache: the databases read from their zips at every scan. */
     public boolean noCache;
-    /** --no-transitive: neither the local Maven repository nor Gradle's cache read, the declared dependencies only. */
-    public boolean noTransitive;
+    /** --direct-only (alias --no-transitive): the declared dependencies only, no Maven repository nor Gradle cache read. */
+    public boolean directOnly;
     /** The day the scan counts from: today, a fixed one in the tests. */
     LocalDate today = LocalDate.now();
     /** Whether the home folder's Maven repository and Gradle cache are read when none is named: never in the tests. */
-    boolean homeCaches = true;
+    public boolean homeCaches = true;
 
     public static Options parse(String[] args) {
         var o = new Options();
@@ -128,7 +131,7 @@ public final class Options {
                 case "--no-ignore" -> o.noIgnore = true;
                 case "--vex" -> o.vexFiles.add(Path.of(value(args, ++i, a)));
                 case "--maven-repo" -> o.mavenRepository = Path.of(value(args, ++i, a));
-                case "--no-transitive" -> o.noTransitive = true;
+                case "--direct-only", "--no-transitive" -> o.directOnly = true;
                 case "--gradle-cache" -> o.gradleCache = Path.of(value(args, ++i, a));
                 case "--cache-dir" -> o.cacheDir = Path.of(value(args, ++i, a));
                 case "--no-cache" -> o.noCache = true;
@@ -145,6 +148,7 @@ public final class Options {
                     }
                 }
                 case "--hide-approximate" -> o.hideApproximate = true;
+                case "--hide-transitive" -> o.hideTransitive = true;
                 case "--hide-name-matches" -> o.hideNameMatches = true;
                 case "--search" -> o.searchWords.addAll(List.of(value(args, ++i, a).strip().split("\\s+")));
                 case "--apply-fixes" -> o.applyFixes = true;
@@ -181,7 +185,7 @@ public final class Options {
             }
         }
         if (o.noIgnore && o.ignoreFile != null) throw new IllegalArgumentException(I18n.text("option.ignoreBoth"));
-        if (o.noTransitive && (o.mavenRepository != null || o.gradleCache != null))
+        if (o.directOnly && (o.mavenRepository != null || o.gradleCache != null))
             throw new IllegalArgumentException(I18n.text("option.mavenRepoBoth"));
         long edits = (o.ignoreAdd != null ? 1 : 0) + (o.ignoreRemove != null ? 1 : 0) + (o.ignoreList ? 1 : 0);
         if (edits > 1 || (edits == 1 && o.noIgnore)) throw new IllegalArgumentException(I18n.text("option.ignoreEdit"));
@@ -222,7 +226,7 @@ public final class Options {
 
     /** The findings the reports keep, the counts and --fail-on count: the window's filters, as the options set them. */
     public FindingFilter filter() {
-        return new FindingFilter(minSeverity, ecosystems, cveOnly, hideApproximate, hideNameMatches, searchWords);
+        return new FindingFilter(minSeverity, ecosystems, cveOnly, hideApproximate, hideNameMatches, hideTransitive, searchWords);
     }
 
     /** Whether the ignore file is to be edited or listed (--ignore-add, --ignore-remove, --ignore-list) rather than a scan run. */
@@ -231,18 +235,26 @@ public final class Options {
     }
 
     /** How Engine.scan runs: the ignore file, the mode, the databases' age limit, today, the VEX documents, the Maven repository. */
-    /** The local Maven repository a scan reads: --maven-repo's, else the home folder's if there is one; null with --no-transitive. */
+    /** The local Maven repository a scan reads: --maven-repo's, else the home folder's if there is one; null with --direct-only. */
     public Path mavenRepository() {
-        if (noTransitive) return null;
+        return directOnly ? null : mavenRepositoryFound();
+    }
+
+    /** The local Maven repository a scan would read without --direct-only: the window's, whose box can turn it on. */
+    public Path mavenRepositoryFound() {
         if (mavenRepository != null) return mavenRepository;
         if (!homeCaches) return null;
         Path home = MavenRepository.locate(Path.of(System.getProperty("user.home")));
         return java.nio.file.Files.isDirectory(home) ? home : null;   // no Maven here: none read, the reports saying so
     }
 
-    /** Gradle's cache a scan reads: --gradle-cache's, else the home folder's (GRADLE_USER_HOME) if there is one; null with --no-transitive. */
+    /** Gradle's cache a scan reads: --gradle-cache's, else the home folder's (GRADLE_USER_HOME) if there is one; null with --direct-only. */
     public Path gradleCache() {
-        if (noTransitive) return null;
+        return directOnly ? null : gradleCacheFound();
+    }
+
+    /** Gradle's cache a scan would read without --direct-only. */
+    public Path gradleCacheFound() {
         if (gradleCache != null) return gradleCache;
         if (!homeCaches) return null;
         Path home = GradleCache.locate(Path.of(System.getProperty("user.home")), System.getenv("GRADLE_USER_HOME"));
@@ -255,7 +267,7 @@ public final class Options {
     }
 
     public ScanOptions scanOptions() {
-        return new ScanOptions(ignoreChoice(), mode(), dbMaxAgeDays, today, vexFiles, mavenRepository(), gradleCache(), cacheDir());
+        return new ScanOptions(ignoreChoice(), mode(), dbMaxAgeDays, today, vexFiles, mavenRepository(), gradleCache(), cacheDir(), directOnly);
     }
 
     public ScanMode mode() {

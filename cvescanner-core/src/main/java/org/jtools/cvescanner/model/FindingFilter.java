@@ -33,11 +33,12 @@ import org.jtools.cvescanner.i18n.Phrase;
  *
  * @param searchWords words that must all be found, whatever their case, in the package, its version, the advisory,
  *                    its CVEs and aliases, the file, the scope or the summary
+ * @param hideTransitive the indirect dependencies left out, those another package brings
  */
 public record FindingFilter(Severity minSeverity, Set<Ecosystem> ecosystems, boolean cveOnly, boolean hideApproximate,
-                            boolean hideNameMatches, List<String> searchWords) {
+                            boolean hideNameMatches, boolean hideTransitive, List<String> searchWords) {
 
-    public static final FindingFilter NONE = new FindingFilter(null, Set.of(), false, false, false, List.of());
+    public static final FindingFilter NONE = new FindingFilter(null, Set.of(), false, false, false, false, List.of());
 
     public FindingFilter {
         ecosystems = Set.copyOf(ecosystems);
@@ -50,6 +51,7 @@ public record FindingFilter(Severity minSeverity, Set<Ecosystem> ecosystems, boo
         if (cveOnly && f.cves().isEmpty()) return false;
         if (hideNameMatches && f.basis().byName()) return false;
         if (hideApproximate && f.approximate()) return false;
+        if (hideTransitive && Dependency.isTransitive(f.scope())) return false;
         if (searchWords.isEmpty()) return true;
         String text = String.join("\u0001", f.ecosystem().id(), f.pkg(), f.version(), f.id(), String.join(" ", f.cves()),
                 String.join(" ", f.aliases()), f.file(), f.scope(), f.summary()).toLowerCase(Locale.ROOT);
@@ -69,6 +71,7 @@ public record FindingFilter(Severity minSeverity, Set<Ecosystem> ecosystems, boo
         if (cveOnly) out.add(Phrase.of("filter.cveOnly"));
         if (hideApproximate) out.add(Phrase.of("reportFilter.hideApproximate"));
         if (hideNameMatches) out.add(Phrase.of("reportFilter.hideNameMatches"));
+        if (hideTransitive) out.add(Phrase.of("reportFilter.hideTransitive"));
         if (!searchWords.isEmpty()) out.add(Phrase.of("reportFilter.search", String.join(" ", searchWords)));
         return out;
     }

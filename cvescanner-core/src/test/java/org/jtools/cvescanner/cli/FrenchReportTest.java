@@ -49,9 +49,11 @@ class FrenchReportTest {
     @Test
     void theReportSpeaksFrenchAndTheMachineFormatsEnglish() throws Exception {
         I18n.use(I18nLanguage.FRENCH);
-        int exit = Cli.run(Options.parse(new String[] {"--no-gui", "-d", SAMPLES.resolve("projects").toString(),
+        var options = Options.parse(new String[] {"--no-gui", "-d", SAMPLES.resolve("projects").toString(),
                 "-o", out.toString(), "--db", SAMPLES.resolve("db/advisory-database-main.zip").toString(),
-                "--db", SAMPLES.resolve("db/2026-11-19_all_CVEs_at_midnight.zip.zip").toString(), "--env", "airgapped", "--no-transitive"}));
+                "--db", SAMPLES.resolve("db/2026-11-19_all_CVEs_at_midnight.zip.zip").toString(), "--env", "airgapped"});
+        options.homeCaches = false;   // the machine's own ~/.m2 and ~/.gradle never read
+        int exit = Cli.run(options);
         I18n.use(I18nLanguage.ENGLISH);
 
         assertEquals(0, exit);

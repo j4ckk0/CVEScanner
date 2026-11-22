@@ -77,6 +77,19 @@ class CliOptionsTest {
     }
 
     @Test
+    void directOnlyAndItsOldNameReadNoCacheHideTransitiveFiltersTheReport() {
+        for (String option : List.of("--direct-only", "--no-transitive")) {
+            var o = Options.parse(new String[]{option});
+            assertTrue(o.scanOptions().directOnly(), option);
+            assertEquals(null, o.scanOptions().gradleCache(), option);
+        }
+        assertThrows(IllegalArgumentException.class, () -> Options.parse(new String[]{"--gradle-cache", "/g", "--direct-only"}));
+        var filter = Options.parse(new String[]{"--hide-transitive"}).filter();
+        assertTrue(filter.hideTransitive());
+        assertEquals(List.of("reportFilter.hideTransitive"), filter.describe().stream().map(org.jtools.cvescanner.i18n.Phrase::key).toList());
+    }
+
+    @Test
     void applyFixesSaysEachPlanAndChangesNothingWithoutYes() throws Exception {
         Path samples = Path.of("..", "samples").toAbsolutePath().normalize();
         var r = Engine.scan(samples.resolve("projects"), List.of(samples.resolve("db/advisory-database-main.zip")),

@@ -36,15 +36,22 @@ import org.jtools.cvescanner.model.ScanMode;
  * @param mavenRepository the local Maven repository, read for the transitive dependencies of the poms; null for none
  * @param gradleCache  Gradle's cache (its files-2.1 folder), read for the transitive dependencies of the builds; null for none
  * @param cacheDir     where the databases' index is kept between scans (IndexCache); null for none
+ * @param directOnly   the project's declared dependencies only: no Maven repository or Gradle cache read, and the
+ *                     lockfiles' indirect packages left out (a declared one at its locked version)
  */
 public record ScanOptions(Path ignoreFile, ScanMode mode, int dbMaxAgeDays, LocalDate today, List<Path> vexFiles,
-                          Path mavenRepository, Path gradleCache, Path cacheDir) {
+                          Path mavenRepository, Path gradleCache, Path cacheDir, boolean directOnly) {
 
     /** A database older than a month is said to be. */
     public static final int DEFAULT_DB_MAX_AGE_DAYS = 30;
 
     public ScanOptions {
         vexFiles = List.copyOf(vexFiles);
+    }
+
+    public ScanOptions(Path ignoreFile, ScanMode mode, int dbMaxAgeDays, LocalDate today, List<Path> vexFiles, Path mavenRepository,
+                       Path gradleCache, Path cacheDir) {
+        this(ignoreFile, mode, dbMaxAgeDays, today, vexFiles, mavenRepository, gradleCache, cacheDir, false);
     }
 
     public ScanOptions(Path ignoreFile, ScanMode mode, int dbMaxAgeDays, LocalDate today, List<Path> vexFiles, Path mavenRepository,

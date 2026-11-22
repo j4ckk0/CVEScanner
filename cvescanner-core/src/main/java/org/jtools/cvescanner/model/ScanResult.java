@@ -39,7 +39,14 @@ import org.jtools.cvescanner.ignore.Ignores;
  */
 public record ScanResult(Path root, List<Finding> findings, List<Dependency> dependencies, List<Unresolved> unresolved,
                   Map<String, Phrase> snapshots, Map<String, Integer> fileCounts, List<Phrase> warnings, Ignores ignores,
-                  ScanMode mode, Path mavenRepository, Path gradleCache, boolean gradleLocked) {
+                  ScanMode mode, Path mavenRepository, Path gradleCache, boolean gradleLocked, boolean directOnly) {
+
+    public ScanResult(Path root, List<Finding> findings, List<Dependency> dependencies, List<Unresolved> unresolved,
+                      Map<String, Phrase> snapshots, Map<String, Integer> fileCounts, List<Phrase> warnings, Ignores ignores,
+                      ScanMode mode, Path mavenRepository, Path gradleCache, boolean gradleLocked) {
+        this(root, findings, dependencies, unresolved, snapshots, fileCounts, warnings, ignores, mode, mavenRepository, gradleCache,
+                gradleLocked, false);
+    }
 
     public ScanResult(Path root, List<Finding> findings, List<Dependency> dependencies, List<Unresolved> unresolved,
                       Map<String, Phrase> snapshots, Map<String, Integer> fileCounts, List<Phrase> warnings, Ignores ignores,

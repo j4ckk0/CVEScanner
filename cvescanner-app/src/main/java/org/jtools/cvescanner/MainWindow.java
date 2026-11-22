@@ -44,6 +44,7 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -77,8 +78,6 @@ import org.jtools.cvescanner.model.ScanListener;
 import org.jtools.cvescanner.model.ScanMode;
 import org.jtools.cvescanner.model.ScanResult;
 import org.jtools.cvescanner.model.Scoring;
-import org.jtools.cvescanner.project.GradleCache;
-import org.jtools.cvescanner.project.MavenRepository;
 
 /**
  * The window: the folder and the databases to scan, the ignore file to read, the environment to score for, the
@@ -100,6 +99,8 @@ final class MainWindow extends JFrame {
     private final JComboBox<Choice<ScanMode>> scanModeCombo = new JComboBox<>(List.of(
             new Choice<>("toolbar.scanMode.sources", ScanMode.SOURCES), new Choice<>("toolbar.scanMode.installed", ScanMode.INSTALLED))
             .toArray(Choice[]::new));
+    /** A scan of the declared dependencies only (--direct-only): for source projects; an installed product has none. */
+    private final JCheckBox directOnlyBox = new JCheckBox();
     private final JTabbedPane tabs = new JTabbedPane();
 
     private final DatabaseChoice databases;
@@ -326,9 +327,20 @@ final class MainWindow extends JFrame {
         labels.tip(scanModeCombo, "toolbar.scanMode.tip");
         boolean installed = opts.installed || settings.get(Settings.SCAN_MODE, "SOURCES").equals(ScanMode.INSTALLED.name());
         scanModeCombo.setSelectedIndex(installed ? 1 : 0);
-        scanModeCombo.addActionListener(_ -> settings.set(Settings.SCAN_MODE, scanMode().name()));
+        scanModeCombo.addActionListener(_ -> {
+            settings.set(Settings.SCAN_MODE, scanMode().name());
+            directOnlyBox.setEnabled(scanMode() == ScanMode.SOURCES);
+        });
         c.gridy++;
         vexDocuments.addRow(rows, c);
+        c.gridx = 4;
+        labels.text(directOnlyBox, "toolbar.directOnly");
+        labels.tip(directOnlyBox, "toolbar.directOnly.tip");
+        directOnlyBox.setName("directOnly");
+        directOnlyBox.setSelected(opts.directOnly || settings.directOnly());
+        directOnlyBox.setEnabled(scanMode() == ScanMode.SOURCES);
+        directOnlyBox.addActionListener(_ -> settings.set(Settings.DIRECT_ONLY, String.valueOf(directOnlyBox.isSelected())));
+        rows.add(directOnlyBox, c);
         return rows;
     }
 
@@ -413,11 +425,10 @@ final class MainWindow extends JFrame {
         }
         setBusy(true);
         var dbFiles = databases.files();
-        Path userHome = Path.of(System.getProperty("user.home"));
-        Path m2 = MavenRepository.locate(userHome), gradle = GradleCache.locate(userHome, System.getenv("GRADLE_USER_HOME"));
-        boolean transitive = viewMenu.mavenTransitive();
+        // the caches the command line names, else the home folder's
+        boolean direct = directOnlyBox.isSelected();
         var options = new ScanOptions(ignoreActions.choice(), scanMode(), viewMenu.dbMaxAge(), LocalDate.now(), vexDocuments.filesForScan(),
-                transitive && Files.isDirectory(m2) ? m2 : null, transitive && Files.isDirectory(gradle) ? gradle : null, opts.cacheDir());
+                direct ? null : opts.mavenRepositoryFound(), direct ? null : opts.gradleCacheFound(), opts.cacheDir(), direct);
         new SwingWorker<ScanResult, Void>() {
             @Override
             protected ScanResult doInBackground() throws Exception {

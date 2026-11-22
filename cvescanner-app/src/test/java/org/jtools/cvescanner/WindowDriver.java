@@ -80,9 +80,9 @@ final class WindowDriver implements AutoCloseable {
     /** The window on these arguments, its settings in that folder, shown and its first scan (if any) done. */
     static WindowDriver start(Path settingsFolder, String... args) throws Exception {
         Settings settings = Settings.in(settingsFolder);
-        // the counts the same on every machine: no local Maven repository read, unless a test says otherwise
-        if (settings.get(Settings.MAVEN_TRANSITIVE, null) == null) settings.set(Settings.MAVEN_TRANSITIVE, "false");
         Options opts = Options.parse(args);
+        // the counts the same on every machine: neither the home folder's Maven repository nor Gradle cache read
+        opts.homeCaches = false;
         var window = new AtomicReference<MainWindow>();
         SwingUtilities.invokeAndWait(() -> {
             Looks.use(settings.get(Settings.LOOK, Looks.DEFAULT));

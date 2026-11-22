@@ -100,6 +100,10 @@ public final class Reports {
      * could not be. A scan that read neither keeps the one line it always had.
      */
     private static void transitiveNotes(StringBuilder sb, ScanResult r, I18nLanguage language) {
+        if (r.directOnly()) {
+            sb.append(I18n.text(language, "markdown.notes.directOnly")).append('\n');
+            return;
+        }
         boolean gradle = r.gradleCache() != null || r.gradleLocked();
         if (r.mavenRepository() == null && !gradle) {
             sb.append(I18n.text(language, "markdown.notes.maven")).append('\n');
@@ -323,6 +327,7 @@ public final class Reports {
                     .map(w -> w.text(I18nLanguage.ENGLISH)).toList());
         }
         if (r.gradleLocked()) root.put("gradle_lockfiles", true);
+        if (r.directOnly()) root.put("direct_only", true);
         root.put("findings", findings.stream().map(Reports::json).toList());
         // in a fixed order, as every other object of the file: two scans of the same projects write the same JSON
         root.put("unresolved_dependencies", r.unresolved().stream().map(u -> {

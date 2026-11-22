@@ -60,6 +60,7 @@ final class FilterBar {
     private final JCheckBox cveOnlyBox = new JCheckBox();
     private final JCheckBox hideApproxBox = new JCheckBox();
     private final JCheckBox hideNameMatchBox = new JCheckBox();
+    private final JCheckBox hideTransitiveBox = new JCheckBox();
     private final JPanel panel = new JPanel(new WrapLayout(FlowLayout.LEFT, 12, 8));
 
     /** @param cveOnly --cve-only, the box ticked from the start; @param changed run on each change */
@@ -83,6 +84,9 @@ final class FilterBar {
         labels.text(hideApproxBox, "filter.hideApproximate").addActionListener(_ -> changed.run());
         labels.text(hideNameMatchBox, "filter.hideNameMatches").addActionListener(_ -> changed.run());
         labels.tip(hideNameMatchBox, "filter.hideNameMatches.tip");
+        labels.text(hideTransitiveBox, "filter.hideTransitive").addActionListener(_ -> changed.run());
+        labels.tip(hideTransitiveBox, "filter.hideTransitive.tip");
+        hideTransitiveBox.setName("hideTransitive");
         var clear = labels.text(new JButton(), "filter.clear");
         clear.addActionListener(_ -> {
             searchField.setText("");
@@ -91,6 +95,7 @@ final class FilterBar {
             cveOnlyBox.setSelected(false);
             hideApproxBox.setSelected(false);
             hideNameMatchBox.setSelected(false);
+            hideTransitiveBox.setSelected(false);
             changed.run();
         });
         panel.add(labels.text(new JLabel(), "filter.search"));
@@ -100,6 +105,7 @@ final class FilterBar {
         panel.add(cveOnlyBox);
         panel.add(hideApproxBox);
         panel.add(hideNameMatchBox);
+        panel.add(hideTransitiveBox);
         panel.add(clear);
         labels.on(() -> List.<Component>of(severityCombo, ecosystemCombo).forEach(Component::repaint));
     }
@@ -123,7 +129,7 @@ final class FilterBar {
         var min = severityCombo.getSelectedItem() instanceof Choice<?> choice ? (Severity) choice.value() : null;
         Ecosystem ecosystem = ecosystem();
         return new FindingFilter(min, ecosystem == null ? Set.of() : Set.of(ecosystem), cveOnlyBox.isSelected(),
-                hideApproxBox.isSelected(), hideNameMatchBox.isSelected(), List.of());
+                hideApproxBox.isSelected(), hideNameMatchBox.isSelected(), hideTransitiveBox.isSelected(), List.of());
     }
 
     /** Searches this text: a package's name, from its row or its finding. */

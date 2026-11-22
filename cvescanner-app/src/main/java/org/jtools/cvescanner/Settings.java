@@ -56,8 +56,10 @@ final class Settings {
     static final String DB_MAX_AGE = "dbMaxAge";
     /** The VEX documents chosen, their paths separated by the system's path separator. */
     static final String VEX_FILES = "vexFiles";
-    /** "false" when a scan reads no local Maven repository (View ▸ Maven transitive dependencies); read otherwise. */
-    static final String MAVEN_TRANSITIVE = "mavenTransitive";
+    /** "true" when a scan keeps the declared dependencies only (the toolbar's Direct dependencies only). */
+    static final String DIRECT_ONLY = "directOnly";
+    /** Before 1.5: "false" when a scan read no Maven repository nor Gradle cache, now a direct-only scan. */
+    private static final String MAVEN_TRANSITIVE = "mavenTransitive";
     private static final String FILE = "cvescanner.properties";
 
     private final Path file;
@@ -92,6 +94,12 @@ final class Settings {
     /** The settings kept in this folder. */
     static Settings in(Path folder) {
         return new Settings(folder.resolve(FILE));
+    }
+
+    /** Whether a scan keeps the declared dependencies only: as set, else as the older View item was. */
+    boolean directOnly() {
+        String set = get(DIRECT_ONLY, null);
+        return set != null ? Boolean.parseBoolean(set) : "false".equals(get(MAVEN_TRANSITIVE, "true"));
     }
 
     String get(String key, String otherwise) {
