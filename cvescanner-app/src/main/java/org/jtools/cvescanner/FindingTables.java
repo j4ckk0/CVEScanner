@@ -22,19 +22,26 @@ package org.jtools.cvescanner;
 
 import java.awt.Component;
 import java.awt.Font;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
+import javax.swing.AbstractAction;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JTable;
+import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.RowSorter;
 import javax.swing.SortOrder;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableRowSorter;
@@ -49,29 +56,12 @@ import org.jtools.cvescanner.model.Unresolved;
 import org.jtools.cvescanner.version.Versions;
 
 /**
- * The window's four tables (the findings, the packages to upgrade, the dependencies not checked, the findings set aside)
- * as they look: their columns, known by their key and titled in the language in use, their sorting, their renderers,
- * the filters they show through. What a click or a menu does with them is TableActions'.
+ * The window's three tables (the findings grouped by package version, the dependencies not checked, the findings set
+ * aside) as they look: their columns, known by their key and titled in the language in use, their sorting, their
+ * renderers, the filters they show through. What a click or a menu does with them is TableActions'.
  */
 final class FindingTables {
 
-    private static final List<Column<Finding>> FINDING_COLUMNS = List.of(
-            new Column<Finding>("column.severity", Severity.class, 175, Finding::severity),
-            new Column<Finding>("column.base", Double.class, 95, Finding::cvss),
-            new Column<Finding>("column.env", Double.class, 140, Finding::envScore),
-            new Column<Finding>("column.cvss", String.class, 95, f -> Objects.requireNonNullElse(f.score().version(), "")),
-            new Column<Finding>("column.ecosystem", String.class, 100, f -> f.ecosystem().id()),
-            new Column<Finding>("column.package", String.class, 320, Finding::pkg),
-            new Column<Finding>("column.version", String.class, 95, Finding::displayVersion),
-            new Column<Finding>("column.fixedIn", String.class, 95, f -> f.fixedIn().isEmpty() ? "—" : f.fixedIn()),
-            new Column<Finding>("column.cve", String.class, 130, Finding::cveText),
-            new Column<Finding>("column.advisory", String.class, 150, Finding::id),
-            new Column<Finding>("column.match", String.class, 125, f -> f.basis().label()),
-            new Column<Finding>("column.scope", String.class, 160, Finding::scope),
-            new Column<Finding>("column.path", String.class, 180, f -> folderOf(f.file())),
-            new Column<Finding>("column.file", String.class, 220, Finding::file),
-            new Column<Finding>("column.published", String.class, 85, Finding::publishedDate),
-            new Column<Finding>("column.summary", String.class, 380, Finding::summary));
     private static final List<Column<IgnoredFinding>> IGNORED_COLUMNS = List.of(
             new Column<IgnoredFinding>("column.severity", Severity.class, 175, i -> i.finding().severity()),
             new Column<IgnoredFinding>("column.env", Double.class, 140, i -> i.finding().envScore()),
@@ -92,62 +82,45 @@ final class FindingTables {
             new Column<Unresolved>("column.reason", String.class, 330, u -> u.reason().text()),
             new Column<Unresolved>("column.file", String.class, 300, Unresolved::file));
 
-    /** A package version, as the Packages tab ticks it: its rows are rebuilt by the filters, its ticks stay. */
+    /** A package version, as the findings' table groups and ticks it: its rows are rebuilt by the filters, its ticks stay. */
     record PackageKey(Ecosystem ecosystem, String pkg, String version) {
         static PackageKey of(PackageSummary p) {
             return new PackageKey(p.ecosystem(), p.pkg(), p.version());
         }
+
+        static PackageKey of(Finding f) {
+            return new PackageKey(f.ecosystem(), f.pkg(), f.version());
+        }
     }
+
+    /** The narrowest a column can be dragged to. */
+    private static final int MIN_WIDTH = 40;
 
     private final I18nLabels labels;
     /** The package versions ticked for Apply fixes. */
     final Set<PackageKey> ticked = new LinkedHashSet<>();
     /** Told whenever a tick changes. */
     Runnable onTicked = () -> { };
-    private final List<Column<PackageSummary>> packageColumns = List.of(
-            new Column<PackageSummary>("column.apply", Boolean.class, 70, p -> fixable(p) ? ticked.contains(PackageKey.of(p)) : null,
-                    FindingTables::fixable, (p, v) -> tick(p, Boolean.TRUE.equals(v))),
-            new Column<PackageSummary>("column.worst", Severity.class, 110, PackageSummary::worst),
-            new Column<PackageSummary>("column.ecosystem", String.class, 75, p -> p.ecosystem().id()),
-            new Column<PackageSummary>("column.package", String.class, 300, PackageSummary::pkg),
-            new Column<PackageSummary>("column.current", String.class, 100, PackageSummary::displayVersion),
-            new Column<PackageSummary>("column.upgradeTo", String.class, 160, p -> p.upgradeTo()),
-            new Column<PackageSummary>("column.vulnerabilities", Integer.class, 95, PackageSummary::vulnerabilities),
-            new Column<PackageSummary>("column.advisories", String.class, 260, PackageSummary::advisories),
-            new Column<PackageSummary>("column.foundIn", String.class, 330, PackageSummary::files));
-    final ListTableModel<Finding> findingsModel = new ListTableModel<>(FINDING_COLUMNS);
-    final ListTableModel<PackageSummary> packagesModel = new ListTableModel<>(packageColumns);
+    /** The findings of the scan, the ignore file's set aside: those the table shows from. */
+    private List<Finding> all = List.of();
+    final FindingGroups findingGroups = new FindingGroups(ticked, () -> onTicked.run());
+    final ScrollingTable findingsTable = new ScrollingTable(findingGroups);
     final ListTableModel<Unresolved> unresolvedModel = new ListTableModel<>(UNRESOLVED_COLUMNS);
     final ListTableModel<IgnoredFinding> ignoredModel = new ListTableModel<>(IGNORED_COLUMNS);
-    final JTable findingsTable = new ScrollingTable(findingsModel);
-    final JTable packagesTable = new ScrollingTable(packagesModel);
     final JTable unresolvedTable = new ScrollingTable(unresolvedModel);
     final JTable ignoredTable = new ScrollingTable(ignoredModel);
-    final HeaderFilters.FilteringSorter<ListTableModel<Finding>> findingsSorter = new HeaderFilters.FilteringSorter<>(findingsModel);
-    /** The findings' ▾ in each header: the values to show, column by column. */
+    final TableRowSorter<ListTableModel<Unresolved>> unresolvedSorter = new TableRowSorter<>(unresolvedModel);
+    final TableRowSorter<ListTableModel<IgnoredFinding>> ignoredSorter = new TableRowSorter<>(ignoredModel);
+    /** The findings' ▾ in each header: the values to show, column by column; a click elsewhere on a header sorts. */
     final HeaderFilters headerFilters;
     /** Told whenever the values ticked in a header change. */
     Runnable onHeaderFilter = () -> { };
-    final TableRowSorter<ListTableModel<PackageSummary>> packagesSorter = new TableRowSorter<>(packagesModel);
-    final TableRowSorter<ListTableModel<Unresolved>> unresolvedSorter = new TableRowSorter<>(unresolvedModel);
-    final TableRowSorter<ListTableModel<IgnoredFinding>> ignoredSorter = new TableRowSorter<>(ignoredModel);
 
     FindingTables(I18nLabels labels) {
         this.labels = labels;
         Comparator<String> version = (a, b) -> Versions.compareMaven(a.replace(" ≈", "").replace("—", ""),
                 b.replace(" ≈", "").replace("—", ""));
-        setup(findingsTable, findingsSorter, FINDING_COLUMNS);
-        findingsSorter.setComparator(column(FINDING_COLUMNS, "column.version"), version);
-        findingsSorter.setComparator(column(FINDING_COLUMNS, "column.fixedIn"), version);
-        findingsSorter.setSortKeys(List.of(new RowSorter.SortKey(0, SortOrder.DESCENDING),
-                new RowSorter.SortKey(column(FINDING_COLUMNS, "column.env"), SortOrder.DESCENDING),
-                new RowSorter.SortKey(column(FINDING_COLUMNS, "column.base"), SortOrder.DESCENDING)));
-        setup(packagesTable, packagesSorter, packageColumns);
-        packagesSorter.setComparator(column(packageColumns, "column.current"), version);
-        packagesSorter.setSortKeys(List.of(new RowSorter.SortKey(column(packageColumns, "column.worst"), SortOrder.DESCENDING),
-                new RowSorter.SortKey(column(packageColumns, "column.vulnerabilities"), SortOrder.DESCENDING)));
-        packagesTable.setDefaultRenderer(Boolean.class, new TickRenderer(packagesTable.getDefaultRenderer(Boolean.class)));
-        labels.tip(packagesTable.getTableHeader(), "column.apply.tip");
+        setupFindings();
         setup(unresolvedTable, unresolvedSorter, UNRESOLVED_COLUMNS);
         setup(ignoredTable, ignoredSorter, IGNORED_COLUMNS);
         ignoredSorter.setComparator(column(IGNORED_COLUMNS, "column.version"), version);
@@ -159,7 +132,7 @@ final class FindingTables {
             protected void setValue(Object v) { setText(v instanceof Double d ? SwingText.score(d) : ""); }
         };
         cvss.setHorizontalAlignment(SwingConstants.RIGHT);
-        findingsTable.getColumnModel().getColumn(column(FINDING_COLUMNS, "column.base")).setCellRenderer(cvss);
+        findingsTable.getColumnModel().getColumn(FindingGroups.BASE).setCellRenderer(cvss);
         var envRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object v, boolean sel, boolean focus, int row, int col) {
@@ -171,13 +144,85 @@ final class FindingTables {
             }
         };
         envRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
-        findingsTable.getColumnModel().getColumn(column(FINDING_COLUMNS, "column.env")).setCellRenderer(envRenderer);
+        findingsTable.getColumnModel().getColumn(FindingGroups.ENV).setCellRenderer(envRenderer);
         ignoredTable.getColumnModel().getColumn(column(IGNORED_COLUMNS, "column.env")).setCellRenderer(envRenderer);
+        var expand = new DefaultTableCellRenderer();
+        expand.setHorizontalAlignment(SwingConstants.CENTER);
+        findingsTable.getColumnModel().getColumn(FindingGroups.EXPAND).setCellRenderer(expand);
         labels.tip(findingsTable.getTableHeader(), "column.header.tip");
-        headerFilters = new HeaderFilters(findingsTable, c -> FINDING_COLUMNS.get(c).value(), findingsModel::rows, HeaderFilters::text,
-                () -> onHeaderFilter.run());
-        findingsSorter.filters(headerFilters);
-        labels.tip(packagesTable, "packages.tip");
+        headerFilters = new HeaderFilters(findingsTable, c -> findingGroups.columns().get(c).filter(), () -> all, HeaderFilters::text,
+                () -> onHeaderFilter.run(), new HeaderFilters.Sorting() {
+                    public int column() { return findingGroups.sortColumn(); }
+                    public boolean ascending() { return findingGroups.ascending(); }
+                    public void sortBy(int column) { keepingSelection(() -> findingGroups.sortBy(column)); }
+                });
+    }
+
+    /** The findings' table: a package version's row in bold, its ▸ opening its findings below it (a click, →, ←). */
+    private void setupFindings() {
+        var t = findingsTable;
+        t.setRowHeight(30);
+        t.setFillsViewportHeight(true);
+        t.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        t.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
+        t.setDefaultRenderer(Severity.class, new SeverityRenderer());
+        t.setDefaultRenderer(String.class, new TextRenderer());
+        t.setDefaultRenderer(Boolean.class, new TickRenderer(t.getDefaultRenderer(Boolean.class)));
+        t.strongRow(row -> findingGroups.row(row) instanceof FindingGroups.Group);
+        t.getTableHeader().setReorderingAllowed(true);
+        var columns = findingGroups.columns();
+        for (int c = 0; c < columns.size(); c++) {
+            var col = t.getColumnModel().getColumn(c);
+            col.setPreferredWidth(columns.get(c).width());
+            col.setMinWidth(c == FindingGroups.EXPAND ? 28 : MIN_WIDTH);
+        }
+        labels.on(() -> {
+            for (int c = 0; c < t.getColumnCount(); c++) {
+                var col = t.getColumnModel().getColumn(c);
+                col.setHeaderValue(c == FindingGroups.EXPAND ? "" : I18n.text(columns.get(col.getModelIndex()).key()));
+            }
+            t.getTableHeader().repaint();
+        });
+        t.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 1 && SwingUtilities.isLeftMouseButton(e)
+                        && t.convertColumnIndexToModel(t.columnAtPoint(e.getPoint())) == FindingGroups.EXPAND) toggle(t.rowAtPoint(e.getPoint()), null);
+            }
+        });
+        bind(KeyEvent.VK_RIGHT, "open", true);
+        bind(KeyEvent.VK_LEFT, "close", false);
+    }
+
+    private void bind(int key, String name, boolean open) {
+        findingsTable.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke(key, 0), name);
+        findingsTable.getActionMap().put(name, new AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                int row = findingsTable.getSelectedRow();
+                if (row < 0) return;
+                if (findingGroups.row(row) instanceof FindingGroups.Child c && !open) selectRow(findingGroups.rowOf(c.group().key()));
+                else toggle(row, open);
+            }
+        });
+    }
+
+    /** The package version of this row opened or closed (null: the other way), its row then selected. */
+    void toggle(int row, Boolean open) {
+        if (row < 0 || !(findingGroups.row(row) instanceof FindingGroups.Group g)) return;
+        findingGroups.toggle(g, open == null ? !findingGroups.expanded(g) : open);
+        selectRow(findingGroups.rowOf(g.key()));
+    }
+
+    /** Whether the row selected is a package version's: a double-click on it opens or closes it rather than copying a link. */
+    boolean packageSelected() {
+        int row = findingsTable.getSelectedRow();
+        return row >= 0 && findingGroups.row(row) instanceof FindingGroups.Group;
+    }
+
+    /** Whether this column of the findings' table is the ticks', wherever it was dragged. */
+    boolean isTickColumn(int viewColumn) {
+        return viewColumn >= 0 && findingsTable.convertColumnIndexToModel(viewColumn) == FindingGroups.FIX;
     }
 
     /**
@@ -190,9 +235,6 @@ final class FindingTables {
         int slash = Math.max(outer.lastIndexOf('/'), outer.lastIndexOf('\\'));
         return slash < 0 ? "." : outer.substring(0, slash);
     }
-
-    /** The narrowest a column can be dragged to. */
-    private static final int MIN_WIDTH = 40;
 
     static <T> int column(List<Column<T>> columns, String key) {
         for (int i = 0; i < columns.size(); i++) if (columns.get(i).key().equals(key)) return i;
@@ -233,18 +275,7 @@ final class FindingTables {
         return (p.ecosystem() == Ecosystem.MAVEN || p.ecosystem() == Ecosystem.NPM) && !p.installed() && !p.fixedIn().isEmpty();
     }
 
-    private void tick(PackageSummary p, boolean on) {
-        if (on) ticked.add(PackageKey.of(p));
-        else ticked.remove(PackageKey.of(p));
-        onTicked.run();
-    }
-
-    /** Whether this column of the packages' table is the ticks' one, wherever it was dragged. */
-    boolean isTickColumn(int viewColumn) {
-        return viewColumn >= 0 && packagesTable.convertColumnIndexToModel(viewColumn) == column(packageColumns, "column.apply");
-    }
-
-    /** A tick where it can be set, nothing where it cannot (a package not fixable). */
+    /** A tick where it can be set, nothing where it cannot (a package not fixable, a finding's row). */
     private static final class TickRenderer implements TableCellRenderer {
         private final TableCellRenderer box;
         private final JLabel none = new JLabel();
@@ -262,31 +293,31 @@ final class FindingTables {
         }
     }
 
-    /** The findings of a scan the table shows from, the ignore file's set aside. */
+    /** The findings of a scan the table shows from, the ignore file's set aside; the packages opened that it still has stay so. */
     void setFindings(List<Finding> findings) {
-        findingsModel.setRows(findings);
+        all = List.copyOf(findings);
+        findingGroups.retainOpened(findings.stream().map(PackageKey::of).collect(Collectors.toSet()));
     }
 
     List<Finding> allFindings() {
-        return findingsModel.rows();
+        return all;
     }
 
-    /** The findings the filters, the headers' ▾ and the search let through, in the table's order. */
+    /** The findings the filters, the headers' ▾ and the search let through, package by package: opened or not. */
     List<Finding> shownFindings() {
-        return java.util.stream.IntStream.range(0, findingsTable.getRowCount())
-                .mapToObj(i -> findingsModel.row(findingsTable.convertRowIndexToModel(i))).toList();
+        return findingGroups.findings();
     }
 
-    /** Selects this finding's row, scrolled to; false when it is not shown. */
+    /** How many package versions the filters let through. */
+    int shownPackages() {
+        return findingGroups.packages();
+    }
+
+    /** Selects this finding's row, its package opened for it, scrolled to; false when it is not let through. */
     boolean select(Finding f) {
-        for (int i = 0; i < findingsTable.getRowCount(); i++) {
-            var g = findingsModel.row(findingsTable.convertRowIndexToModel(i));
-            if (g.id().equals(f.id()) && g.file().equals(f.file()) && g.scope().equals(f.scope()) && g.pkg().equals(f.pkg())) {
-                selectRow(i);
-                return true;
-            }
-        }
-        return false;
+        int row = findingGroups.rowOf(f);
+        if (row >= 0) selectRow(row);
+        return row >= 0;
     }
 
     /** The row selected in the findings' table, -1 for none. */
@@ -297,20 +328,30 @@ final class FindingTables {
     /** Selects the row at this place, the last when there are fewer; none when the table is empty. */
     void selectRow(int row) {
         int rows = findingsTable.getRowCount();
-        if (rows == 0) return;
-        int r = Math.min(Math.max(row, 0), rows - 1);
+        if (rows == 0 || row < 0) return;
+        int r = Math.min(row, rows - 1);
         findingsTable.setRowSelectionInterval(r, r);
         findingsTable.scrollRectToVisible(findingsTable.getCellRect(r, 0, true));
     }
 
+    /** The finding of the row selected; for a package version's row, its most severe finding. */
     Finding selectedFinding() {
         int row = findingsTable.getSelectedRow();
-        return row < 0 ? null : findingsModel.row(findingsTable.convertRowIndexToModel(row));
+        if (row < 0) return null;
+        return switch (findingGroups.row(row)) {
+            case FindingGroups.Child c -> c.finding();
+            case FindingGroups.Group g -> g.worst();
+        };
     }
 
+    /** The package version of the row selected, or of its finding. */
     PackageSummary selectedPackage() {
-        int row = packagesTable.getSelectedRow();
-        return row < 0 ? null : packagesModel.row(packagesTable.convertRowIndexToModel(row));
+        int row = findingsTable.getSelectedRow();
+        if (row < 0) return null;
+        return switch (findingGroups.row(row)) {
+            case FindingGroups.Child c -> c.group().summary();
+            case FindingGroups.Group g -> g.summary();
+        };
     }
 
     /** The filters last applied: the export leaves out what they leave out. */
@@ -320,29 +361,36 @@ final class FindingTables {
 
     private FindingFilter facets = FindingFilter.NONE;
 
+    /** Something done to the findings' rows, the row selected before selected again: the same finding or package version. */
+    private void keepingSelection(Runnable change) {
+        int row = findingsTable.getSelectedRow();
+        FindingGroups.Row before = row < 0 ? null : findingGroups.row(row);
+        change.run();
+        switch (before) {
+            case FindingGroups.Child c -> {
+                int r = rowOfShown(c.finding());
+                selectRow(r >= 0 ? r : findingGroups.rowOf(c.group().key()));   // its package closed: the package's row
+            }
+            case FindingGroups.Group g -> selectRow(findingGroups.rowOf(g.key()));
+            case null, default -> { }
+        }
+    }
+
+    /** The row of this finding if it is shown, its package left closed or open as it is; -1 otherwise. */
+    private int rowOfShown(Finding f) {
+        for (int i = 0; i < findingGroups.getRowCount(); i++)
+            if (findingGroups.row(i) instanceof FindingGroups.Child c && FindingGroups.same(c.finding(), f)) return i;
+        return -1;
+    }
+
     /**
-     * The filters applied to every table: the findings by the facets, the values ticked in their headers and the search;
-     * the package view rebuilt from the findings that pass the facets and the headers, then searched; the others by the
-     * ecosystem and the search.
+     * The filters applied to every table: the findings by the facets, the values ticked in their headers and the search,
+     * then grouped by package version (every one opened while searching); the others by the ecosystem and the search.
      */
     void filter(FindingFilter facets, List<String> terms, Ecosystem ecosystem) {
         this.facets = facets;
-        findingsSorter.setRowFilter(new RowFilter<>() {
-            @Override
-            public boolean include(Entry<? extends ListTableModel<Finding>, ? extends Integer> e) {
-                var f = e.getModel().row(e.getIdentifier());
-                return facets.test(f) && headerFilters.test(f) && matchesSearch(e, terms, String.join(" ", f.aliases()));
-            }
-        });
-        var rows = findingsModel.rows();
-        packagesModel.setRows(PackageSummary.of(java.util.stream.IntStream.range(0, rows.size())
-                .filter(i -> facets.test(rows.get(i)) && headerFilters.test(rows.get(i))).mapToObj(rows::get).toList()));
-        packagesSorter.setRowFilter(new RowFilter<>() {
-            @Override
-            public boolean include(Entry<? extends ListTableModel<PackageSummary>, ? extends Integer> e) {
-                return matchesSearch(e, terms, "");
-            }
-        });
+        var shown = all.stream().filter(f -> facets.test(f) && headerFilters.test(f) && matchesSearch(f, terms)).toList();
+        keepingSelection(() -> findingGroups.show(shown, !terms.isEmpty()));
         unresolvedSorter.setRowFilter(new RowFilter<>() {
             @Override
             public boolean include(Entry<? extends ListTableModel<Unresolved>, ? extends Integer> e) {
@@ -357,6 +405,18 @@ final class FindingTables {
                 return (ecosystem == null || i.finding().ecosystem() == ecosystem) && matchesSearch(e, terms, i.rule().reason());
             }
         });
+    }
+
+    /** Every word searched is in one of the finding's columns, its package's, or its aliases. */
+    private boolean matchesSearch(Finding f, List<String> terms) {
+        if (terms.isEmpty()) return true;
+        var sb = new StringBuilder(String.join(" ", f.aliases()));
+        for (var c : findingGroups.columns()) {
+            Object v = c.filter() != null ? c.filter().apply(f) : null;
+            if (v != null) sb.append('\u0001').append(HeaderFilters.text(v));
+        }
+        String hay = sb.toString().toLowerCase(Locale.ROOT);
+        return terms.stream().allMatch(hay::contains);
     }
 
     /** Every word searched is in a column of the row, or in the extra text given (aliases, the reason set aside). */

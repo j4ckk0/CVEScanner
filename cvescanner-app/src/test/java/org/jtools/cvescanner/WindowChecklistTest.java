@@ -110,7 +110,7 @@ class WindowChecklistTest {
         w.click(w.find(javax.swing.JCheckBox.class, b -> "npm".equals(b.getText())));
         w.waitUntil("the npm findings left out", () -> w.tabTitle(0).startsWith("Findings (") && w.tabTitle(0).contains(" of 12"));
         assertTrue(WindowDriver.onEdt(() -> {
-            for (int r = 0; r < findings.getRowCount(); r++) if ("npm".equals(findings.getValueAt(r, findings.convertColumnIndexToView(4)))) return false;
+            for (int r = 0; r < findings.getRowCount(); r++) if ("npm".equals(findings.getModel().getValueAt(r, FindingGroups.ECOSYSTEM))) return false;
             return true;
         }), "no npm row");
         w.clickButton("Close");
@@ -123,11 +123,16 @@ class WindowChecklistTest {
         w.menu("View", "Look", "FlatLaf Light");
         w.waitUntil("the light look", () -> !Looks.isDark());
 
-        // 2. the packages: a tick, the button's count, the package's finding in the details
-        w.clickTab(1);
-        w.clickRow("lodash", 3);
+        // 2. a package version's row: its most severe finding in the details; ▸ opens its findings below it, ← closes it;
+        // its tick, the button's count
+        w.clickRow("lodash", FindingGroups.PACKAGE);
         assertTrue(w.details().contains("lodash"), w.details());
-        w.clickRow("lodash", 0);
+        int closed = WindowDriver.onEdt(findings::getRowCount);
+        w.clickRow("lodash", FindingGroups.EXPAND);
+        w.waitUntil("lodash's findings below it", () -> WindowDriver.onEdt(findings::getRowCount) > closed);
+        w.key(java.awt.event.KeyEvent.VK_LEFT);
+        w.waitUntil("lodash closed again", () -> WindowDriver.onEdt(findings::getRowCount) == closed);
+        w.clickRow("lodash", FindingGroups.FIX);
         w.waitUntil("one fix ticked", () -> w.text("applyFixes").contains("(1)"));
 
         // 3. Apply fixes: the plan names the package; cancelled, nothing is applied
@@ -144,13 +149,12 @@ class WindowChecklistTest {
         w.choose(w.named("scanMode", JComboBox.class), I18n.text("toolbar.scanMode.installed"));
         w.type(w.named("folder", JTextField.class), ROOT.resolve("examples/installed-app").toString());
         w.scan();
-        w.clickTab(1);
         JTable packages = w.table();
         int rows = WindowDriver.onEdt(packages::getRowCount);
         assertTrue(rows > 0);
         for (int r = 0; r < rows; r++) {
             int row = r;
-            assertEquals(null, WindowDriver.onEdt(() -> packages.getValueAt(row, 0)), "row " + r + " has a tick box");
+            assertEquals(null, WindowDriver.onEdt(() -> packages.getModel().getValueAt(row, FindingGroups.FIX)), "row " + r + " has a tick box");
         }
 
         // standard mode: no ignore file, VEX documents nor CVSS version to choose; expert mode shows them

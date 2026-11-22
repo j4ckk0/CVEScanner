@@ -41,7 +41,7 @@ import org.jtools.cvescanner.model.PackageSummary;
 import org.jtools.cvescanner.model.ScanResult;
 
 /**
- * Apply fixes: the package versions ticked in the Packages tab upgraded by each project's own build tool, offline. The
+ * Apply fixes: the package versions ticked in the findings' table upgraded by each project's own build tool, offline. The
  * plans are made in the background and shown (FixDialog); those confirmed run one after another (ToolRunner); then
  * what they gave is shown and the folder scanned again.
  */

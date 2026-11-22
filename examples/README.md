@@ -31,7 +31,7 @@ integrity hashes npm and yarn add (CVEScanner reads only the versions).
 
 Scanned with OSV.dev's Maven and npm exports of 2026-11-21: **283 findings, 204 distinct advisories, in all 32
 vulnerable package versions, and no dependency left unchecked.** A newer database finds more: advisories are added
-every day. For each package, one of its best known CVEs, and the version that fixes that one (*Packages to upgrade*
+every day. For each package, one of its best known CVEs, and the version that fixes that one (a package's *Upgrade to*
 gives the version that fixes them all):
 
 **Maven** (`maven-webapp`)

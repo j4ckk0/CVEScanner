@@ -107,7 +107,7 @@ final class MainWindow extends JFrame {
     private final JCheckBox directOnlyBox = new JCheckBox();
     private final JTabbedPane tabs = new JTabbedPane();
     /** The tabs, in their order. */
-    static final int FINDINGS_TAB = 0, PACKAGES_TAB = 1, DEPENDENCIES_TAB = 2, UNRESOLVED_TAB = 3, IGNORED_TAB = 4;
+    static final int FINDINGS_TAB = 0, DEPENDENCIES_TAB = 1, UNRESOLVED_TAB = 2, IGNORED_TAB = 3;
     private final DependencyTreeTab dependencyTab = new DependencyTreeTab(this::showSelected);
 
     private final DatabaseChoice databases;
@@ -212,16 +212,11 @@ final class MainWindow extends JFrame {
         TableActions.wire(tables, labels, new TableActions.Host() {
             public void showSelected() { MainWindow.this.showSelected(); }
             public void copyLink(String url) { MainWindow.this.copyLink(url); }
-            public void showFindingsOf(String text) {
-                filterBar.search(text);
-                tabs.setSelectedIndex(FINDINGS_TAB);
-            }
             public void search(String text) { filterBar.search(text); }
             public void ignore(Finding f) { MainWindow.this.ignore(f); }
             public void stopIgnoring(IgnoredFinding i) { ignoreActions.stopIgnoring(i); }
         });
         tabs.addTab("", new JScrollPane(tables.findingsTable));
-        tabs.addTab("", new JScrollPane(tables.packagesTable));
         tabs.addTab("", dependencyTab.component());
         tabs.addTab("", new JScrollPane(tables.unresolvedTable));
         tabs.addTab("", new JScrollPane(tables.ignoredTable));
@@ -257,7 +252,7 @@ final class MainWindow extends JFrame {
         labels.on(this::showSelected);
         labels.on(this::updateSeverityHeader);
         labels.on(scanModeCombo::repaint);
-        labels.on(() -> List.of(tables.findingsTable, tables.packagesTable, dependencyTab.tree(), tables.unresolvedTable,
+        labels.on(() -> List.of(tables.findingsTable, dependencyTab.tree(), tables.unresolvedTable,
                 tables.ignoredTable).forEach(JComponent::repaint));
         setSize(1480, 940);
         setMinimumSize(new Dimension(1000, 640));
@@ -492,7 +487,7 @@ final class MainWindow extends JFrame {
 
     /** The severity column says it is the environmental severity when an environment applies. */
     private void updateSeverityHeader() {
-        var header = tables.findingsTable.getColumnModel().getColumn(tables.findingsTable.convertColumnIndexToView(0));
+        var header = tables.findingsTable.getColumnModel().getColumn(tables.findingsTable.convertColumnIndexToView(FindingGroups.SEVERITY));
         header.setHeaderValue(I18n.text(environmentBar.environment().active() ? "column.envSeverity" : "column.severity"));
         tables.findingsTable.getTableHeader().repaint();
     }
@@ -521,11 +516,12 @@ final class MainWindow extends JFrame {
     private void updateCounts() {
         int shown = tables.shownFindings().size(), total = tables.allFindings().size();
         tabs.setTitleAt(FINDINGS_TAB, shown == total ? I18n.text("tab.findings", total) : I18n.text("tab.findings.filtered", shown, total));
-        tabs.setTitleAt(PACKAGES_TAB, I18n.text("tab.packages", tables.packagesTable.getRowCount()));
         tabs.setTitleAt(DEPENDENCIES_TAB, dependencyTab.title());
         tabs.setTitleAt(UNRESOLVED_TAB, I18n.text("tab.unresolved", tables.unresolvedTable.getRowCount()));
         tabs.setTitleAt(IGNORED_TAB, I18n.text("tab.ignored", tables.ignoredTable.getRowCount()));
-        summaryBar.showing(result == null ? " " : shown == total ? I18n.text("showing.all", total) : I18n.text("showing.some", shown, total));
+        int packages = tables.shownPackages();
+        summaryBar.showing(result == null ? " " : shown == total ? I18n.text("showing.all", total, packages)
+                : I18n.text("showing.some", shown, total, packages));
     }
 
     /** The severities' colours, those of the look in use, in the chips and the details. */

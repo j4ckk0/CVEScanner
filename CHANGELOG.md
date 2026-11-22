@@ -5,6 +5,11 @@ checksums.
 
 ## Unreleased
 
+- **Findings and Packages to upgrade in one tab**: the findings grouped by package version, a row each in bold with
+  its worst severity, the version fixing all its findings (*Upgrade to*), its tick for *Apply fixes* and how many
+  findings it has; ▸ (a click, →) opens its findings below it, ← closes it, a search opens them all. A click on a
+  header sorts, each package keeping its findings; the line under the counters says how many package versions hold the
+  findings shown.
 - **Filters in the column headers**: in the findings table, a ▾ at the right of each header lists the column's values
   to tick, as a spreadsheet filters; a filtered column's ▾ is drawn in colour, and *Clear filters* clears them too.
 - **Path**, a new column of the findings: the folder of the file a finding comes from (`maven-webapp/service`), to

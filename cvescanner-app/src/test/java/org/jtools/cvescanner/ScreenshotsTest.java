@@ -123,12 +123,13 @@ class ScreenshotsTest {
         show("folder", "~/CVEScanner/examples");
         show("databases", "~/CVEScanner/database/  Maven-all.zip  ;  npm-all.zip  ;  PyPI-all.zip  ;  nvdcve-2.0-2002.json.zip … "
                 + "nvdcve-2.0-2026.json.zip  ;  nvdcve-2.0-modified.json.zip");
-        w.clickRow("CVE-2021-44228", 5);
+        w.clickRow("log4j-core", FindingGroups.EXPAND);
+        w.clickRow("CVE-2021-44228", FindingGroups.CVE);
         w.screenshot(dir.resolve("findings.png"));
 
-        w.clickTab(1);
-        for (String pkg : List.of("jackson-databind", "axios", "netty-codec-http")) w.clickRow(pkg, 0);
-        w.clickRow("jackson-databind", 3);
+        w.clickRow("log4j-core", FindingGroups.EXPAND);
+        for (String pkg : List.of("jackson-databind", "axios", "netty-codec-http")) w.clickRow(pkg, FindingGroups.FIX);
+        w.clickRow("jackson-databind", FindingGroups.PACKAGE);
         w.screenshot(dir.resolve("packages.png"));
 
         w.clickTab(MainWindow.DEPENDENCIES_TAB);
@@ -139,7 +140,8 @@ class ScreenshotsTest {
         w.choose(w.named("ecosystem", JComboBox.class), I18n.text("filter.cots"));
         w.menu(I18n.text("menu.view"), I18n.text("menu.look"), "FlatLaf Dark");
         w.waitUntil("the dark look", Looks::isDark);
-        w.clickRow("CVE-", 5);
+        w.clickRow("COTS", FindingGroups.EXPAND);
+        w.clickRow("CVE-", FindingGroups.CVE);
         w.screenshot(dir.resolve("cots-dark.png"));
         w.menu(I18n.text("menu.view"), I18n.text("menu.look"), "FlatLaf Light");
         w.waitUntil("the light look", () -> !Looks.isDark());

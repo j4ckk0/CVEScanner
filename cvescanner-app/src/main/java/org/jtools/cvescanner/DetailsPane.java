@@ -36,10 +36,9 @@ import org.jtools.cvescanner.cvss.Environment;
 import org.jtools.cvescanner.ignore.IgnoredFinding;
 import org.jtools.cvescanner.ignore.Ignores;
 import org.jtools.cvescanner.model.Finding;
-import org.jtools.cvescanner.model.PackageSummary;
 
 /**
- * The details of what is selected in the tab shown: a finding; in the packages' tab, the package's most severe
+ * The details of what is selected in the tab shown: a finding; for a package version's row, its most severe
  * finding, in the Dependencies tab the dependency's (given by MainWindow); in the Ignored tab, the finding set aside
  * and why; nothing in the unchecked dependencies' tab. A link in it is copied, never opened. Above it, buttons for what
  * the tables' right-click menus do: copy the advisory's link, the CVEs, the package; ignore it, or stop ignoring it.
@@ -63,7 +62,7 @@ final class DetailsPane {
         void stopIgnoring(IgnoredFinding i);
     }
 
-    private static final int FINDINGS = MainWindow.FINDINGS_TAB, PACKAGES = MainWindow.PACKAGES_TAB, IGNORED = MainWindow.IGNORED_TAB;
+    private static final int FINDINGS = MainWindow.FINDINGS_TAB, IGNORED = MainWindow.IGNORED_TAB;
 
     private final FindingTables tables;
     private final Host host;
@@ -129,7 +128,6 @@ final class DetailsPane {
     void show(int tab) {
         switch (tab) {
             case FINDINGS -> show(tables.selectedFinding());
-            case PACKAGES -> show(worstFinding(tables.selectedPackage()));
             case IGNORED -> showIgnored();
             default -> show((Finding) null);
         }
@@ -150,12 +148,5 @@ final class DetailsPane {
                 : FindingDetails.page(i.finding(), host.environment(), i.rule(), host.ignores().shown(),
                         host.ignores().statementsFor(i.finding())));
         pane.setCaretPosition(0);
-    }
-
-    private Finding worstFinding(PackageSummary p) {
-        if (p == null) return null;
-        return host.split().active().stream()
-                .filter(f -> f.ecosystem() == p.ecosystem() && f.pkg().equals(p.pkg()) && f.version().equals(p.version()))
-                .max(Comparator.comparing(Finding::severity)).orElse(null);
     }
 }

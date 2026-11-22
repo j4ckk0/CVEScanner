@@ -20,7 +20,11 @@ package org.jtools.cvescanner;
  * #L%
  */
 
+import java.awt.Component;
+import java.awt.Font;
+import java.util.function.IntPredicate;
 import javax.swing.JTable;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 
 /**
@@ -29,8 +33,22 @@ import javax.swing.table.TableModel;
  */
 final class ScrollingTable extends JTable {
 
+    /** The rows drawn in bold: a package version's among its findings. */
+    private IntPredicate strong = _ -> false;
+
     ScrollingTable(TableModel model) {
         super(model);
+    }
+
+    void strongRow(IntPredicate rows) {
+        strong = rows;
+    }
+
+    @Override
+    public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+        Component c = super.prepareRenderer(renderer, row, column);
+        if (strong.test(convertRowIndexToModel(row)) && !c.getFont().isBold()) c.setFont(c.getFont().deriveFont(Font.BOLD));
+        return c;
     }
 
     @Override

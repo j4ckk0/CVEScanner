@@ -33,7 +33,8 @@ import org.jtools.cvescanner.model.Finding;
 
 /**
  * What a click, a double-click, a right-click does in the tables: a selection shows its details, a double-click on a
- * finding copies its link, on a package searches its findings; the right-click menus copy, ignore, stop ignoring.
+ * finding copies its link, on a package version opens or closes it; the right-click menus copy, ignore, stop ignoring
+ * (on a package version's row, its most severe finding).
  */
 final class TableActions {
 
@@ -42,9 +43,6 @@ final class TableActions {
         void showSelected();
 
         void copyLink(String url);
-
-        /** The findings' tab shown, searched for this text. */
-        void showFindingsOf(String text);
 
         /** The findings' search set to this text, the tab left as it is. */
         void search(String text);
@@ -69,7 +67,7 @@ final class TableActions {
     }
 
     private void wire() {
-        for (JTable t : new JTable[]{tables.findingsTable, tables.packagesTable, tables.ignoredTable})
+        for (JTable t : new JTable[]{tables.findingsTable, tables.ignoredTable})
             t.getSelectionModel().addListSelectionListener(e -> {
                 if (!e.getValueIsAdjusting()) host.showSelected();
             });
@@ -77,8 +75,16 @@ final class TableActions {
         tables.findingsTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() != 2 || !SwingUtilities.isLeftMouseButton(e)) return;
+                int column = tables.findingsTable.columnAtPoint(e.getPoint());
+                if (tables.isTickColumn(column)) return;   // a tick, not a look
+                if (tables.packageSelected()) {
+                    if (tables.findingsTable.convertColumnIndexToModel(column) != FindingGroups.EXPAND)   // the ▸ toggles on one click
+                        tables.toggle(tables.selectedRow(), null);
+                    return;
+                }
                 var f = tables.selectedFinding();
-                if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e) && f != null) host.copyLink(f.url());
+                if (f != null) host.copyLink(f.url());
             }
         });
         tables.findingsTable.setComponentPopupMenu(findingsMenu());
@@ -93,14 +99,6 @@ final class TableActions {
         });
         tables.ignoredTable.setComponentPopupMenu(ignoredMenu());
 
-        tables.packagesTable.addMouseListener(new MouseAdapter() {     // double-click a package: show its findings
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (tables.isTickColumn(tables.packagesTable.columnAtPoint(e.getPoint()))) return;   // a tick, not a look
-                var p = tables.selectedPackage();
-                if (e.getClickCount() == 2 && p != null) host.showFindingsOf(p.pkg());
-            }
-        });
     }
 
     /** A right-click selects the row it is on, so that its menu acts on that row. */

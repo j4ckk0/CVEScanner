@@ -50,16 +50,25 @@ import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableRowSorter;
 import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.model.Finding;
 
 /**
- * A ▾ at the right of each header of a table: a click on it lists the column's values, each to tick, as a spreadsheet
- * filters; a row is shown when each filtered column's value is one ticked. The ▾ of a filtered column is drawn in the
- * accent colour. A click elsewhere on the header still sorts.
+ * A ▾ at the right of each header of the findings' table: a click on it lists the column's values, each to tick, as a
+ * spreadsheet filters; a finding is shown when each filtered column's value of it is one ticked. The ▾ of a filtered
+ * column is drawn in the accent colour. A click elsewhere on a header sorts by its column (Sorting), the arrow of the
+ * look drawn beside its title.
  */
 final class HeaderFilters {
+
+    /** The table's own order, which a header click changes: the table sorts itself, without a RowSorter. */
+    interface Sorting {
+        int column();
+
+        boolean ascending();
+
+        void sortBy(int column);
+    }
 
     /** The width of the ▾ zone at a header's right, the last pixels left to resizing the column. */
     private static final int ZONE = 20, RESIZE = 4;
@@ -71,9 +80,10 @@ final class HeaderFilters {
     private final Supplier<List<Finding>> all;
     private final Function<Object, String> text;
     private final Runnable changed;
+    private final Sorting sorting;
     /** Each filtered column's values shown, by its model index; a column not in it is not filtered. */
     private final Map<Integer, Set<String>> shown = new HashMap<>();
-    /** Set when a press opens the list: the click it ends in does not sort. */
+    /** Set when a press opens a list or grabs a column's edge: the click it ends in does not sort. */
     private boolean pressedOnArrow;
     /** The look's own header renderer, which the ▾ is put beside, and the look it is of: made anew in another look. */
     private TableCellRenderer plain;
@@ -86,18 +96,26 @@ final class HeaderFilters {
      * @param all     every finding the table can show
      * @param text    a value as the list names it
      * @param changed run when the values ticked change
+     * @param sorting the table's order, which a click on a header changes
      */
     HeaderFilters(JTable table, IntFunction<Function<Finding, ?>> value, Supplier<List<Finding>> all, Function<Object, String> text,
-                  Runnable changed) {
+                  Runnable changed, Sorting sorting) {
         this.table = table;
         this.value = value;
         this.all = all;
         this.text = text;
         this.changed = changed;
+        this.sorting = sorting;
         var header = table.getTableHeader();
         header.setDefaultRenderer((t, heading, selected, focus, row, column) -> {
             Component c = plain().getTableCellRendererComponent(t, heading, selected, focus, row, column);
-            var arrow = new JLabel(shown.containsKey(t.convertColumnIndexToModel(column)) ? "▼" : "▾");
+            int model = t.convertColumnIndexToModel(column);
+            if (c instanceof JLabel title) {   // the column sorted by: the look's arrow beside its title
+                title.setIcon(model == sorting.column()
+                        ? UIManager.getIcon(sorting.ascending() ? "Table.ascendingSortIcon" : "Table.descendingSortIcon") : null);
+                title.setHorizontalTextPosition(JLabel.LEADING);
+            }
+            var arrow = new JLabel(value.apply(model) == null ? "" : shown.containsKey(model) ? "▼" : "▾");
             arrow.setBorder(BorderFactory.createEmptyBorder(0, 2, 0, RESIZE));
             if (shown.containsKey(t.convertColumnIndexToModel(column))) {
                 arrow.setForeground(UIManager.getColor("Component.accentColor"));
@@ -123,8 +141,19 @@ final class HeaderFilters {
             public void mousePressed(MouseEvent e) {
                 int column = header.columnAtPoint(e.getPoint());
                 Rectangle r = column < 0 ? null : header.getHeaderRect(column);
-                pressedOnArrow = r != null && e.getX() >= r.x + r.width - ZONE && e.getX() < r.x + r.width - RESIZE;
-                if (pressedOnArrow) list(column, r);
+                boolean onArrow = r != null && value.apply(table.convertColumnIndexToModel(column)) != null
+                        && e.getX() >= r.x + r.width - ZONE && e.getX() < r.x + r.width - RESIZE;
+                boolean onEdge = r != null && (e.getX() < r.x + RESIZE || e.getX() >= r.x + r.width - RESIZE);
+                pressedOnArrow = onArrow || onEdge;
+                if (onArrow) list(column, r);
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int column = header.columnAtPoint(e.getPoint());
+                if (column < 0 || pressedOnArrow || e.getClickCount() != 1 || !javax.swing.SwingUtilities.isLeftMouseButton(e)) return;
+                sorting.sortBy(table.convertColumnIndexToModel(column));
+                header.repaint();
             }
         });
     }
@@ -136,13 +165,6 @@ final class HeaderFilters {
             border = null;
         }
         return plain;
-    }
-
-    /** Whether the press that ends in this click opened a list: then the click does not sort (FilteringSorter). */
-    boolean pressedOnArrow() {
-        boolean was = pressedOnArrow;
-        pressedOnArrow = false;
-        return was;
     }
 
     /** Whether a finding shows: each filtered column's value of it is one ticked. */
@@ -212,25 +234,6 @@ final class HeaderFilters {
         popup.add(panel);
         close.addActionListener(_ -> popup.setVisible(false));
         popup.show(table.getTableHeader(), header.x, header.y + header.height);
-    }
-
-    /** A sorter that does not sort on the click that opened a header's list. */
-    static final class FilteringSorter<M extends ListTableModel<?>> extends TableRowSorter<M> {
-        private HeaderFilters filters;
-
-        FilteringSorter(M model) {
-            super(model);
-        }
-
-        void filters(HeaderFilters filters) {
-            this.filters = filters;
-        }
-
-        @Override
-        public void toggleSortOrder(int column) {
-            if (filters != null && filters.pressedOnArrow()) return;
-            super.toggleSortOrder(column);
-        }
     }
 
     /** The texts a list shows for a column's values: a severity by its label, a score as the language writes it. */

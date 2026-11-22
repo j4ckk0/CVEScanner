@@ -159,15 +159,17 @@ the columns and the aliases; Ctrl+F, Esc to clear); on the second the **Filters*
 counters set the **severity**: a click on one shows it and above, filled; a click on the lowest filled one shows all
 again. In the findings table, the ▾ at the right of each column header lists that column's
 values to tick, as a spreadsheet filters (the ▾ of a filtered column in colour; *Clear filters* clears them too); the
-*Path* column gives the folder of the file a finding comes from. Its tabs: **Findings**, one row per
-vulnerability and dependency, its details below (the fix, the scores, the match, the links); **Packages to
-upgrade**, one row per package version with the version that fixes all its findings; **Dependencies**, each file's
+*Path* column gives the folder of the file a finding comes from. Its tabs: **Findings**, a row per vulnerable
+package version, in bold: its worst severity, the version that fixes all its findings (*Upgrade to*), its tick for
+*Apply fixes*, how many findings it has; its ▸ (a click, →) shows below it a row per finding, ← closes it again, and a
+search opens them all. A click on a header sorts, each package keeping its findings below it. The details below show
+the finding selected, or a package's most severe one (the fix, the scores, the match, the links); **Dependencies**, each file's
 dependencies as a tree (each file with its ecosystem), each declared one with the packages it brings below it and the dot of its worst finding (the
 lockfiles that do not record what brings a package, Gradle's and `Pipfile.lock`, list their indirect ones apart);
 **Unchecked dependencies**,
 those whose version could not be known (an external BOM, a dynamic version like `1.+`), and why; **Ignored**, the
-findings the ignore file sets aside (see [Ignoring findings](#ignoring-findings)). A double-click or a right-click
-copies the advisory's link, the CVEs, the package's coordinates; a right-click also ignores a finding. The buttons
+findings the ignore file sets aside (see [Ignoring findings](#ignoring-findings)). A double-click on a package opens or closes it; on a finding,
+as a right-click, it copies the advisory's link, the CVEs, the package's coordinates; a right-click also ignores a finding. The buttons
 above the details do the same for the finding shown. **Export…**
 writes the reports for the rows shown. *Hide indirect dependencies* shows only what the projects declare;
 *Direct dependencies only*, beside the scan mode, scans only that. Once the first scan's findings are shown, the settings
@@ -180,7 +182,7 @@ what was chosen in them. A command line naming `--ignore`, `--no-ignore`, `--vex
 expert mode. *View ▸ Look* offers FlatLaf's looks, light and dark; the language is
 on the right of the menus. The choices are kept in `cvescanner.properties`, beside the program.
 
-![Packages to upgrade: one row per package version and the version that fixes its findings, three ticked for Apply fixes](docs/images/packages.png)
+![The findings by package version: each one's worst severity and the version that fixes its findings, three ticked for Apply fixes](docs/images/packages.png)
 
 ![The Dependencies tab: each file's dependencies as a tree, axios with follow-redirects below it, the dot of each one's worst finding](docs/images/dependencies.png)
 
@@ -279,9 +281,9 @@ team's, to change there. The SBOM CVEScanner writes, `bom.cdx.json`, is read bac
 ## Applying fixes
 
 On the command line, `--apply-fixes` says the same plans for every package the report keeps (`--fix-packages` names
-some), `--yes` applies them and `--allow-major` lets a major version change through. In the window, in **Packages to
-upgrade**, tick the package versions to upgrade (each row shows the version that fixes all its
-findings), then **Apply fixes… (n)**. CVEScanner first shows, for each, the exact command it would run, or why it will
+some), `--yes` applies them and `--allow-major` lets a major version change through. In the window, in **Findings**, tick
+the package versions to upgrade (each package's row shows the version that fixes all its findings), then **Apply
+fixes… (n)**. CVEScanner first shows, for each, the exact command it would run, or why it will
 not, and applies only what you confirm; then it shows what each tool said and scans the folder again.
 
 | Project | How a version is changed |
@@ -353,14 +355,14 @@ dependencies*. A native library without a version string stays unchecked too, as
 builds (Debian's zlib holds none). A distribution that backports a fix without changing the version string makes its
 library safer than its version says: the findings then say what the version is known for. A CVE published both as a
 GitHub advisory and in OSV's own records (PYSEC) is reported once, the record with a CVSS vector kept. What an
-installed product ships is not offered to *Apply fixes*: its fix belongs to whoever builds it, and *Packages to
-upgrade* says to which version. *Ignore this finding…* writes `cvescanner-ignore.csv` into the product's folder, like
+installed product ships is not offered to *Apply fixes*: its fix belongs to whoever builds it, and its row's
+*Upgrade to* says to which version. *Ignore this finding…* writes `cvescanner-ignore.csv` into the product's folder, like
 any other.
 
 ## Understanding the results
 
 - **Severity** is the environmental severity when an environment applies and the advisory has a CVSS vector,
-  otherwise the base one; the filters, the counters, *Packages to upgrade*, the reports and `--fail-on` all use it.
+  otherwise the base one; the filters, the counters, a package's worst severity, the reports and `--fail-on` all use it.
 - **Fixed in**: the first version without the vulnerability (— when no fix is published).
 - **≈ version**: an npm project without a lockfile is checked at the *lowest* version its range allows (`^4.17.0` →
   `4.17.0`); the version installed may be newer. Commit a lockfile for exact results.
@@ -409,7 +411,7 @@ menus, ou `--lang fr`) :
 
 ![Les exemples analysés pour un environnement exposé à Internet : 668 résultats, Log4Shell sélectionné](docs/images/fr/findings.png)
 
-![Les paquets à mettre à jour, trois cochés pour Appliquer les correctifs](docs/images/fr/packages.png)
+![Les résultats par version de paquet, trois cochés pour Appliquer les correctifs](docs/images/fr/packages.png)
 
 ![L'onglet Dépendances : les dépendances de chaque fichier en arbre, ce que chacune apporte en dessous](docs/images/fr/dependencies.png)
 
