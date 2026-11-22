@@ -46,6 +46,11 @@ public final class ProjectFiles {
             gradleProps = new ArrayList<>(), packageJsons = new ArrayList<>();
     /** Gradle's lockfiles: gradle.lockfile, and the older gradle/dependency-locks/*.lockfile. */
     public final List<Path> gradleLocks = new ArrayList<>();
+    /** Python projects: requirements*.txt, pyproject.toml, Pipfile, and the lockfiles poetry.lock, uv.lock, Pipfile.lock. */
+    public final List<Path> pythonProjects = new ArrayList<>();
+    /** What a source scan passes over besides SKIP_DIRS: Python's caches and installed packages. */
+    static final Set<String> PYTHON_SKIP = Set.of("__pycache__", "site-packages");
+    private static final Pattern REQUIREMENTS = Pattern.compile("(?i)requirements.*\\.txt");
     /** What names components off-the-shelf: inventories, SBOMs, binaries, pkg-config files, vcpkg and Conan manifests. */
     public final List<Path> cotsInventories = new ArrayList<>(), sboms = new ArrayList<>(), binaries = new ArrayList<>(),
             pkgConfigs = new ArrayList<>(), vcpkgManifests = new ArrayList<>(), conanFiles = new ArrayList<>();
@@ -72,7 +77,9 @@ public final class ProjectFiles {
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                 if (dir.equals(root)) return FileVisitResult.CONTINUE;
                 String n = dir.getFileName().toString();
-                boolean skipped = installed ? VERSION_CONTROL.contains(n) : SKIP_DIRS.contains(n) || n.startsWith(".");
+                // a virtual environment, whatever its name, holds pyvenv.cfg: what is installed there is not the project
+                boolean skipped = installed ? VERSION_CONTROL.contains(n)
+                        : SKIP_DIRS.contains(n) || n.startsWith(".") || PYTHON_SKIP.contains(n) || Files.isRegularFile(dir.resolve("pyvenv.cfg"));
                 return skipped ? FileVisitResult.SKIP_SUBTREE : FileVisitResult.CONTINUE;
             }
 
@@ -92,6 +99,7 @@ public final class ProjectFiles {
                     case "build.gradle", "build.gradle.kts" -> f.gradle.add(file);
                     case "gradle.properties" -> f.gradleProps.add(file);
                     case "gradle.lockfile" -> f.gradleLocks.add(file);
+                    case "pyproject.toml", "Pipfile", "poetry.lock", "uv.lock", "Pipfile.lock" -> f.pythonProjects.add(file);
                     case "package.json" -> f.packageJsons.add(file);
                     case "cots.csv" -> f.cotsInventories.add(file);
                     case "bom.json" -> f.sboms.add(file);
@@ -100,6 +108,9 @@ public final class ProjectFiles {
                     default -> {
                         String lower = n.toLowerCase(Locale.ROOT);
                         if (n.endsWith(".versions.toml")) f.catalogs.add(file);
+                        else if (REQUIREMENTS.matcher(n).matches() || (lower.endsWith(".txt") && file.getParent() != null
+                                && file.getParent().getFileName() != null && file.getParent().getFileName().toString().equals("requirements")))
+                            f.pythonProjects.add(file);
                         else if (lower.endsWith(".lockfile") && file.getParent() != null && file.getParent().getFileName() != null
                                 && file.getParent().getFileName().toString().equals("dependency-locks")) f.gradleLocks.add(file);
                         else if (lower.endsWith(".cots.csv")) f.cotsInventories.add(file);
@@ -114,7 +125,7 @@ public final class ProjectFiles {
             @Override
             public FileVisitResult visitFileFailed(Path file, IOException e) { return FileVisitResult.CONTINUE; }
         });
-        for (var list : List.of(f.poms, f.gradle, f.catalogs, f.gradleProps, f.gradleLocks, f.packageJsons, f.cotsInventories, f.sboms,
+        for (var list : List.of(f.poms, f.gradle, f.catalogs, f.gradleProps, f.gradleLocks, f.pythonProjects, f.packageJsons, f.cotsInventories, f.sboms,
                 f.binaries, f.pkgConfigs, f.vcpkgManifests, f.conanFiles, f.jars, f.installedPackageJsons, f.pythonMetadata, f.vexFiles))
             Collections.sort(list);
         return f;

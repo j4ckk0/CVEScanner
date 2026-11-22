@@ -1,0 +1,46 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "abc"
+        },
+        "pipfile-spec": 6,
+        "requires": {},
+        "sources": [
+            {
+                "name": "pypi",
+                "url": "https://pypi.org/simple",
+                "verify_ssl": true
+            }
+        ]
+    },
+    "default": {
+        "asgiref": {
+            "hashes": [],
+            "version": "==3.3.1"
+        },
+        "django": {
+            "hashes": [],
+            "index": "pypi",
+            "version": "==3.1.0"
+        },
+        "pytz": {
+            "hashes": [],
+            "version": "==2021.1"
+        },
+        "sqlparse": {
+            "hashes": [],
+            "version": "==0.4.1"
+        }
+    },
+    "develop": {
+        "pytest": {
+            "hashes": [],
+            "index": "pypi",
+            "version": "==7.0.0"
+        },
+        "localpkg": {
+            "editable": true,
+            "path": "."
+        }
+    }
+}

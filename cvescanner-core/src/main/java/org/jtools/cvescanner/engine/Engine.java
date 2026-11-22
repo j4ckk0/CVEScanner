@@ -54,6 +54,7 @@ import org.jtools.cvescanner.project.MavenReader;
 import org.jtools.cvescanner.project.MavenRepository;
 import org.jtools.cvescanner.project.NpmReader;
 import org.jtools.cvescanner.project.ProjectFiles;
+import org.jtools.cvescanner.project.PythonProjectReader;
 
 public final class Engine {
     private Engine() {}
@@ -123,6 +124,7 @@ public final class Engine {
         JarReader.scan(files.jars, col, l::warn);
         InstalledNpmReader.scan(files.installedPackageJsons, col, l::warn);
         PythonReader.scan(files.pythonMetadata, col, l::warn);
+        PythonProjectReader.scan(files.pythonProjects, col, l::warn);
 
         var wanted = VulnDb.Wanted.of(col.deps);
         var index = new VulnDb.Index();
@@ -160,6 +162,7 @@ public final class Engine {
         if (!files.jars.isEmpty()) counts.put("files.jars", files.jars.size());
         if (!files.installedPackageJsons.isEmpty()) counts.put("files.installedPackages", files.installedPackageJsons.size());
         if (!files.pythonMetadata.isEmpty()) counts.put("files.pythonPackages", files.pythonMetadata.size());
+        if (!files.pythonProjects.isEmpty()) counts.put("files.pythonProjects", files.pythonProjects.size());
         // the files of components off-the-shelf, said only when there are some
         if (!files.cotsInventories.isEmpty()) counts.put("files.cotsInventories", files.cotsInventories.size());
         if (!files.sboms.isEmpty()) counts.put("files.sboms", files.sboms.size());

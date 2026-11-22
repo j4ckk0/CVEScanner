@@ -1,0 +1,812 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:dc8c1d4d-acbf-353c-9688-7978c19e7271",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-11-22T10:21:23Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "CVEScanner",
+          "version": "1.4"
+        }
+      ]
+    },
+    "component": {
+      "type": "application",
+      "bom-ref": "scanned",
+      "name": "python-projects"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/jinja2@2.11.2",
+      "name": "jinja2",
+      "version": "2.11.2",
+      "purl": "pkg:pypi/jinja2@2.11.2",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "PyPI"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "requirements"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "pinned-pyproject/requirements.txt"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "poetry/poetry.lock"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/asgiref@3.3.1",
+      "name": "asgiref",
+      "version": "3.3.1",
+      "purl": "pkg:pypi/asgiref@3.3.1",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "PyPI"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "transitive"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "pipenv/Pipfile.lock"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/django@3.1.0",
+      "name": "django",
+      "version": "3.1.0",
+      "purl": "pkg:pypi/django@3.1.0",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "PyPI"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "direct"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "pipenv/Pipfile.lock"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/pytz@2021.1",
+      "name": "pytz",
+      "version": "2021.1",
+      "purl": "pkg:pypi/pytz@2021.1",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "PyPI"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "transitive"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "pipenv/Pipfile.lock"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/sqlparse@0.4.1",
+      "name": "sqlparse",
+      "version": "0.4.1",
+      "purl": "pkg:pypi/sqlparse@0.4.1",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "PyPI"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "transitive"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "pipenv/Pipfile.lock"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/pytest@7.0.0",
+      "name": "pytest",
+      "version": "7.0.0",
+      "purl": "pkg:pypi/pytest@7.0.0",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "PyPI"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "direct (dev)"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "pipenv/Pipfile.lock"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "poetry/poetry.lock"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/markupsafe@1.1.1",
+      "name": "markupsafe",
+      "version": "1.1.1",
+      "purl": "pkg:pypi/markupsafe@1.1.1",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "PyPI"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "transitive"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "poetry/poetry.lock"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/requests@2.25.0",
+      "name": "requests",
+      "version": "2.25.0",
+      "purl": "pkg:pypi/requests@2.25.0",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "PyPI"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "direct"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "poetry/poetry.lock"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "reqs/base.txt"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/urllib3@1.26.4",
+      "name": "urllib3",
+      "version": "1.26.4",
+      "purl": "pkg:pypi/urllib3@1.26.4",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "PyPI"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "transitive"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "poetry/poetry.lock"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "uv/uv.lock"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/django@3.1",
+      "name": "Django",
+      "version": "3.1",
+      "purl": "pkg:pypi/django@3.1",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "PyPI"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "requirements"
+        },
+        {
+          "name": "cvescanner:approximate",
+          "value": "true"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "reqs/requirements.txt"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/pyyaml@5.3.1",
+      "name": "PyYAML",
+      "version": "5.3.1",
+      "purl": "pkg:pypi/pyyaml@5.3.1",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "PyPI"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "requirements"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "reqs/requirements.txt"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "uv/uv.lock"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/pytest@7.4.0",
+      "name": "pytest",
+      "version": "7.4.0",
+      "purl": "pkg:pypi/pytest@7.4.0",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "PyPI"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "direct (dev)"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "uv/uv.lock"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/requests@2.25.1",
+      "name": "requests",
+      "version": "2.25.1",
+      "purl": "pkg:pypi/requests@2.25.1",
+      "properties": [
+        {
+          "name": "cvescanner:ecosystem",
+          "value": "PyPI"
+        },
+        {
+          "name": "cvescanner:scope",
+          "value": "direct"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "uv/uv.lock"
+        }
+      ]
+    }
+  ],
+  "vulnerabilities": [
+    {
+      "id": "GHSA-68w8-qjq3-2gfm",
+      "source": {
+        "name": "GitHub",
+        "url": "https://github.com/advisories/GHSA-68w8-qjq3-2gfm"
+      },
+      "references": [
+        {
+          "id": "CVE-2021-35042",
+          "source": {
+            "name": "NVD",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-35042"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "severity": "critical",
+          "method": "other"
+        }
+      ],
+      "description": "Test vuln in Django",
+      "recommendation": "Upgrade to 3.1.13",
+      "advisories": [
+        {
+          "url": "https://osv.dev/vulnerability/GHSA-68w8-qjq3-2gfm"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:pypi/django@3.1"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "ADVISORY"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "reqs/requirements.txt"
+        }
+      ]
+    },
+    {
+      "id": "GHSA-8q59-q68h-6hv4",
+      "source": {
+        "name": "GitHub",
+        "url": "https://github.com/advisories/GHSA-8q59-q68h-6hv4"
+      },
+      "references": [
+        {
+          "id": "CVE-2020-14343",
+          "source": {
+            "name": "NVD",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2020-14343"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 9.8,
+          "severity": "critical",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+        }
+      ],
+      "description": "Test vuln in PyYAML",
+      "recommendation": "Upgrade to 5.4",
+      "advisories": [
+        {
+          "url": "https://osv.dev/vulnerability/GHSA-8q59-q68h-6hv4"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:pypi/pyyaml@5.3.1"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "ADVISORY"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "reqs/requirements.txt"
+        }
+      ]
+    },
+    {
+      "id": "GHSA-68w8-qjq3-2gfm",
+      "source": {
+        "name": "GitHub",
+        "url": "https://github.com/advisories/GHSA-68w8-qjq3-2gfm"
+      },
+      "references": [
+        {
+          "id": "CVE-2021-35042",
+          "source": {
+            "name": "NVD",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-35042"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "severity": "critical",
+          "method": "other"
+        }
+      ],
+      "description": "Test vuln in Django",
+      "recommendation": "Upgrade to 3.1.13",
+      "advisories": [
+        {
+          "url": "https://osv.dev/vulnerability/GHSA-68w8-qjq3-2gfm"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:pypi/django@3.1.0"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "ADVISORY"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "pipenv/Pipfile.lock"
+        }
+      ]
+    },
+    {
+      "id": "GHSA-8q59-q68h-6hv4",
+      "source": {
+        "name": "GitHub",
+        "url": "https://github.com/advisories/GHSA-8q59-q68h-6hv4"
+      },
+      "references": [
+        {
+          "id": "CVE-2020-14343",
+          "source": {
+            "name": "NVD",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2020-14343"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "score": 9.8,
+          "severity": "critical",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+        }
+      ],
+      "description": "Test vuln in PyYAML",
+      "recommendation": "Upgrade to 5.4",
+      "advisories": [
+        {
+          "url": "https://osv.dev/vulnerability/GHSA-8q59-q68h-6hv4"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:pypi/pyyaml@5.3.1"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "ADVISORY"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "uv/uv.lock"
+        }
+      ]
+    },
+    {
+      "id": "GHSA-q2q7-5pp4-w6pg",
+      "source": {
+        "name": "GitHub",
+        "url": "https://github.com/advisories/GHSA-q2q7-5pp4-w6pg"
+      },
+      "references": [
+        {
+          "id": "CVE-2021-33503",
+          "source": {
+            "name": "NVD",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-33503"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "severity": "high",
+          "method": "other"
+        }
+      ],
+      "description": "Test vuln in urllib3",
+      "recommendation": "Upgrade to 1.26.5",
+      "advisories": [
+        {
+          "url": "https://osv.dev/vulnerability/GHSA-q2q7-5pp4-w6pg"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:pypi/urllib3@1.26.4"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "ADVISORY"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "poetry/poetry.lock"
+        }
+      ]
+    },
+    {
+      "id": "GHSA-q2q7-5pp4-w6pg",
+      "source": {
+        "name": "GitHub",
+        "url": "https://github.com/advisories/GHSA-q2q7-5pp4-w6pg"
+      },
+      "references": [
+        {
+          "id": "CVE-2021-33503",
+          "source": {
+            "name": "NVD",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-33503"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "severity": "high",
+          "method": "other"
+        }
+      ],
+      "description": "Test vuln in urllib3",
+      "recommendation": "Upgrade to 1.26.5",
+      "advisories": [
+        {
+          "url": "https://osv.dev/vulnerability/GHSA-q2q7-5pp4-w6pg"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:pypi/urllib3@1.26.4"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "ADVISORY"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "uv/uv.lock"
+        }
+      ]
+    },
+    {
+      "id": "GHSA-g3rq-g295-4j3m",
+      "source": {
+        "name": "GitHub",
+        "url": "https://github.com/advisories/GHSA-g3rq-g295-4j3m"
+      },
+      "references": [
+        {
+          "id": "CVE-2020-28493",
+          "source": {
+            "name": "NVD",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2020-28493"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "severity": "medium",
+          "method": "other"
+        }
+      ],
+      "description": "Test vuln in Jinja2",
+      "recommendation": "Upgrade to 2.11.3",
+      "advisories": [
+        {
+          "url": "https://osv.dev/vulnerability/GHSA-g3rq-g295-4j3m"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:pypi/jinja2@2.11.2"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "ADVISORY"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "pinned-pyproject/requirements.txt"
+        }
+      ]
+    },
+    {
+      "id": "GHSA-g3rq-g295-4j3m",
+      "source": {
+        "name": "GitHub",
+        "url": "https://github.com/advisories/GHSA-g3rq-g295-4j3m"
+      },
+      "references": [
+        {
+          "id": "CVE-2020-28493",
+          "source": {
+            "name": "NVD",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2020-28493"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "severity": "medium",
+          "method": "other"
+        }
+      ],
+      "description": "Test vuln in Jinja2",
+      "recommendation": "Upgrade to 2.11.3",
+      "advisories": [
+        {
+          "url": "https://osv.dev/vulnerability/GHSA-g3rq-g295-4j3m"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:pypi/jinja2@2.11.2"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "ADVISORY"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "poetry/poetry.lock"
+        }
+      ]
+    },
+    {
+      "id": "GHSA-j8r2-6x86-q33q",
+      "source": {
+        "name": "GitHub",
+        "url": "https://github.com/advisories/GHSA-j8r2-6x86-q33q"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-32681",
+          "source": {
+            "name": "NVD",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-32681"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "severity": "medium",
+          "method": "other"
+        }
+      ],
+      "description": "Test vuln in requests",
+      "recommendation": "Upgrade to 2.31.0",
+      "advisories": [
+        {
+          "url": "https://osv.dev/vulnerability/GHSA-j8r2-6x86-q33q"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:pypi/requests@2.25.0"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "ADVISORY"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "poetry/poetry.lock"
+        }
+      ]
+    },
+    {
+      "id": "GHSA-j8r2-6x86-q33q",
+      "source": {
+        "name": "GitHub",
+        "url": "https://github.com/advisories/GHSA-j8r2-6x86-q33q"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-32681",
+          "source": {
+            "name": "NVD",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-32681"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "severity": "medium",
+          "method": "other"
+        }
+      ],
+      "description": "Test vuln in requests",
+      "recommendation": "Upgrade to 2.31.0",
+      "advisories": [
+        {
+          "url": "https://osv.dev/vulnerability/GHSA-j8r2-6x86-q33q"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:pypi/requests@2.25.0"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "ADVISORY"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "reqs/base.txt"
+        }
+      ]
+    },
+    {
+      "id": "GHSA-j8r2-6x86-q33q",
+      "source": {
+        "name": "GitHub",
+        "url": "https://github.com/advisories/GHSA-j8r2-6x86-q33q"
+      },
+      "references": [
+        {
+          "id": "CVE-2023-32681",
+          "source": {
+            "name": "NVD",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-32681"
+          }
+        }
+      ],
+      "ratings": [
+        {
+          "severity": "medium",
+          "method": "other"
+        }
+      ],
+      "description": "Test vuln in requests",
+      "recommendation": "Upgrade to 2.31.0",
+      "advisories": [
+        {
+          "url": "https://osv.dev/vulnerability/GHSA-j8r2-6x86-q33q"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg:pypi/requests@2.25.1"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cvescanner:match",
+          "value": "ADVISORY"
+        },
+        {
+          "name": "cvescanner:file",
+          "value": "uv/uv.lock"
+        }
+      ]
+    }
+  ]
+}

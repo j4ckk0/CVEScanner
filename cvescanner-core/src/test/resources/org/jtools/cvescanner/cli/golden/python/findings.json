@@ -1,0 +1,369 @@
+{
+  "generated": "2026-11-22 10:21 UTC",
+  "scanned_directory": "<samples>/python-projects",
+  "databases": {
+    "pypi.zip": "OSV / GitHub advisories, 5 records (5 relevant), file dated 2026-11-22 10:19 UTC"
+  },
+  "scoring": {
+    "preferred_cvss_version": "4.0",
+    "environment": "Not applied (base score)",
+    "reach": "UNRESTRICTED",
+    "confidentiality_requirement": "X",
+    "integrity_requirement": "X",
+    "availability_requirement": "X"
+  },
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "base_severity": "CRITICAL",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "PyPI",
+      "package": "Django",
+      "version": "3.1",
+      "approximate": true,
+      "scope": "requirements",
+      "file": "reqs/requirements.txt",
+      "id": "GHSA-68w8-qjq3-2gfm",
+      "cves": [
+        "CVE-2021-35042"
+      ],
+      "aliases": [
+        "CVE-2021-35042"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "3.1.13",
+      "summary": "Test vuln in Django",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-68w8-qjq3-2gfm"
+    },
+    {
+      "severity": "CRITICAL",
+      "base_severity": "CRITICAL",
+      "cvss_version": "3.1",
+      "base_score": 9.8,
+      "base_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "PyPI",
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "approximate": false,
+      "scope": "requirements",
+      "file": "reqs/requirements.txt",
+      "id": "GHSA-8q59-q68h-6hv4",
+      "cves": [
+        "CVE-2020-14343"
+      ],
+      "aliases": [
+        "CVE-2020-14343"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "5.4",
+      "summary": "Test vuln in PyYAML",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-8q59-q68h-6hv4"
+    },
+    {
+      "severity": "CRITICAL",
+      "base_severity": "CRITICAL",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "PyPI",
+      "package": "django",
+      "version": "3.1.0",
+      "approximate": false,
+      "scope": "direct",
+      "file": "pipenv/Pipfile.lock",
+      "id": "GHSA-68w8-qjq3-2gfm",
+      "cves": [
+        "CVE-2021-35042"
+      ],
+      "aliases": [
+        "CVE-2021-35042"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "3.1.13",
+      "summary": "Test vuln in Django",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-68w8-qjq3-2gfm"
+    },
+    {
+      "severity": "CRITICAL",
+      "base_severity": "CRITICAL",
+      "cvss_version": "3.1",
+      "base_score": 9.8,
+      "base_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "PyPI",
+      "package": "pyyaml",
+      "version": "5.3.1",
+      "approximate": false,
+      "scope": "direct",
+      "file": "uv/uv.lock",
+      "id": "GHSA-8q59-q68h-6hv4",
+      "cves": [
+        "CVE-2020-14343"
+      ],
+      "aliases": [
+        "CVE-2020-14343"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "5.4",
+      "summary": "Test vuln in PyYAML",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-8q59-q68h-6hv4"
+    },
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "PyPI",
+      "package": "urllib3",
+      "version": "1.26.4",
+      "approximate": false,
+      "scope": "transitive",
+      "file": "poetry/poetry.lock",
+      "id": "GHSA-q2q7-5pp4-w6pg",
+      "cves": [
+        "CVE-2021-33503"
+      ],
+      "aliases": [
+        "CVE-2021-33503"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "1.26.5",
+      "summary": "Test vuln in urllib3",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-q2q7-5pp4-w6pg"
+    },
+    {
+      "severity": "HIGH",
+      "base_severity": "HIGH",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "PyPI",
+      "package": "urllib3",
+      "version": "1.26.4",
+      "approximate": false,
+      "scope": "transitive",
+      "file": "uv/uv.lock",
+      "id": "GHSA-q2q7-5pp4-w6pg",
+      "cves": [
+        "CVE-2021-33503"
+      ],
+      "aliases": [
+        "CVE-2021-33503"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "1.26.5",
+      "summary": "Test vuln in urllib3",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-q2q7-5pp4-w6pg"
+    },
+    {
+      "severity": "MEDIUM",
+      "base_severity": "MEDIUM",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "PyPI",
+      "package": "jinja2",
+      "version": "2.11.2",
+      "approximate": false,
+      "scope": "requirements",
+      "file": "pinned-pyproject/requirements.txt",
+      "id": "GHSA-g3rq-g295-4j3m",
+      "cves": [
+        "CVE-2020-28493"
+      ],
+      "aliases": [
+        "CVE-2020-28493"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "2.11.3",
+      "summary": "Test vuln in Jinja2",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-g3rq-g295-4j3m"
+    },
+    {
+      "severity": "MEDIUM",
+      "base_severity": "MEDIUM",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "PyPI",
+      "package": "jinja2",
+      "version": "2.11.2",
+      "approximate": false,
+      "scope": "direct",
+      "file": "poetry/poetry.lock",
+      "id": "GHSA-g3rq-g295-4j3m",
+      "cves": [
+        "CVE-2020-28493"
+      ],
+      "aliases": [
+        "CVE-2020-28493"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "2.11.3",
+      "summary": "Test vuln in Jinja2",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-g3rq-g295-4j3m"
+    },
+    {
+      "severity": "MEDIUM",
+      "base_severity": "MEDIUM",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "PyPI",
+      "package": "requests",
+      "version": "2.25.0",
+      "approximate": false,
+      "scope": "direct",
+      "file": "poetry/poetry.lock",
+      "id": "GHSA-j8r2-6x86-q33q",
+      "cves": [
+        "CVE-2023-32681"
+      ],
+      "aliases": [
+        "CVE-2023-32681"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "2.31.0",
+      "summary": "Test vuln in requests",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-j8r2-6x86-q33q"
+    },
+    {
+      "severity": "MEDIUM",
+      "base_severity": "MEDIUM",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "PyPI",
+      "package": "requests",
+      "version": "2.25.0",
+      "approximate": false,
+      "scope": "requirements",
+      "file": "reqs/base.txt",
+      "id": "GHSA-j8r2-6x86-q33q",
+      "cves": [
+        "CVE-2023-32681"
+      ],
+      "aliases": [
+        "CVE-2023-32681"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "2.31.0",
+      "summary": "Test vuln in requests",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-j8r2-6x86-q33q"
+    },
+    {
+      "severity": "MEDIUM",
+      "base_severity": "MEDIUM",
+      "cvss_version": null,
+      "base_score": null,
+      "base_vector": null,
+      "env_score": null,
+      "env_vector": null,
+      "ecosystem": "PyPI",
+      "package": "requests",
+      "version": "2.25.1",
+      "approximate": false,
+      "scope": "direct",
+      "file": "uv/uv.lock",
+      "id": "GHSA-j8r2-6x86-q33q",
+      "cves": [
+        "CVE-2023-32681"
+      ],
+      "aliases": [
+        "CVE-2023-32681"
+      ],
+      "match": "ADVISORY",
+      "match_note": "The advisory lists this exact package and its affected version range.",
+      "fixed_in": "2.31.0",
+      "summary": "Test vuln in requests",
+      "published": "",
+      "url": "https://osv.dev/vulnerability/GHSA-j8r2-6x86-q33q"
+    }
+  ],
+  "unresolved_dependencies": [
+    {
+      "ecosystem": "PyPI",
+      "name": "requests",
+      "declared": "",
+      "file": "pinned-pyproject/pyproject.toml",
+      "reason": "unpinned version '*'"
+    },
+    {
+      "ecosystem": "PyPI",
+      "name": "localpkg",
+      "declared": "",
+      "file": "pipenv/Pipfile.lock",
+      "reason": "non-registry source"
+    },
+    {
+      "ecosystem": "PyPI",
+      "name": "tool",
+      "declared": "git+https://github.com/example/tool.git#egg=tool",
+      "file": "reqs/requirements.txt",
+      "reason": "non-registry source"
+    },
+    {
+      "ecosystem": "PyPI",
+      "name": "mypkg",
+      "declared": "@ https://example.org/mypkg-1.0-py3-none-any.whl",
+      "file": "reqs/requirements.txt",
+      "reason": "non-registry source"
+    },
+    {
+      "ecosystem": "PyPI",
+      "name": "local",
+      "declared": "-e ./local#egg=local",
+      "file": "reqs/requirements.txt",
+      "reason": "non-registry source"
+    },
+    {
+      "ecosystem": "PyPI",
+      "name": "urllib3",
+      "declared": "<2",
+      "file": "reqs/requirements.txt",
+      "reason": "range has no lower bound"
+    }
+  ]
+}

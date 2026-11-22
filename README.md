@@ -9,7 +9,7 @@
 
 ## What it does
 
-- **Finds the known vulnerabilities** (CVEs and advisories) of your **Maven, Gradle and npm/Yarn** projects'
+- **Finds the known vulnerabilities** (CVEs and advisories) of your **Maven, Gradle, npm/Yarn and Python** projects'
   dependencies, of the **native components you ship** (GDAL, FFmpeg, OpenSSL, zlib, curl, SQLite…), and of an
   **installed product** read from its binaries: the jars inside its fat jars, WARs and EARs, its `node_modules`, its
   Python packages, its native libraries.
@@ -39,6 +39,8 @@ to install, a Java runtime is inside: unpack it anywhere, drop a database zip in
 1. **It finds your dependencies** in the folder you give it, sub-folders included:
    - `pom.xml` files, with their properties and parents; Gradle build files, version catalogs and lockfiles; `package.json`
      files, with their lockfile (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`) for the npm packages they pull in;
+     Python's `requirements*.txt`, `pyproject.toml` (PEP 621, Poetry) and `Pipfile`, with their lockfile (`poetry.lock`,
+     `uv.lock`, `Pipfile.lock`), whose versions win: a pinned version is exact, a range checked at its lowest (≈);
    - the native components named by a component inventory (`cots.csv`), an SBOM (CycloneDX, SPDX), a C/C++ build
      manifest (pkg-config, vcpkg, Conan), or the binaries themselves (a DLL's version resource, a file name).
    - or, for an **installed product** (*Installed product*, `--installed`), what it ships: each jar's Maven
@@ -455,14 +457,14 @@ Two Maven modules, each a jar and a Java module, built in this order by the pare
 
 | Path | What it holds |
 |---|---|
-| `cvescanner-core/…/project/` | the projects' dependencies: `ProjectFiles` (the files found), `MavenReader` (POMs, their properties and parents), `GradleReader` (build files, catalogs), `NpmReader` (package.json and its lockfiles), `DependencyCollector` |
+| `cvescanner-core/…/project/` | the projects' dependencies: `ProjectFiles` (the files found), `MavenReader` (POMs, their properties and parents), `GradleReader` (build files, catalogs, lockfiles; Gradle's cache through `GradleTransitive`), `MavenTransitive` (a pom's transitive dependencies), `NpmReader` (package.json and its lockfiles), `PythonProjectReader` (requirements, pyproject, Pipfile and their lockfiles, read with `TomlLite`), `DependencyCollector` |
 | `cvescanner-core/…/db/` | the databases: `VulnDb` (the zips streamed, nested ones followed, only what the projects use kept), `Osv` (OSV records, their ranges), `CveList` (CVE JSON 5 records, their package and name matches), `NvdFeed` (NVD's feeds, read a record at a time: CPE rules) |
 | `cvescanner-core/…/cots/` | components off-the-shelf: `InventoryReader` (cots.csv), `SbomReader` (CycloneDX, SPDX), `ManifestReader` (pkg-config, vcpkg, Conan), `BinaryReader` and `PeVersionInfo` (a DLL's version resource, read in bounded reads), `KnownProducts` (names to vendor:product) |
 | `cvescanner-core/…/engine/` | `Engine` (a scan: files, dependencies, databases, matches), `Matcher` (which database reports what, in which order) |
 | `cvescanner-core/…/installed/` | an installed product: `JarReader` (jars inside jars, their pom.properties), `InstalledNpmReader` (node_modules), `PythonReader` (site-packages) |
 | `cvescanner-core/…/fix/` | applying fixes: `FixPlanner` (the command per project, or why not: Java and Node checks, tools found without running them), `GradleEdit`, `ArtifactJava` and `NodeEngines` (the new version's needs, from the local caches), `ToolRunner` (the one class that starts a program: the build tool, offline, its files put back on failure) |
 | `cvescanner-core/…/cvss/` | `Cvss` (vectors, the 3.x formulas, the 4.0 macrovectors), `Severity`, `Environment`, `Reach`, `Requirement`, `Rating`, `Score` |
-| `cvescanner-core/…/model/` | what a scan finds: `Finding`, `Dependency` (its `Ecosystem`: Maven, npm, COTS), `Unresolved`, `PackageSummary`, `ScanResult`, `MatchBasis`; `Scoring` (a finding scored for an environment), `ScanListener` (a scan's progress) |
+| `cvescanner-core/…/model/` | what a scan finds: `Finding`, `Dependency` (its `Ecosystem`: Maven, npm, PyPI, COTS), `Unresolved`, `PackageSummary`, `ScanResult`, `MatchBasis`; `Scoring` (a finding scored for an environment), `ScanListener` (a scan's progress) |
 | `cvescanner-core/…/report/`, `…/cli/` | `Reports` (report.md, findings.csv, findings.json, the packages to upgrade); `Options` and `Cli` (the command line) |
 | `cvescanner-core/…/json/`, `…/version/`, `…/i18n/` | `Json` (a small parser and writer), `JsonStream` (a large array's elements one at a time); `Versions` (Maven's and npm's version order); the languages: `I18n`, `I18nLanguage`, `I18nTexts`, `Phrase` |
 | `cvescanner-app/…/` | `Launcher` (the entry point), `MainWindow`, `FindingTables`, `EnvironmentBar`, `IgnoreActions` and `FixActions` with `FixDialog`, `FindingDetails` (a finding's page, escaped), the table's `Column`, `ListTableModel` and renderers, `Settings`, `Looks`, `HelpMenu`, `I18nLabels` and `I18nLanguageBox`, `NoNetworkResolver` |

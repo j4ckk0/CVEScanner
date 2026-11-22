@@ -1,0 +1,4 @@
+[project]
+name = "pinned"
+version = "1.0"
+dependencies = ["Jinja2>=2.10,<3", "requests"]

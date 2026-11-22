@@ -17,6 +17,12 @@ checksums.
   only once ticked. Decided per declaration: one a declared pom of its chain governs follows that one's upgrade. Checked
   with the real Maven by `scripts/fix-tools-check.sh` (snakeyaml through jackson-dataformat-yaml).
 
+- **Python projects**: `requirements*.txt` (its `-r` includes followed), `pyproject.toml` (PEP 621, Poetry) and
+  `Pipfile`, with their lockfiles `poetry.lock`, `uv.lock` and `Pipfile.lock`, whose versions win, the declared
+  packages direct, the others transitive. A pinned version is exact; a range is checked at its lowest (≈); a URL, a
+  path or a VCS source is listed among the unchecked. A virtual environment (a folder holding `pyvenv.cfg`) is passed
+  over.
+
 ## 1.4 — 2026-11-22
 
 - **Apply fixes for transitive npm packages**: a package the project has only through others is overridden, its
