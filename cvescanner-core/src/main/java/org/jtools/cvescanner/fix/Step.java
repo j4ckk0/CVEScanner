@@ -43,7 +43,19 @@ public record Step(TextEdit edit, List<String> command, Path directory, Map<Stri
 
     /** The step as a person would type it: the command, after the edit it needs. */
     public String shown() {
-        String cmd = String.join(" ", command);
+        return withEdit(String.join(" ", command));
+    }
+
+    /** The step in short, to read at a glance: the program by its name (npm, not /usr/local/bin/npm.cmd). */
+    public String brief() {
+        if (command.isEmpty()) return withEdit("");
+        Path program = Path.of(command.getFirst()).getFileName();
+        String name = program == null ? command.getFirst() : program.toString().replaceFirst("(?i)\\.(cmd|bat|exe)$", "");
+        var rest = command.subList(1, command.size());
+        return withEdit(rest.isEmpty() ? name : name + " " + String.join(" ", rest));
+    }
+
+    private String withEdit(String cmd) {
         return edit == null ? cmd : edit.file().getFileName() + ": " + edit.before() + " → " + edit.after() + "; " + cmd;
     }
 }

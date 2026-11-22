@@ -563,6 +563,9 @@ final class MainWindow extends JFrame {
         tables.ignoredTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) showSelected();
         });
+        tables.packagesTable.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) showSelected();
+        });
         tables.ignoredTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
@@ -788,7 +791,7 @@ final class MainWindow extends JFrame {
         }
         setBusy(true);
         var databases = List.copyOf(dbFiles);
-        var options = new ScanOptions(ignoreActions.choice(), scanMode(), dbMaxAge(), LocalDate.now(), vexDocuments.files());
+        var options = new ScanOptions(ignoreActions.choice(), scanMode(), dbMaxAge(), LocalDate.now(), vexDocuments.filesForScan());
         new SwingWorker<ScanResult, Void>() {
             @Override
             protected ScanResult doInBackground() throws Exception {
@@ -866,12 +869,27 @@ final class MainWindow extends JFrame {
         return result != null;
     }
 
-    /** The details of the finding selected in the findings' table; in the Ignored tab, of the one set aside there. */
+    /**
+     * The details of the finding selected in the tab shown: in the packages' tab, the package's most severe finding; in
+     * the Ignored tab, the one set aside there; none in the unchecked dependencies' tab.
+     */
     private void showSelected() {
-        if (tabs.getSelectedIndex() != 3) {
-            showDetails(tables.selectedFinding());
-            return;
+        switch (tabs.getSelectedIndex()) {
+            case 0 -> showDetails(tables.selectedFinding());
+            case 1 -> showDetails(worstFinding(tables.selectedPackage()));
+            case 3 -> showSelectedIgnored();
+            default -> showDetails(null);
         }
+    }
+
+    private Finding worstFinding(PackageSummary p) {
+        if (p == null) return null;
+        return split.active().stream()
+                .filter(f -> f.ecosystem() == p.ecosystem() && f.pkg().equals(p.pkg()) && f.version().equals(p.version()))
+                .max(java.util.Comparator.comparing(Finding::severity)).orElse(null);
+    }
+
+    private void showSelectedIgnored() {
         var i = tables.selectedIgnored();
         detailPane.setText(i == null ? FindingDetails.placeholder(result != null)
                 : FindingDetails.page(i.finding(), environmentBar.environment(), i.rule(), ignoreActions.ignores().shown(),

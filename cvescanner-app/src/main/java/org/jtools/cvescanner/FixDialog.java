@@ -27,6 +27,7 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
 import java.io.File;
@@ -41,6 +42,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.Scrollable;
 import org.jtools.cvescanner.fix.FixOutcome;
 import org.jtools.cvescanner.fix.FixPlan;
 import org.jtools.cvescanner.fix.Step;
@@ -76,7 +78,7 @@ final class FixDialog {
      */
     static JPanel content(List<FixPlan> plans, Map<FixPlan, JCheckBox> boxes, Path root) {
         String prefix = root.toAbsolutePath().normalize() + File.separator;
-        var panel = new JPanel(new GridBagLayout());
+        var panel = new WidthTrackingPanel();
         var c = new GridBagConstraints();
         c.gridx = 0;
         c.gridy = 0;
@@ -93,15 +95,24 @@ final class FixDialog {
             panel.add(box, c);
             c.gridy++;
             var lines = new ArrayList<String>();
+            var full = new ArrayList<String>();
             if (!plan.applicable()) {
                 lines.add(I18n.text("fixDialog.notApplied", plan.notApplicable().text()));
             } else {
-                for (Step step : plan.steps()) lines.add(step.shown().replace(prefix, ""));
+                for (Step step : plan.steps()) {
+                    lines.add(step.brief().replace(prefix, ""));
+                    full.add(step.shown().replace(prefix, ""));
+                }
                 if (plan.requirement() != null) lines.add(plan.requirement().text());
                 plan.notes().forEach(note -> lines.add(note.text()));
                 if (plan.majorJump()) lines.add(I18n.text("fixDialog.majorJump"));
             }
             var detail = SwingText.plain(String.join("\n", lines));
+            detail.setLineWrap(true);
+            detail.setWrapStyleWord(true);
+            // the programs by their full path, which the short lines leave out; every text escaped
+            if (!full.isEmpty())
+                detail.setToolTipText("<html>" + String.join("<br>", full.stream().map(SwingText::html).toList()) + "</html>");
             detail.setForeground(plan.applicable() ? detail.getForeground() : Color.GRAY);
             detail.setBorder(BorderFactory.createEmptyBorder(0, 28, 0, 0));
             c.insets = new Insets(0, 4, 2, 4);
@@ -122,6 +133,19 @@ final class FixDialog {
         content.add(intro, BorderLayout.NORTH);
         content.add(scroll, BorderLayout.CENTER);
         return content;
+    }
+
+    /** The plans' panel in its scroll pane: as wide as the pane, so that long lines wrap rather than run past its edge. */
+    private static final class WidthTrackingPanel extends JPanel implements Scrollable {
+        WidthTrackingPanel() {
+            super(new GridBagLayout());
+        }
+
+        @Override public Dimension getPreferredScrollableViewportSize() { return getPreferredSize(); }
+        @Override public int getScrollableUnitIncrement(Rectangle r, int orientation, int direction) { return 16; }
+        @Override public int getScrollableBlockIncrement(Rectangle r, int orientation, int direction) { return r.height; }
+        @Override public boolean getScrollableTracksViewportWidth() { return true; }
+        @Override public boolean getScrollableTracksViewportHeight() { return false; }
     }
 
     /** What applying the fixes gave: per package applied or why not, then the tools' log, which can be copied. */

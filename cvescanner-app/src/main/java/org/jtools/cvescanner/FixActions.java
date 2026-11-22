@@ -117,6 +117,8 @@ final class FixActions {
                     failed(e);
                     return;
                 }
+                host.busy(false);   // the checks are done: no progress shown while the user chooses
+                host.say(() -> I18n.text("fixDialog.checked", plans.size()));
                 var chosen = FixDialog.confirm(owner, plans, result.root());
                 if (chosen.isEmpty()) {
                     setRunning(false);
@@ -129,6 +131,7 @@ final class FixActions {
     }
 
     private void runFixes(List<FixPlan> plans) {
+        host.busy(true);
         new SwingWorker<List<FixOutcome>, String>() {
             @Override
             protected List<FixOutcome> doInBackground() {
@@ -162,6 +165,8 @@ final class FixActions {
                         tables.ticked.remove(new FindingTables.PackageKey(r.ecosystem(), r.pkg(), r.from()));
                     }
                 setRunning(false);
+                long applied = outcomes.stream().filter(FixOutcome::applied).count();
+                host.say(() -> I18n.text("fixDialog.results.count", applied, outcomes.size() - applied));
                 FixDialog.results(owner, outcomes);
                 host.rescan();
             }

@@ -242,6 +242,11 @@ final class FindingTables {
         return row < 0 ? null : findingsModel.row(findingsTable.convertRowIndexToModel(row));
     }
 
+    PackageSummary selectedPackage() {
+        int row = packagesTable.getSelectedRow();
+        return row < 0 ? null : packagesModel.row(packagesTable.convertRowIndexToModel(row));
+    }
+
     IgnoredFinding selectedIgnored() {
         int row = ignoredTable.getSelectedRow();
         return row < 0 ? null : ignoredModel.row(ignoredTable.convertRowIndexToModel(row));

@@ -54,6 +54,7 @@ final class VexDocuments {
     private final JTextField field = new JTextField(40);
     private final JButton noneButton = new JButton();
     private final List<Path> files = new ArrayList<>();
+    private boolean pending;   // chosen since the last scan began: not read yet
 
     /** @param given those the command line named (--vex), else the ones the settings keep */
     VexDocuments(Component owner, I18nLabels labels, Settings settings, List<Path> given, Supplier<Path> scanFolder) {
@@ -70,8 +71,12 @@ final class VexDocuments {
         labels.on(this::updateField);
     }
 
-    /** The documents chosen, for Engine.scan (ScanOptions.vexFiles). */
-    List<Path> files() {
+    /** The documents chosen, for Engine.scan (ScanOptions.vexFiles): from now on, the field no longer says "from the next scan". */
+    List<Path> filesForScan() {
+        if (pending) {
+            pending = false;
+            updateField();
+        }
         return List.copyOf(files);
     }
 
@@ -109,6 +114,7 @@ final class VexDocuments {
     private void set(List<Path> chosen) {
         files.clear();
         files.addAll(chosen);
+        pending = true;
         settings.set(Settings.VEX_FILES, chosen.stream().map(Path::toString).collect(Collectors.joining(File.pathSeparator)));
         updateField();
     }
@@ -116,7 +122,7 @@ final class VexDocuments {
     private void updateField() {
         boolean none = files.isEmpty();
         field.setText(none ? I18n.text("toolbar.vex.folderOnly")
-                : I18n.text("toolbar.vex.chosen", String.join("  ;  ", files.stream().map(Path::toString).toList())));
+                : I18n.text(pending ? "toolbar.vex.pending" : "toolbar.vex.chosen", String.join("  ;  ", files.stream().map(Path::toString).toList())));
         field.setForeground(none ? Color.GRAY : UIManager.getColor("TextField.foreground"));
         field.setCaretPosition(0);
         noneButton.setEnabled(!none);

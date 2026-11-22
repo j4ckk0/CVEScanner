@@ -53,7 +53,7 @@ public final class ToolRunner {
         var log = new StringBuilder();
         var kept = new LinkedHashMap<Path, byte[]>();   // every step's files, the first time seen: a fix is undone whole
         for (Step step : plan.steps()) {
-            progress.accept(step.shown());
+            progress.accept(step.brief());
             log.append("$ ").append(step.shown()).append('\n');
             try {
                 keep(step.touched(), kept);
