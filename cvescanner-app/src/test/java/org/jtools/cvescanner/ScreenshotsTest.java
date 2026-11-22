@@ -107,6 +107,13 @@ class ScreenshotsTest {
         show("databases", "~/CVEScanner/database/  Maven-all.zip  ;  npm-all.zip  ;  PyPI-all.zip  ;  nvdcve-2.0-2002.json.zip … "
                 + "nvdcve-2.0-2026.json.zip  ;  nvdcve-2.0-modified.json.zip");
         w.named("tryExamples");
+        // the folder shown is a reader's, not this machine's: the window as it is with that folder there
+        var folder = w.named("folder", javax.swing.JTextField.class);
+        var scans = List.of(w.named("scan"), w.named("welcomeScan"));
+        SwingUtilities.invokeAndWait(() -> {
+            folder.putClientProperty("JComponent.outline", null);
+            scans.forEach(b -> b.setEnabled(true));
+        });
         w.screenshot(dir.resolve("welcome.png"));
         w.close();
         w = null;

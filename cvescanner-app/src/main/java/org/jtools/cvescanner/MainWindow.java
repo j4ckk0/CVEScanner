@@ -124,9 +124,9 @@ final class MainWindow extends JFrame {
     private WelcomePanel welcome;
     /** Before the first scan the welcome, then the tables and the details. */
     private final JPanel centreCards = new JPanel(new CardLayout());
-    /** The search, the filters and the counters: shown from the first scan, the welcome alone before. */
+    /** The search, the filters and the counters: shown from the first scan, the welcome in their place before. */
     private final List<JComponent> afterScan = new ArrayList<>();
-    /** The environment's row and the line above it: shown from the first scan, unless the settings are collapsed. */
+    /** The environment's row and the line below it: shown with the other settings, on the welcome too. */
     private final List<JComponent> environment = new ArrayList<>();
     /** The toolbar's rows below the folder's (the databases, what a scan reads), hidden when the settings are collapsed. */
     private final List<Component> collapsible = new ArrayList<>();
@@ -288,14 +288,13 @@ final class MainWindow extends JFrame {
 
     /**
      * What the window shows of its controls: the folder's row always; the other settings unless collapsed, the ignore
-     * file and the VEX documents in expert mode only, the environment from the first scan; the search, the filters and
-     * the counters from the first scan.
+     * file and the VEX documents in expert mode only; the search, the filters and the counters from the first scan.
      */
     private void showBlocks() {
         boolean collapsed = this.collapsed && result != null;   // before the first scan, the folder and the database to choose
         collapsible.forEach(c -> c.setVisible(!collapsed));
         expertRows.forEach(c -> c.setVisible(expert && !collapsed));
-        environment.forEach(c -> c.setVisible(result != null && !collapsed));
+        environment.forEach(c -> c.setVisible(!collapsed));
         afterScan.forEach(c -> c.setVisible(result != null));
         collapseButton.setVisible(result != null);
         collapseButton.setText(collapsed ? "▾" : "▴");

@@ -34,8 +34,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * The window opened without a folder: the welcome alone, below the toolbar; its Scan, then the findings with the search
- * and the filters, the settings collapsed until ▾ shows them with the environment; the folder among the recent ones;
+ * The window opened without a folder: the welcome below the toolbar and the environment; its Scan, then the findings
+ * with the search and the filters, the settings collapsed until ▾ shows them again; the folder among the recent ones;
  * Scan greyed until a folder and a database are given. Only with -Dcvescanner.windowTest=true, on a virtual display
  * (scripts/window-check.sh).
  */
@@ -61,8 +61,7 @@ class WindowWelcomeTest {
         assertEquals(null, w.find(Component.class, k -> "tryExamples".equals(k.getName())), "no examples beside this program");
         assertEquals(null, w.find(Component.class, k -> "tabs".equals(k.getName())), "no table before a scan");
         assertEquals(null, w.find(Component.class, k -> "ecosystem".equals(k.getName())), "no filters before a scan");
-        assertEquals(null, w.find(Component.class, k -> "reach".equals(k.getName()) || "envCustomise".equals(k.getName())),
-                "no environment before a scan");
+        w.named("envCustomise");   // the environment, to choose before a scan
         w.type(w.named("folder", JTextField.class), SAMPLES.resolve("projects").toString());
         w.click(w.named("welcomeScan"));
         w.waitUntil("the findings in place of the welcome", () -> w.find(Component.class, k -> "tabs".equals(k.getName())) != null

@@ -3,6 +3,11 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
+## Unreleased
+
+- The welcome shows the **environment** line too, to be chosen before the first scan; the search, the filters and the
+  counters still come with the findings.
+
 ## 1.7.2 — 2026-11-22
 
 - The window's *Base score* is named **CVSS base score** (*Score CVSS de base*): the findings' column, the details,

@@ -148,8 +148,8 @@ Start `cvescanner.bat` or `CVEScanner.exe` (Windows), `cvescanner.sh` (Linux); g
    mode they are on the row).
 4. **Scan.** Reading a database takes from a few seconds to a minute or two, as its size.
 
-Until the first scan the window shows these steps below the toolbar, with **Try the examples**; the environment, the
-search and the filters come with the findings. To see it at
+Until the first scan the window shows these steps below the toolbar and the environment, with **Try the examples**;
+the search and the filters come with the findings. To see it at
 work first, scan the `examples` folder beside the program: a Maven, a Gradle, an npm and a yarn project
 declaring real packages at vulnerable versions (Log4Shell, Text4Shell, Spring4Shell…), what a scan finds listed in
 [examples/README.md](examples/README.md).
