@@ -121,7 +121,7 @@ final class NpmRange {
         return new Bound(parts, wild);
     }
 
-    /** An exact version's numbers; a prerelease counts as below its version (1.2.3-beta < 1.2.3). */
+    /** An exact version's numbers; a prerelease or build suffix is not read (1.2.3-beta as 1.2.3). */
     private static int[] exact(String version) {
         if (version == null) return null;
         Matcher m = VERSION.matcher(version.strip());

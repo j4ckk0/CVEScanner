@@ -21,9 +21,10 @@ package org.jtools.cvescanner.model;
  */
 
 /**
- * What a scan reads. SOURCES: the projects' manifests (poms, Gradle files, package.json and their lockfiles, C/C++
- * manifests). INSTALLED: an installed product, from what it ships (jars, WARs and EARs and the jars inside them, an
- * installed node_modules, a Python site-packages, native libraries), every folder included. Both read the SBOMs,
- * component inventories, pkg-config files and binaries of components off-the-shelf.
+ * What a scan reads. SOURCES: the projects' manifests (poms, Gradle files, package.json, Python's requirements,
+ * pyproject.toml and Pipfile, and their lockfiles, C/C++ manifests). INSTALLED: an installed product, from what it
+ * ships (jars, WARs and EARs and the jars inside them, an installed node_modules, a Python site-packages, native
+ * libraries), every folder included. Both read the SBOMs, component inventories, pkg-config files and binaries of
+ * components off-the-shelf.
  */
 public enum ScanMode { SOURCES, INSTALLED }

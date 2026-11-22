@@ -40,9 +40,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * The window clicked through, as a person would check it: a scan, the packages ticked for Apply fixes, the plan, an
- * installed product, a VEX document, the database age, the other language. Only with -Dcvescanner.windowTest=true,
- * on a virtual display (scripts/window-check.sh): never on a desktop, which it would take over.
+ * The window clicked through, as a person would check it: a scan and its filters, the looks, the packages ticked for
+ * Apply fixes, the plan, an installed product, a VEX document, the database age, the Dependencies tab, Direct
+ * dependencies only, the other language. Only with -Dcvescanner.windowTest=true, on a virtual display
+ * (scripts/window-check.sh): never on a desktop, which it would take over.
  */
 class WindowChecklistTest {
 
@@ -138,7 +139,7 @@ class WindowChecklistTest {
         w.clickRow("lodash", 3);
         assertTrue(w.details().contains("stated in the VEX document"), w.details());
 
-        // 6. the database age: a day, and the sample database is not older
+        // 6. the database age: a day; the sample's records carry no date, so none is said old
         w.menu("View", "Database age");
         var age = w.dialog("Database age");
         w.type(w.find(JTextField.class, f -> javax.swing.SwingUtilities.getWindowAncestor(f) == age), "1");

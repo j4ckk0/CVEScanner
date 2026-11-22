@@ -53,7 +53,7 @@ final class MavenTransitive {
         this.index = index;
     }
 
-    /** The model of a scanned pom: its parents and BOMs found in the folder, else in the repository. */
+    /** The model of a pom, scanned or the repository's: its parents and BOMs found in the folder, else in the repository. */
     MavenModel model(MavenReader.Pom pom) {
         return models.computeIfAbsent(pom, p -> new MavenModel(p, this::parentOf, this::find, missing));
     }

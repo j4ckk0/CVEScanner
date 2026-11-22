@@ -190,7 +190,8 @@ public final class NpmReader {
 
     /**
      * package-lock.json (v2, v3): what each installed package depends on, found as Node finds it (its own
-     * node_modules, then its parents' up to the root); each package's parents, by its key, from the root's dependencies.
+     * node_modules, then its parents' up to the root); each package's parents, by its key, from the root's and its
+     * workspaces' dependencies.
      */
     private static Map<String, List<String>> packageLockPaths(Map<String, Object> packages) {
         var children = new HashMap<String, List<String>>();
@@ -364,8 +365,8 @@ public final class NpmReader {
     }
 
     /**
-     * pnpm-lock.yaml (v5 to v9): its packages at their versions, their parents from what each needs, from the root
-     * project's and its workspaces' dependencies (the importers or, before importers, the top-level ones).
+     * pnpm-lock.yaml (lockfile 5.x, 6.0, 9.0): its packages at their versions, their parents from what each needs, from
+     * the root project's and its workspaces' dependencies (the importers, or a single project's top-level ones).
      */
     private static List<LockEntry> pnpmLock(Path path, Set<String> declared) throws IOException {
         var found = new LinkedHashMap<String, String[]>();   // id "name@version" -> {name, version}

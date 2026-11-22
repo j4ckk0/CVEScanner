@@ -1,6 +1,7 @@
 # Apply fixes with the real build tools, on Linux and on Windows: scripts/fix-tools-check.sh upgrades the projects of
-# samples/fix-tools with npm, yarn 1, yarn 4, pnpm and Gradle, offline. The tools are the runner's own or installed
-# here, and fill their caches online first: CI's downloads, never CVEScanner's. Run when the fixes change, or by hand.
+# samples/fix-tools with npm, yarn 1, yarn 4, pnpm, Gradle and Maven, offline. The tools are the runner's own or
+# installed here, and fill their caches online first: CI's downloads, never CVEScanner's. Run when the fixes change, or
+# by hand.
 name: fix-tools
 
 on:

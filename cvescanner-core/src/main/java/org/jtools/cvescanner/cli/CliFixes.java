@@ -39,9 +39,10 @@ import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.PackageSummary;
 
 /**
- * --apply-fixes: the window's Apply fixes, on the command line. Every package the report keeps (or those
- * --fix-packages names) that a project declares and a version fixes is planned, each plan said: its command, what was
- * checked, or why it cannot be applied. Nothing changes without --yes; a major version change needs --allow-major too.
+ * --apply-fixes: the window's Apply fixes, on the command line. Every Maven or npm package the report keeps (those of
+ * them --fix-packages names) that a project declares and a version fixes is planned, each plan said: its command, what
+ * was checked, or why it cannot be applied. Nothing changes without --yes; a major version change needs --allow-major
+ * too.
  */
 final class CliFixes {
 

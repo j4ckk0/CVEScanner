@@ -32,8 +32,8 @@ import org.jtools.cvescanner.model.PackageSummary;
 
 /**
  * The details of what is selected in the tab shown: a finding; in the packages' tab, the package's most severe
- * finding; in the Ignored tab, the finding set aside and why; nothing in the unchecked dependencies' tab. A link in
- * it is copied, never opened.
+ * finding, in the Dependencies tab the dependency's (given by MainWindow); in the Ignored tab, the finding set aside
+ * and why; nothing in the unchecked dependencies' tab. A link in it is copied, never opened.
  */
 final class DetailsPane {
 

@@ -69,10 +69,10 @@ public final class Reports {
     }
 
     /**
-     * Writes report.md, in this language, and findings.csv, dependencies.csv, findings.json and bom.cdx.json (CycloneDX), in English
-     * whatever the language: their readers are programs. The findings reported are the split's active ones; those it
-     * sets aside have a section of their own in report.md and findings.json, are analysed "not_affected" in the SBOM,
-     * and are not in findings.csv.
+     * Writes report.md, in this language, and findings.csv, dependencies.csv, findings.json and bom.cdx.json
+     * (CycloneDX), in English whatever the language: their readers are programs. The findings reported are the split's
+     * active ones; those it sets aside have a section of their own in report.md and findings.json, an analysis in the
+     * SBOM, and are in neither CSV.
      *
      * @param hideTransitive the indirect dependencies left out of dependencies.csv, as the filter leaves out their findings
      * @return the paths written
@@ -127,7 +127,6 @@ public final class Reports {
 
     private static final Pattern MARKDOWN_SPECIAL = Pattern.compile("[\\\\`*_\\[\\]<>|&!#~]");
 
-    /** Text of a project or a database in a code span, where HTML is not read: no backquote to end it, no cell's pipe. */
     /** The scan's warnings of these keys: what a transitive resolution could not follow. */
     private static List<Phrase> warnings(ScanResult r, String... keys) {
         var wanted = List.of(keys);
@@ -135,8 +134,8 @@ public final class Reports {
     }
 
     /**
-     * The notes' lines on the transitive dependencies: whether Maven's and Gradle's were followed, from where, and what
-     * could not be. A scan that read neither keeps the one line it always had.
+     * The notes' lines on the transitive dependencies: none read (--direct-only), or whether Maven's and Gradle's were
+     * followed, from where, and what could not be; a single line when neither was.
      */
     private static void transitiveNotes(StringBuilder sb, ScanResult r, I18nLanguage language) {
         if (r.directOnly()) {
@@ -165,6 +164,7 @@ public final class Reports {
         } else sb.append(I18n.text(language, "markdown.notes.gradleDeclared")).append('\n');   // locked builds, the others declared only
     }
 
+    /** Text of a project or a database in a code span, where HTML is not read: no backquote to end it, no cell's pipe. */
     static String code(String s) {
         if (s == null) return "";
         return s.replaceAll("\\s+", " ").strip().replace('`', '\'').replace("|", "\\|");
@@ -378,7 +378,7 @@ public final class Reports {
             m.put("reason", u.reason().text(I18nLanguage.ENGLISH));
             return m;
         }).toList());
-        // the ignore file's, when there is one: what it sets aside, its entries expired and those setting nothing aside
+        // the ignore file's and the VEX documents', when read: what they set aside, the entries expired and those setting nothing aside
         if (split.ignores().said()) {
             if (split.ignores().read()) root.put("ignore_file", split.ignores().shown());
             if (!split.ignores().vex().isEmpty()) root.put("vex_files", split.ignores().vexSources());

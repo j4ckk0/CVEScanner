@@ -129,7 +129,7 @@ public final class JsonStream {
         throw new IllegalArgumentException("a value breaks off");
     }
 
-    /** Reads a string's characters after its opening quote, up to and with its closing one; escapes kept as written. */
+    /** Reads a string's characters after its opening quote, up to its closing one, kept withQuote; escapes kept as written. */
     private void string(StringBuilder text, boolean withQuote) throws IOException {
         for (int c; (c = read()) != -1; ) {
             if (c == '"') {

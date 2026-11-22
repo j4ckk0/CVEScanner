@@ -45,7 +45,7 @@ final class NodeEngines {
 
     private NodeEngines() {}
 
-    /** The version's engines.node: "" when it states none, empty when the cache does not hold the package. */
+    /** The version's engines.node: "" when it states none, empty when the cache does not hold this version. */
     static Optional<String> of(Machine machine, String pkg, String version) {
         for (String name : List.of(pkg.replace("/", "%2f"), pkg)) {
             Optional<Map<String, Object>> doc = document(machine.npmCache(), "make-fetch-happen:request-cache:" + REGISTRY + name);

@@ -43,7 +43,7 @@ import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.FindingFilter;
 
 /**
- * What the tables show: the search (every word, over the columns), the lowest severity, the ecosystem, and the three
+ * What the tables show: the search (every word, over the columns), the lowest severity, the ecosystem, and the four
  * boxes the command line has too (FindingFilter). Says each change through the Runnable given.
  */
 final class FilterBar {

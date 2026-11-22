@@ -315,7 +315,7 @@ class FixPlannerTest {
         assertEquals(List.of("fix.note.pinned"), pnpm.notes().stream().map(Phrase::key).toList());
     }
 
-    /** mkdirp 0.5.5 asking minimist ^1.2.5, locked at 1.2.5: as the real tools' fixtures (samples/fix-tools). */
+    /** mkdirp 0.5.5 asking minimist in the range given, locked at 1.2.5: as the real tools' fixtures (samples/fix-tools). */
     private static final String PACKAGE_LOCK = """
             {"name": "t", "lockfileVersion": 3, "packages": {
               "": {"dependencies": {"mkdirp": "0.5.5"}},

@@ -33,7 +33,7 @@ import java.util.TreeMap;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/** npm's declared ranges read without a lockfile, a yarn alias, and Gradle's variables. */
+/** npm's declared ranges read without a lockfile, a yarn alias, the parents each lockfile says, workspaces; Gradle's variables. */
 class NpmAndGradleTest {
 
     @Test
@@ -79,7 +79,7 @@ class NpmAndGradleTest {
         assertEquals(Map.of("async@2.6.3", "direct", "lodash@4.17.11", "direct", "lodash@4.17.15", "transitive"), scopes);
     }
 
-    /** Each package's parents, "name@version > …", by "name@version"; "?" when the lockfile does not say. */
+    /** Each package's scope and parents, "name@version > …", by "name@version"; "?" when the lockfile does not say. */
     private static Map<String, String> parents(Path dir, String packageJson, String lockName, String lock) throws Exception {
         Files.writeString(dir.resolve("package.json"), packageJson);
         Files.writeString(dir.resolve(lockName), lock);

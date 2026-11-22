@@ -36,6 +36,7 @@ import org.jtools.cvescanner.ignore.Ignores;
  * @param mavenRepository the local Maven repository read for the poms' transitive dependencies; null when none was
  * @param gradleCache  Gradle's cache read for the builds' transitive dependencies; null when none was
  * @param gradleLocked whether Gradle lockfiles gave the builds' versions
+ * @param directOnly   whether the projects' declared dependencies only were read (ScanOptions.directOnly)
  */
 public record ScanResult(Path root, List<Finding> findings, List<Dependency> dependencies, List<Unresolved> unresolved,
                   Map<String, Phrase> snapshots, Map<String, Integer> fileCounts, List<Phrase> warnings, Ignores ignores,

@@ -67,7 +67,7 @@ public final class ProjectFiles {
 
     /**
      * The files of a scan: the projects' manifests (SOURCES), or what an installed product ships (INSTALLED), where no
-     * folder but a hidden one is passed over: node_modules, build, dist hold what is installed.
+     * folder but version control's is passed over: node_modules, build, dist hold what is installed.
      */
     public static ProjectFiles find(Path root, ScanMode mode) throws IOException {
         var f = new ProjectFiles();

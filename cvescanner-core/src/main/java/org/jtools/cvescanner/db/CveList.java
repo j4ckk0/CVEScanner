@@ -43,8 +43,8 @@ import org.jtools.cvescanner.model.Scoring;
 /**
  * CVE List (CVE JSON 5) support. CVE records describe products in free text (vendor/product), so a record is
  * matched to a dependency when it names the package (packageName, or product equal to "group:artifact"), or,
- * flagged as a name match, when the product equals the npm name / Maven artifactId (and the vendor appears in
- * the groupId). A component off-the-shelf is matched by its product, as a package when the vendor appears in its own.
+ * flagged as a name match, when the product equals the package's name (for Maven, its artifactId, the vendor appearing
+ * in the groupId). A component off-the-shelf is matched by its product, as a package when the vendor appears in its own.
  */
 public final class CveList {
     public record Info(String id, String summary, String details, String published, Rating rating) {}

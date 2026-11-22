@@ -1,21 +1,22 @@
 #!/usr/bin/env bash
 #
-# Apply fixes with the real build tools: npm, yarn 1, yarn 4, pnpm and Gradle each upgrade a vulnerable version of
-# samples/fix-tools, offline, as the window's Apply fixes and --apply-fixes --yes run them.
+# Apply fixes with the real build tools: npm, yarn 1, yarn 4, pnpm, Gradle and Maven each upgrade a vulnerable version
+# of samples/fix-tools, offline, as the window's Apply fixes and --apply-fixes --yes run them.
 #
 #   scripts/fix-tools-check.sh
 #
 # Needs java, node with npm, yarn and pnpm (through corepack: yarn 1 by default, yarn 4 by the project's
-# packageManager), and gradle on the PATH, and the program built (cvescanner-app/target/cvescanner.jar). Runs on Linux,
-# and on Windows in Git Bash (the release's CI does both, .github/workflows/fix-tools.yml).
+# packageManager), gradle and mvn on the PATH, and the program built (cvescanner-app/target/cvescanner.jar). Runs on
+# Linux, and on Windows in Git Bash (the CI does both, .github/workflows/fix-tools.yml).
 #
 # First the tools fill their own caches, online: the versions the projects lock and the versions that fix them. These
 # downloads are the tools' and this script's, never CVEScanner's: the scan and the fixes then run with the tools offline.
 # Then each project is checked: its manifest and lockfile name the fixed version, written as the project wrote it
 # (exact, ^ or ~; pnpm and yarn 4 pin it, since offline they resolve no range, and so does yarn 1 a ^ on Windows), and
 # the folder scanned again holds no finding. minimist, which the projects have only through mkdirp, is overridden in each
-# (npm's overrides, yarn's resolutions, pnpm-workspace.yaml). Last, without the tools on the PATH, nothing is applied
-# and nothing changes.
+# (npm's overrides, yarn's resolutions, pnpm-workspace.yaml). snakeyaml, which the Maven project has only through
+# jackson-dataformat-yaml, is pinned once --allow-major allows it. Last, without the tools on the PATH, nothing is
+# applied and nothing changes.
 #
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")/.."

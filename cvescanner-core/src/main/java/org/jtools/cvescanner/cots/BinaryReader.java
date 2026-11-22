@@ -38,8 +38,9 @@ import org.jtools.cvescanner.project.DependencyCollector;
  * The components off-the-shelf a project carries as binaries: a Windows DLL or EXE named by its version resource
  * (PeVersionInfo: "FFmpeg" 4.4.2), else by its file name (gdal304.dll, avcodec-58.dll, libgdal.so.30, ffmpeg-4.4.2.exe).
  * A file name gives a version only when it spells one out (name-1.2.3), shown approximate; an ABI number (avcodec-58,
- * libgdal.so.30) is not the product's version, and such a binary is unchecked. Only binaries KnownProducts names are
- * reported — not every DLL of a folder —, and one product's binaries of a folder count once.
+ * libgdal.so.30) is not the product's version: such a binary is known by the version string it holds, else unchecked.
+ * Only binaries KnownProducts names are reported — not every DLL of a folder —, and one product's binaries of a folder
+ * count once.
  */
 public final class BinaryReader {
 

@@ -67,8 +67,9 @@ public final class VulnDb {
     private static final Pattern FEED_DATE = Pattern.compile("\"timestamp\"\\s*:\\s*\"(\\d{4}-\\d{2}-\\d{2})");
     private static final Pattern CVE_NAME = Pattern.compile("\"(?:product|packageName)\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
 
-    /** What the scan looks for: packages by ecosystem, the CVE List's keys, and the products of the COTS components. */
     /**
+     * What the scan looks for: packages by ecosystem, the CVE List's keys, and the products of the COTS components.
+     *
      * @param mavenArtifacts the artifactIds of jars known by their name alone (no group): every group's advisories for
      *                       them are wanted
      */

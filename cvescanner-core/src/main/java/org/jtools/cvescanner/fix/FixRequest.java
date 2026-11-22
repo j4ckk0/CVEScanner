@@ -31,8 +31,8 @@ import org.jtools.cvescanner.model.PackageSummary;
  * An upgrade asked for: this package, from this version to the one fixing its findings, wherever the scan found it.
  * The target is the one the Packages tab showed when asked: the window's filters change no request once made.
  *
- * @param declarations the files declaring it (a pom, a build file, a catalog, a package.json or its lockfile), with the
- *                     scope the scan gave each
+ * @param declarations the files declaring it (a pom, a Gradle build file or catalog, a package.json, a Python manifest,
+ *                     a lockfile), with the scope the scan gave each
  */
 public record FixRequest(Ecosystem ecosystem, String pkg, String from, String to, List<Declaration> declarations) {
 

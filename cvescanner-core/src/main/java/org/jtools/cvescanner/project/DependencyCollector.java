@@ -50,7 +50,7 @@ public final class DependencyCollector {
         add(new Dependency(eco, name, version, f, scope, approximate));
     }
 
-    /** A dependency another package brings, with the packages that bring it ("name@version", the declared one first). */
+    /** A dependency with the packages that bring it ("name@version", the declared one first): empty when declared, null when unknown. */
     public void add(Ecosystem eco, String name, String version, Path file, String scope, List<String> parents) {
         add(new Dependency(eco, name, version, rel(file), scope, false, null, parents));
     }

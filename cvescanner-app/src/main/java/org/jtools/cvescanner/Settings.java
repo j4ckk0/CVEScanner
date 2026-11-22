@@ -29,7 +29,7 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 /**
- * The program's settings — its look, its language, the database zips chosen, the environment and the CVSS version preferred —,
+ * The program's settings — its look, its language, the databases and VEX documents chosen, how to scan and to score —,
  * kept in cvescanner.properties, beside the program (cvescanner.jar): in its folder, as a portable program keeps them,
  * never in the registry or the user's folder. Written only when a setting changes; a folder that cannot be written in
  * keeps nothing, and the program goes on.
@@ -58,7 +58,7 @@ final class Settings {
     static final String VEX_FILES = "vexFiles";
     /** "true" when a scan keeps the declared dependencies only (the toolbar's Direct dependencies only). */
     static final String DIRECT_ONLY = "directOnly";
-    /** Before 1.5: "false" when a scan read no Maven repository nor Gradle cache, now a direct-only scan. */
+    /** Older settings files' key: "false" (no Maven repository nor Gradle cache read) is read as DIRECT_ONLY. */
     private static final String MAVEN_TRANSITIVE = "mavenTransitive";
     private static final String FILE = "cvescanner.properties";
 
@@ -96,7 +96,7 @@ final class Settings {
         return new Settings(folder.resolve(FILE));
     }
 
-    /** Whether a scan keeps the declared dependencies only: as set, else as the older View item was. */
+    /** Whether a scan keeps the declared dependencies only: as set, else as an older file's MAVEN_TRANSITIVE has it. */
     boolean directOnly() {
         String set = get(DIRECT_ONLY, null);
         return set != null ? Boolean.parseBoolean(set) : "false".equals(get(MAVEN_TRANSITIVE, "true"));

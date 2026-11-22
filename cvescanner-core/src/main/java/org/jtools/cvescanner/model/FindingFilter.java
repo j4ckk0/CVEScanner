@@ -31,9 +31,9 @@ import org.jtools.cvescanner.i18n.Phrase;
  * Which findings are reported: the window's filters and the command line's options, one rule for both. An empty set
  * of ecosystems, a null severity, no search words: no filter on that.
  *
- * @param searchWords words that must all be found, whatever their case, in the package, its version, the advisory,
- *                    its CVEs and aliases, the file, the scope or the summary
- * @param hideTransitive the indirect dependencies left out, those another package brings
+ * @param searchWords words that must all be found, whatever their case, in the ecosystem, the package, its version,
+ *                    the advisory, its CVEs and aliases, the file, the scope or the summary
+ * @param hideTransitive the findings of the indirect dependencies, those another package brings, left out
  */
 public record FindingFilter(Severity minSeverity, Set<Ecosystem> ecosystems, boolean cveOnly, boolean hideApproximate,
                             boolean hideNameMatches, boolean hideTransitive, List<String> searchWords) {

@@ -106,8 +106,8 @@ public final class Engine {
         };
 
         var ignores = Ignores.load(root, ignoreFile, l::warn);
-        for (Path named : options.vexFiles())   // as the ignore file: a document named that is not there stops the scan
-            if (!Files.isRegularFile(named)) throw new IOException(I18n.text("error.vexMissing", named));   // first: a file named that is not there stops the scan now
+        for (Path named : options.vexFiles())   // as the ignore file: a document named that is not there stops the scan, before any search
+            if (!Files.isRegularFile(named)) throw new IOException(I18n.text("error.vexMissing", named));
         l.status(I18n.text("status.lookingFor", root));
         l.progress(-1);
         var files = ProjectFiles.find(root, mode);
@@ -161,7 +161,7 @@ public final class Engine {
             counts.put("files.catalogs", files.catalogs.size());
             counts.put("files.packageJson", files.packageJsons.size());
         }
-        // what an installed product ships, said only when there is some
+        // what an installed product ships, and the Python projects, said only when there are some
         if (!files.jars.isEmpty()) counts.put("files.jars", files.jars.size());
         if (!files.installedPackageJsons.isEmpty()) counts.put("files.installedPackages", files.installedPackageJsons.size());
         if (!files.pythonMetadata.isEmpty()) counts.put("files.pythonPackages", files.pythonMetadata.size());

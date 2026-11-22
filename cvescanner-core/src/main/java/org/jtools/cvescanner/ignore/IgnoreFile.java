@@ -40,7 +40,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * An ignore file, cvescanner-ignore.csv: id,package,version,until,reason, one entry a line, as a spreadsheet writes CSV
  * (a field holding a comma is quoted). Lines starting with # are comments, a line starting with "id," is the header.
- * Written only when asked to (the window's Ignore… and Stop ignoring), every other line kept as it was.
+ * Written only when asked to (the window's Ignore… and Stop ignoring, --ignore-add, --ignore-remove), every other
+ * line kept as it was.
  */
 public final class IgnoreFile {
 

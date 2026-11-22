@@ -80,10 +80,11 @@ import org.jtools.cvescanner.model.ScanResult;
 import org.jtools.cvescanner.model.Scoring;
 
 /**
- * The window: the folder and the databases to scan, the ignore file to read, the environment to score for, the
- * findings' table with its filters, the details of the finding selected. It lays its parts out and runs the scan;
- * each part is its own class (the toolbar's rows, the filters, the summary, the details, the status line, the menus,
- * the tables' actions). Every text is bound to its key (I18nLabels) and set again when the language changes.
+ * The window: the folder and the databases to scan, the ignore file and VEX documents to read, the environment to
+ * score for, the tabs of findings and dependencies with their filters, the details of the finding selected. It lays its
+ * parts out and runs the scan; each part is its own class (the toolbar's rows, the filters, the summary, the tables, the
+ * Dependencies tab, the details, the status line, the menus, the tables' actions). Every text is bound to its key
+ * (I18nLabels) and set again when the language changes.
  */
 final class MainWindow extends JFrame {
 
@@ -432,7 +433,7 @@ final class MainWindow extends JFrame {
         }
         setBusy(true);
         var dbFiles = databases.files();
-        // the caches the command line names, else the home folder's
+        // the Maven and Gradle caches the command line names, else the home folder's; none for a direct-only scan
         boolean direct = directOnlyBox.isSelected();
         var options = new ScanOptions(ignoreActions.choice(), scanMode(), viewMenu.dbMaxAge(), LocalDate.now(), vexDocuments.filesForScan(),
                 direct ? null : opts.mavenRepositoryFound(), direct ? null : opts.gradleCacheFound(), opts.cacheDir(), direct);
@@ -507,7 +508,7 @@ final class MainWindow extends JFrame {
     }
 
     // ------------------------------------------------------------------------------- ignore file
-    /** The findings scored for the environment, then set apart by the ignore file: the tables, the chips, the counts. */
+    /** The findings scored for the environment, then set apart by the ignore file: the tables, the tree, the chips, the counts. */
     private void refreshFindings() {
         if (result == null) return;
         split = ignoreActions.ignores().split(Scoring.applyAll(result.findings(), environmentBar.environment(), environmentBar.preferV4()), LocalDate.now());

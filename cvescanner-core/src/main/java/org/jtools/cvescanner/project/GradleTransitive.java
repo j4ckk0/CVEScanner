@@ -47,8 +47,11 @@ final class GradleTransitive {
         String ga() { return group + ":" + artifact; }
     }
 
-    /** A dependency of the graph: its version once resolved, its scope, the declaration that brings it. */
-    /** @param path the packages that bring it, "g:a@v", the declared one first; empty for a declaration */
+    /**
+     * A dependency of the graph: its version once resolved, its scope, the declaration that brings it.
+     *
+     * @param path the packages that bring it, "g:a@v", the declared one first; empty for a declaration
+     */
     record Resolved(String group, String artifact, String version, String scope, String via, List<String> path) {
         String ga() { return group + ":" + artifact; }
     }

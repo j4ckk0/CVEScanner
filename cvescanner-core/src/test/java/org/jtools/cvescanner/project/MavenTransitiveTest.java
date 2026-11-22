@@ -69,7 +69,7 @@ class MavenTransitiveTest {
                 + (p.length > 2 ? "<version>" + p[2] + "</version>" : "") + String.join("", extra) + "</dependency>";
     }
 
-    /** The project's poms scanned with the repository: each dependency's name, version and scope, by name. */
+    /** The project's poms scanned with the repository: each dependency's version and scope, by name and file. */
     private Map<String, String> scan(String... projectPoms) throws IOException {
         var paths = new ArrayList<Path>();
         for (int i = 0; i < projectPoms.length; i += 2) {
@@ -188,7 +188,7 @@ class MavenTransitiveTest {
     void missingPomsAndUnresolvedVersionsAreSaidOnce() throws IOException {
         pom("g", "a", "1", deps(dep("g:m:1"), dep("g:n:2"), dep("g:r:[1,2)")));
         var found = scan(".", app(deps(dep("g:a:1"))));
-        assertEquals("1 transitive via g:a", found.get("g:m @pom.xml"));   // listed: its own poms is what is missing
+        assertEquals("1 transitive via g:a", found.get("g:m @pom.xml"));   // listed: its own pom is what is missing
         assertEquals(2, warnings.size(), warnings.toString());
         assertEquals("warning.mavenPomsMissing", warnings.get(0).key());
         assertEquals(2, warnings.get(0).arguments().get(0));

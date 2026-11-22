@@ -48,8 +48,9 @@ import org.jtools.cvescanner.json.Json;
 /**
  * The index of a database file kept between scans, beside the program: the file's records for every name scanned so
  * far, and what the file holds (its kind, its record count, its newest date). Valid while the file keeps its path, size
- * and modification time, and the program its cache format; a scan wanting a name not covered reads the zip again, for
- * the names wanted and those covered. A cache file that cannot be read is ignored; one that cannot be written, left.
+ * and modification time, and the program its version and cache format; a scan wanting a name not covered reads the zip
+ * again, for the names wanted and those covered. A cache file that cannot be read is ignored; one that cannot be written,
+ * left.
  */
 final class IndexCache {
 

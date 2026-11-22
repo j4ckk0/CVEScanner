@@ -28,7 +28,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.jtools.cvescanner.model.Ecosystem;
 
-/** The order of versions, as Maven (ComparableVersion, approximated) and npm (SemVer 2.0) see it. */
+/** The order of versions, as Maven (ComparableVersion, approximated), npm (SemVer 2.0) and Python (PEP 440) see it. */
 class VersionsTest {
 
     private static void ascending(Ecosystem ecosystem, String... versions) {

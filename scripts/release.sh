@@ -46,7 +46,7 @@ else
 fi
 for tool in curl python3 sha256sum git; do command -v "$tool" >/dev/null || { echo "$tool not found in PATH" >&2; exit 1; }; done
 
-# What is attached: the two archives of scripts/package.sh, for this version.
+# What is attached: the two archives of scripts/package.sh and .bat, for this version.
 zip=cvescanner-$version-windows.zip; tgz=cvescanner-$version-linux.tar.gz
 for f in "$zip" "$tgz"; do
   [ -f "releases/$f" ] || { echo "releases/$f missing - run scripts/package.sh after the version bump" >&2; exit 1; }

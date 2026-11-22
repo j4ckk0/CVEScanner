@@ -55,7 +55,8 @@ final class FindingDetails {
     }
 
     /**
-     * The page of a finding the ignore file sets aside: why, until when, which entry of which file, before the rest.
+     * The page of a finding; for one set aside, first why, until when, and which entry of which file or which VEX
+     * document.
      *
      * @param rule the entry setting it aside; null for a finding reported
      * @param vex  what VEX documents state of it (in triage, exploitable…), shown whatever they state

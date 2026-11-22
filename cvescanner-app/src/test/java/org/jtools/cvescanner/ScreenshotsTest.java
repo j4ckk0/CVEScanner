@@ -37,7 +37,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 /**
  * The README's pictures, in English and in French: the examples scanned with real databases (the findings, the
- * packages to upgrade, the components off-the-shelf in a dark look), and a VEX document's statements in the samples.
+ * packages to upgrade, the dependency tree, the components off-the-shelf in a dark look), and a VEX document's
+ * statements in the samples.
  * Only with -Dcvescanner.screenshots=DIR and the databases in -Dcvescanner.screenshotDbs (scripts/screenshots.sh).
  */
 class ScreenshotsTest {
@@ -90,7 +91,10 @@ class ScreenshotsTest {
         }
     }
 
-    /** The examples for an internet-facing environment: Log4Shell selected, three packages ticked, the COTS in the dark. */
+    /**
+     * The examples for an internet-facing environment: Log4Shell selected, three packages ticked, lodash in the tree,
+     * the COTS in the dark.
+     */
     private void examples(I18nLanguage language, List<String> databases, Path dir) throws Exception {
         var more = new ArrayList<>(databases);
         more.addAll(List.of("--env", "internet"));

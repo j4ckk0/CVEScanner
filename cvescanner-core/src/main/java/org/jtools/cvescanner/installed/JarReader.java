@@ -66,8 +66,8 @@ public final class JarReader {
     }
 
     /**
-     * A jar's artifacts, then those of the jars inside it. One holding no coordinates and no jar is an artifact
-     * CVEScanner cannot check: said, with what its manifest or its file name tells of it.
+     * A jar's artifacts, then those of the jars inside it. One holding no coordinates and no jar is checked by its
+     * name.
      *
      * @param shown the jar as the findings name it: "app.jar", "app.jar!/BOOT-INF/lib/x.jar"
      */
@@ -91,7 +91,7 @@ public final class JarReader {
                 try {
                     manifest = new Manifest(new ByteArrayInputStream(small(zip)));
                 } catch (IOException | RuntimeException _) {
-                    manifest = null;   // a malformed manifest only names an unchecked jar: its file name will do
+                    manifest = null;   // a malformed manifest: the jar is known by its file name alone
                 }
             } else if (depth < MAX_DEPTH && !e.isDirectory() && isArchive(n)) {
                 nested = true;
@@ -108,9 +108,9 @@ public final class JarReader {
 
     /**
      * A jar without Maven coordinates, checked by its name: its artifactId and version from its file name
-     * (log4j-core-2.14.1.jar), its version else from its manifest. Every group's advisories for that artifactId are
-     * matched; its OSGi name, when it has one, tells those of its own group (Dependency.bundle). Its version is the
-     * jar's own, not approximate. Without one, it cannot be checked: said.
+     * (log4j-core-2.14.1.jar). Every group's advisories for that artifactId are matched; its OSGi name, when it has
+     * one, tells those of its own group (Dependency.bundle). Its version is the jar's own, not approximate. A file name
+     * without them cannot be checked: said, with its manifest's name and version.
      */
     private static void unchecked(Manifest manifest, String shown, String name, DependencyCollector col) {
         String symbolic = null, title = null, manifestVersion = null;

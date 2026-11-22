@@ -93,7 +93,7 @@ public final class Options {
     public Path mavenRepository;
     /** --gradle-cache DIR: Gradle's cache (files-2.1) read for the builds' transitive dependencies; null for the home folder's. */
     public Path gradleCache;
-    /** --cache-dir DIR: where the databases' index is kept between scans; set by the launcher to the program's folder. */
+    /** --cache-dir DIR: where the databases' index is kept between scans; the launcher's default: cache/ beside the program. */
     public Path cacheDir;
     /** --no-cache: the databases read from their zips at every scan. */
     public boolean noCache;
@@ -234,7 +234,6 @@ public final class Options {
         return ignoreAdd != null || ignoreRemove != null || ignoreList;
     }
 
-    /** How Engine.scan runs: the ignore file, the mode, the databases' age limit, today, the VEX documents, the Maven repository. */
     /** The local Maven repository a scan reads: --maven-repo's, else the home folder's if there is one; null with --direct-only. */
     public Path mavenRepository() {
         return directOnly ? null : mavenRepositoryFound();
@@ -266,6 +265,7 @@ public final class Options {
         return noCache ? null : cacheDir;
     }
 
+    /** How Engine.scan runs, as the options set it. */
     public ScanOptions scanOptions() {
         return new ScanOptions(ignoreChoice(), mode(), dbMaxAgeDays, today, vexFiles, mavenRepository(), gradleCache(), cacheDir(), directOnly);
     }

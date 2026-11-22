@@ -40,7 +40,7 @@ import org.jtools.cvescanner.model.ScanListener;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/** The command line's filters and Apply fixes: the window's, by options. */
+/** The command line's filters, scan options and Apply fixes: the window's, by options. */
 class CliOptionsTest {
 
     @TempDir

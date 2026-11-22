@@ -25,8 +25,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * One thing done to apply a fix: an edit of a file first, if any (Gradle's build file, which no command changes; an
- * override in package.json), then a command of the project's build tool, in its offline mode.
+ * One thing done to apply a fix: an edit of a file first, if any (Gradle's build file, which no command changes; a pin
+ * in a pom's dependencyManagement; an override in package.json or pnpm-workspace.yaml), then a command of the
+ * project's build tool, in its offline mode.
  *
  * @param touched the files the step may change: kept before it runs, put back should it fail
  */

@@ -46,8 +46,9 @@ import org.jtools.cvescanner.project.ProjectFiles;
 /**
  * How each fix asked for would be applied, by the project's own build tool in its offline mode, or why it cannot be:
  * the tool is not installed (nothing is installed), the new version needs a newer Java or Node than the project
- * targets or that cannot be checked offline, the dependency is transitive, the version is written in a way no tool
- * changes. Nothing is run here: the plans are shown first, and run (ToolRunner) once confirmed.
+ * targets or that cannot be checked offline, the dependency is transitive in a Gradle build, the version is written in
+ * a way no tool changes, the package is a Python one. Nothing is run here: the plans are shown first, and run
+ * (ToolRunner) once confirmed.
  */
 public final class FixPlanner {
 
@@ -123,8 +124,8 @@ public final class FixPlanner {
         var steps = new LinkedHashMap<String, Step>();   // one per file and action, two modules sharing one parent's
         OptionalInt target = OptionalInt.empty();
         // per declaration: a declared one upgraded where written; a transitive Maven one follows a declared pom of its
-        // chain (a parent managing it, the module itself), else is pinned in its topmost pom's dependencyManagement;
-        // a transitive Gradle one is left (a constraint to write by hand)
+        // chain (a parent managing it, the module itself) or of the sibling it comes through, else is pinned in its
+        // topmost pom's dependencyManagement; a transitive Gradle one is left (a constraint to write by hand)
         var declared = r.declarations().stream().filter(d -> !Dependency.isTransitive(d.scope())).toList();
         var declaredPoms = new java.util.HashSet<Path>();
         for (var d : declared) if (d.file().getFileName().toString().equals("pom.xml")) declaredPoms.add(d.file().toAbsolutePath().normalize());
@@ -250,7 +251,6 @@ public final class FixPlanner {
         }
     }
 
-    /** The Gradle project a build file or a catalog belongs to: the nearest folder up with a settings file, else its own. */
     /** The build file a lockfile locks: build.gradle(.kts) in its folder, or two folders up from gradle/dependency-locks. */
     private static Path buildFileFor(Path lockfile) {
         Path dir = lockfile.getParent();
@@ -261,6 +261,7 @@ public final class FixPlanner {
         return null;
     }
 
+    /** The Gradle project a build file or a catalog belongs to: the nearest folder up with a settings file, else its own. */
     private Path gradleProject(Path file) {
         Path own = file.getParent();
         if (file.getFileName().toString().endsWith(".versions.toml") && own.getFileName() != null
@@ -360,8 +361,8 @@ public final class FixPlanner {
     /**
      * The package, transitive in this lockfile's project, overridden to the fixed version: its vulnerable copy only where
      * the tool can say so (npm under the dependents using it, pnpm by its version, yarn 2+ by the specs it is locked
-     * under), every copy with yarn 1, which cannot. The notes say a
-     * dependent whose range the fixed version leaves, or that the ranges are not known.
+     * under); with yarn 1, which cannot, only when no other version is locked. The notes say a dependent whose range
+     * the fixed version leaves, or that the ranges are not known.
      */
     private Override override(FixRequest r, Path lockfile, Set<Phrase> notes) throws IOException {
         Path dir = lockfile.getParent();

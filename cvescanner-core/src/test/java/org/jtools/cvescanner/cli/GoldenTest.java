@@ -42,10 +42,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * The scan of the samples gives the reports kept in golden/: the prototype's for the first cases, this project's
- * for the components off-the-shelf and the ignore file. Each case holds the arguments it ran with (args.txt, the
- * databases — and a folder to scan other than samples/projects, -d — relative to samples/), its exit code and its
- * three reports. What differs from one run to the next is set aside: the time, the folder scanned, the databases'
- * file dates. The JSON is compared as values, the order of an object's keys aside.
+ * for the cases it added. Each case holds the arguments it ran with (args.txt, its paths relative to samples/, -d
+ * when the folder scanned is not samples/projects), its exit code and its reports: the three always, the SBOM and
+ * dependencies.csv where kept. What differs from one run to the next is set aside: the time, the folder scanned,
+ * the databases' file dates. The JSON is compared as values, the order of an object's keys aside.
  */
 class GoldenTest {
 

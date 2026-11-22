@@ -129,7 +129,7 @@ public final class ToolRunner {
         }
     }
 
-    /** A Windows batch file (mvn.cmd, gradlew.bat) is run through cmd.exe, as Windows starts it. */
+    /** A Windows batch file (mvn.cmd, gradle.bat) is run through cmd.exe, as Windows starts it. */
     static List<String> command(List<String> command) {
         String exe = command.getFirst().toLowerCase(java.util.Locale.ROOT);
         if (!exe.endsWith(".cmd") && !exe.endsWith(".bat")) return command;

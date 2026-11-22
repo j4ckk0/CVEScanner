@@ -31,8 +31,8 @@ import java.util.regex.Pattern;
 
 /**
  * A pom as Maven sees it: with its parents' properties, dependencies and dependency management, and the dependency
- * management its chain imports (BOMs), read from the scanned folder or the local repository. Its texts resolved
- * as the pom itself would resolve them: its own properties first, then its parents'.
+ * management its chain imports (BOMs), read where its finder looks (the scanned folder, the local repository, Gradle's
+ * cache). Its texts resolved as the pom itself would resolve them: its own properties first, then its parents'.
  */
 final class MavenModel {
 

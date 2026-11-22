@@ -29,9 +29,11 @@ import org.jtools.cvescanner.i18n.Phrase;
  * @param notApplicable why the fix cannot be applied; null when it can
  * @param requirement   what was checked of the new version (the Java or Node it needs), or why nothing was; null when
  *                      nothing applies
- * @param majorJump     applied only once the user confirms: the major version changes, or a transitive package's new
- *                      version leaves what a dependent asks (or what they ask is not known)
- * @param notes         what else to know: a version shared with other packages, raised for them
+ * @param majorJump     applied only once the user confirms: the major version changes, a transitive Maven package is
+ *                      pinned, or a transitive npm package's new version leaves what a dependent asks (or what they
+ *                      ask is not known)
+ * @param notes         what else to know: a version shared with other packages, raised for them; a pin; a dependent's
+ *                      range the new version leaves
  */
 public record FixPlan(FixRequest request, List<Step> steps, Phrase notApplicable, Phrase requirement, boolean majorJump,
                       List<Phrase> notes) {

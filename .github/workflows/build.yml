@@ -1,6 +1,6 @@
-# Build and test on every push and pull request: JDK 25 + Maven, the window clicked through on a virtual display
-# (WindowChecklistTest), then keep the jar as a workflow artefact (the distributions, with their runtime, are built by
-# the release workflow on a tag, or by scripts/package.sh and .bat).
+# Build and test on every push to main and every pull request: JDK 25 + Maven, the window clicked through on a virtual
+# display (WindowChecklistTest), then keep the jar as a workflow artefact (the distributions, with their runtime, are
+# built by the release workflow on a tag, or by scripts/package.sh and .bat).
 name: build
 
 on:

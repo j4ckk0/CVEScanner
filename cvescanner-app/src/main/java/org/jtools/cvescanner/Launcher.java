@@ -30,9 +30,9 @@ import org.jtools.cvescanner.i18n.I18n;
 import org.jtools.cvescanner.i18n.I18nLanguage;
 
 /**
- * The entry point: the window, in the look chosen (View ▸ Look; FlatLaf Light until one is), or with --no-gui (or no
- * display) the command line. Both speak the language --lang asks for, else the one chosen in the window (Settings),
- * else French.
+ * The entry point: the window, in the look chosen (View ▸ Look; FlatLaf Light until one is), or with --no-gui (or an
+ * --ignore-add/remove/list, or no display) the command line. Both speak the language --lang asks for, else the one
+ * chosen in the window (Settings), else French.
  */
 public final class Launcher {
 

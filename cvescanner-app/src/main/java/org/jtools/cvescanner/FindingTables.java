@@ -222,7 +222,7 @@ final class FindingTables {
         return viewColumn >= 0 && packagesTable.convertColumnIndexToModel(viewColumn) == column(packageColumns, "column.apply");
     }
 
-    /** A tick where it can be set, nothing where it cannot (a COTS component, a package without a fix). */
+    /** A tick where it can be set, nothing where it cannot (a package not fixable). */
     private static final class TickRenderer implements TableCellRenderer {
         private final TableCellRenderer box;
         private final JLabel none = new JLabel();

@@ -44,8 +44,8 @@ import org.jtools.cvescanner.model.ScanResult;
 /**
  * bom.cdx.json: the scan as a CycloneDX 1.6 SBOM, for the tools that read one. Its components are every dependency
  * found, named by their package URL; its vulnerabilities the findings reported, with their base and environmental
- * ratings, and those the ignore file sets aside, analysed "not_affected" with the entry's reason. The same scan gives
- * the same document but for its timestamp: its serial number is made from its content.
+ * ratings, and those set aside, analysed "not_affected" (a VEX false_positive kept) with the entry's reason. The
+ * same scan gives the same document but for its timestamp: its serial number is made from its content.
  */
 final class CycloneDx {
 

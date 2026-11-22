@@ -156,7 +156,7 @@ public record Ignores(Path file, String shown, List<IgnoreRule> rules, boolean r
             return new Split(NONE, findings, List.of(), List.of(), List.of());
         }
 
-        /** The findings, set aside or not, that pass this filter (--cve-only); the entries kept. */
+        /** The findings, set aside or not, that pass this filter (the report's, FindingFilter); the entries kept. */
         public Split filter(Predicate<Finding> keep) {
             return new Split(ignores, active.stream().filter(keep).toList(),
                     ignored.stream().filter(i -> keep.test(i.finding())).toList(), expired, unused);
