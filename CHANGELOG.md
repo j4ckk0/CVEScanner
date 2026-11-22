@@ -3,7 +3,7 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
-## 1.4 — not released yet
+## 1.4 — 2026-11-22
 
 - **Apply fixes for transitive npm packages**: a package the project has only through others is overridden, its
   vulnerable version only — npm's `overrides` under each dependent using it (npm 10 and 11), pnpm's in
