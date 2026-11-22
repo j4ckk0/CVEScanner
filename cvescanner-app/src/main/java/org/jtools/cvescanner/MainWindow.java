@@ -317,7 +317,7 @@ final class MainWindow extends JFrame {
         return line;
     }
 
-    /** The rows of the toolbar: the folder, the databases, the ignore file, the VEX documents, with their buttons. */
+    /** The rows of the toolbar: the folder, the databases, what a scan reads, the ignore file, the VEX documents. */
     private JPanel toolbar() {
         var rows = new JPanel(new GridBagLayout());
         rows.setBorder(BorderFactory.createEmptyBorder(12, 14, 8, 14));
@@ -354,10 +354,17 @@ final class MainWindow extends JFrame {
         c.gridx = 4;
         rows.add(fixActions.button(), c);
 
+        // what a scan reads, on a row of its own: the rows below it are expert mode's only
         c.gridy = 2;
-        ignoreActions.addRow(rows, c);
-        c.gridx = 4;
-        rows.add(scanModeCombo, c);
+        c.gridx = 0;
+        rows.add(labels.text(new JLabel(), "toolbar.scanMode"), c);
+        var scanKind = new JPanel();
+        scanKind.setLayout(new BoxLayout(scanKind, BoxLayout.X_AXIS));
+        scanKind.add(scanModeCombo);
+        scanKind.add(Box.createHorizontalStrut(16));
+        scanKind.add(directOnlyBox);
+        c.gridx = 1;
+        rows.add(scanKind, c);
         labels.tip(scanModeCombo, "toolbar.scanMode.tip");
         boolean installed = opts.installed || settings.get(Settings.SCAN_MODE, "SOURCES").equals(ScanMode.INSTALLED.name());
         scanModeCombo.setSelectedIndex(installed ? 1 : 0);
@@ -365,16 +372,16 @@ final class MainWindow extends JFrame {
             settings.set(Settings.SCAN_MODE, scanMode().name());
             directOnlyBox.setEnabled(scanMode() == ScanMode.SOURCES);
         });
-        c.gridy++;
+        c.gridy = 3;
+        ignoreActions.addRow(rows, c);
+        c.gridy = 4;
         vexDocuments.addRow(rows, c);
-        c.gridx = 4;
         labels.text(directOnlyBox, "toolbar.directOnly");
         labels.tip(directOnlyBox, "toolbar.directOnly.tip");
         directOnlyBox.setName("directOnly");
         directOnlyBox.setSelected(opts.directOnly || settings.directOnly());
         directOnlyBox.setEnabled(scanMode() == ScanMode.SOURCES);
         directOnlyBox.addActionListener(_ -> settings.set(Settings.DIRECT_ONLY, String.valueOf(directOnlyBox.isSelected())));
-        rows.add(directOnlyBox, c);
         return rows;
     }
 
