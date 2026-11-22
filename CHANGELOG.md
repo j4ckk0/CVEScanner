@@ -7,6 +7,9 @@ checksums.
 
 - After the welcome the settings are **collapsed at each start**, whatever was chosen the time before; ▾ shows them
   for the session.
+- **A warning when no database covers an ecosystem found**: the Maven, npm or PyPI packages with NVD's feeds alone,
+  the components off-the-shelf with the advisories alone, are said unchecked, in the window's status line ("⚠ no
+  database for Maven, npm: not checked"), on the command line and in the reports.
 - The welcome shows the **environment** line too, to be chosen before the first scan; the search, the filters and the
   counters still come with the findings.
 

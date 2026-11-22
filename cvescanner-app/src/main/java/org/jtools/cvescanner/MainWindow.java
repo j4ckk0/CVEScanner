@@ -666,6 +666,9 @@ final class MainWindow extends JFrame {
             var oldest = r.warnings().stream().filter(w -> w.key().equals("warning.dbOld"))
                     .mapToLong(w -> ((Number) w.arguments().get(2)).longValue()).max();
             if (oldest.isPresent()) scanned += "  ·  " + I18n.text("scan.done.dbOld", oldest.getAsLong());
+            // an ecosystem no database chosen covers: its dependencies unchecked, which no finding would say
+            for (Phrase w : r.warnings())
+                if (w.key().equals("warning.noDatabaseFor")) scanned += "  ·  " + I18n.text("scan.done.noDatabaseFor", w.arguments().get(0));
             return scanned;
         });
         updateStatusTip(r.warnings());

@@ -159,6 +159,10 @@ public final class VulnDb {
         public final Map<String, LocalDate> newest = new LinkedHashMap<>();
         /** The NVD feeds among them: one database split by year, whose old years change seldom. */
         public final Set<String> nvdFeeds = new LinkedHashSet<>();
+        /** Whether a database read holds advisories of packages (OSV, the GitHub Advisory Database, the CVE List). */
+        public boolean packages;
+        /** Whether a database read describes components by their product (NVD's feeds, the CVE List). */
+        public boolean components;
 
         /** The NVD rules of a COTS component's product. */
         public List<NvdFeed.Rule> nvdFor(Dependency d) {
@@ -257,6 +261,10 @@ public final class VulnDb {
             LocalDate newest = date(part.newest);
             if (newest != null) index.newest.put(name, newest);
             if (part.nvdFeed) index.nvdFeeds.add(name);
+            if (part.records > 0) {
+                index.packages |= !part.kind.equals("database.kind.nvd");
+                index.components |= !part.kind.equals("database.kind.osv");
+            }
             Phrase kind = Phrase.of(part.kind);
             index.sources.put(name, newest == null ? Phrase.of("database.description", kind, part.records, used, fileDate)
                     : Phrase.of("database.descriptionNewest", kind, part.records, used, fileDate, newest.toString()));

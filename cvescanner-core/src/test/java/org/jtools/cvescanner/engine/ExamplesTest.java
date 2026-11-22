@@ -65,7 +65,8 @@ class ExamplesTest {
                 "webmproject:libwebp@1.2.0", "freedesktop:poppler@21.01.0", "uclouvain:openjpeg@2.4.0",
                 "libarchive:libarchive@3.5.1")), packages);
         assertEquals(List.of(), result.unresolved(), "a dependency left unchecked");
-        assertEquals(List.of(), result.warnings(), "a file skipped");
+        assertEquals(List.of(), result.warnings().stream().filter(w -> !w.key().equals("warning.noDatabaseFor")).toList(),
+                "a file skipped");   // the components unchecked by this database: anEcosystemNoDatabaseCoversIsSaid
     }
 
     /**
@@ -86,6 +87,23 @@ class ExamplesTest {
         var installed = Engine.scan(ROOT.resolve("examples/installed-app"), List.of(db.resolve("examples.zip")), null,
                 org.jtools.cvescanner.model.ScanMode.INSTALLED, quiet);
         assertEquals(22, installed.findings().stream().map(f -> f.pkg() + "@" + f.version()).distinct().count());
+    }
+
+    /** The examples scanned with databases that leave an ecosystem out: said, as no finding would say it. */
+    @Test
+    void anEcosystemNoDatabaseCoversIsSaid() throws Exception {
+        ScanListener quiet = message -> { };
+        var db = ROOT.resolve("samples/db");
+        assertEquals(List.of("Maven, npm"), noDatabaseFor(Engine.scan(ROOT.resolve("examples"), List.of(db.resolve("nvdcve-2.0-2024.json.zip")), quiet)),
+                "NVD's feeds: the components only");
+        assertEquals(List.of("COTS"), noDatabaseFor(Engine.scan(ROOT.resolve("examples"), List.of(db.resolve("examples.zip")), quiet)),
+                "advisories of packages: no component");
+        assertEquals(List.of(), noDatabaseFor(Engine.scan(ROOT.resolve("examples"), List.of(db.resolve("examples.zip"),
+                db.resolve("nvdcve-2.0-2024.json.zip")), quiet)));
+    }
+
+    private static List<Object> noDatabaseFor(org.jtools.cvescanner.model.ScanResult result) {
+        return result.warnings().stream().filter(w -> w.key().equals("warning.noDatabaseFor")).map(w -> w.arguments().getFirst()).toList();
     }
 
     private static java.util.Map<String, Integer> sizes(java.util.Map<String, Set<String>> byFolder) {

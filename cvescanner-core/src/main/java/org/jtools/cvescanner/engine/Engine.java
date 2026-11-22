@@ -44,6 +44,7 @@ import org.jtools.cvescanner.installed.InstalledNpmReader;
 import org.jtools.cvescanner.installed.JarReader;
 import org.jtools.cvescanner.installed.PythonReader;
 import org.jtools.cvescanner.model.Dependency;
+import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.Finding;
 import org.jtools.cvescanner.model.ScanListener;
 import org.jtools.cvescanner.model.ScanMode;
@@ -136,6 +137,12 @@ public final class Engine {
                 throw new IOException(I18n.text("error.noDatabase"));
             index = VulnDb.load(dbFiles, wanted, l, options.cacheDir());
         }
+        // the dependencies of an ecosystem none of the databases covers: said, as no finding would say it
+        var unchecked = new java.util.TreeSet<Ecosystem>();
+        for (Dependency d : col.deps)
+            if (d.ecosystem() == Ecosystem.COTS ? !index.components : !index.packages) unchecked.add(d.ecosystem());
+        if (!col.deps.isEmpty() && !unchecked.isEmpty())
+            l.warn(Phrase.of("warning.noDatabaseFor", String.join(", ", unchecked.stream().map(Ecosystem::id).toList())));
         // how old each database is: the NVD feeds as one, by their newest record (a fresh 2003 feed may not have changed for weeks)
         var ages = new LinkedHashMap<Object, LocalDate>();
         for (var e : index.newest.entrySet()) {

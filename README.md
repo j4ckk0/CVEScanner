@@ -111,7 +111,9 @@ delete the old ones; each report says which files it used and **the date of each
 old its data is (a file copied yesterday may hold last year's). A scan warns of a database whose newest record is more
 than 30 days old (NVD's year feeds taken together: a fresh 2003 feed may not have changed for weeks), in the
 window's status line and in the reports: `--db-max-age DAYS` on the command line, *View ▸
-Database age…* in the window, change the limit (0: never).
+Database age…* in the window, change the limit (0: never). A scan also says when none of the databases chosen covers an
+ecosystem it found, in the status line and the reports: NVD's feeds alone leave the Maven, npm and Python packages
+unchecked, the advisories alone the components off-the-shelf.
 
 ## Components off-the-shelf
 
