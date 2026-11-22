@@ -37,6 +37,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -163,7 +164,7 @@ final class MainWindow extends JFrame {
             public Environment environment() { return environmentBar.environment(); }
             public void copyLink(String url) { MainWindow.this.copyLink(url); }
         });
-        viewMenu = new ViewMenu(this, labels, settings, this::showSeverityColors);
+        viewMenu = new ViewMenu(this, labels, settings, startsExpert(opts, settings), this::setExpert, this::showSeverityColors);
         setJMenuBar(menuBar());
 
         var north = new JPanel();
@@ -222,7 +223,35 @@ final class MainWindow extends JFrame {
         setSize(1480, 940);
         setMinimumSize(new Dimension(1000, 640));
         setLocationRelativeTo(null);
+        applyMode(viewMenu.expert());
         if (opts.dirGiven) SwingUtilities.invokeLater(this::startScan);
+    }
+
+    // ------------------------------------------------------------------------------------ standard, expert
+    /** Expert mode when the command line names what only it shows (an ignore file, VEX documents, a CVSS version), else as kept. */
+    private static boolean startsExpert(Options opts, Settings settings) {
+        return opts.ignoreFile != null || opts.noIgnore || !opts.vexFiles.isEmpty() || opts.cvssGiven
+                || Boolean.parseBoolean(settings.get(Settings.EXPERT, "false"));
+    }
+
+    /** Standard mode hides the ignore file, the VEX documents and the CVSS version, and uses their defaults. */
+    private void applyMode(boolean expert) {
+        ignoreActions.standard(!expert);
+        vexDocuments.standard(!expert);
+        environmentBar.standard(!expert);
+        getContentPane().revalidate();
+        getContentPane().repaint();
+    }
+
+    /** View ▸ Mode: the findings shown as the mode's settings give them, scanned again when the files read change. */
+    private void setExpert(boolean expert) {
+        Path ignore = ignoreActions.choice();
+        List<Path> vex = vexDocuments.files();
+        boolean v4 = environmentBar.preferV4();
+        applyMode(expert);
+        if (result == null || busy) return;
+        if (!Objects.equals(ignore, ignoreActions.choice()) || !vex.equals(vexDocuments.files())) startScan();
+        else if (v4 != environmentBar.preferV4()) rescore();
     }
 
     /** The components the window test (WindowDriver) looks up, by a name no language changes. */

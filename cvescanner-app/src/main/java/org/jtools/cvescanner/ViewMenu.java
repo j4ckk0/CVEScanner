@@ -24,6 +24,7 @@ import java.awt.BorderLayout;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Consumer;
 import javax.swing.ButtonGroup;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -40,7 +41,8 @@ import org.jtools.cvescanner.engine.ScanOptions;
 import org.jtools.cvescanner.i18n.I18n;
 
 /**
- * The View menu: the look the window is shown in, and how old a database may be before a scan says so.
+ * The View menu: the mode (standard, or expert with the ignore file, the VEX documents and the CVSS version), the look
+ * the window is shown in, and how old a database may be before a scan says so.
  */
 final class ViewMenu {
 
@@ -51,22 +53,60 @@ final class ViewMenu {
     private final Settings settings;
     private final Runnable lookChanged;
     private final List<JRadioButtonMenuItem> lookItems = new ArrayList<>();
+    private final JRadioButtonMenuItem standardItem = new JRadioButtonMenuItem(), expertItem = new JRadioButtonMenuItem();
+    private final Consumer<Boolean> modeChanged;
+    private boolean expert;
 
-    /** @param lookChanged run once the window is shown in another look (the colours that depend on it) */
-    ViewMenu(JFrame frame, I18nLabels labels, Settings settings, Runnable lookChanged) {
+    /**
+     * @param expert the mode to start in; @param modeChanged run with true once the window is in expert mode, false in
+     * standard; @param lookChanged run once the window is shown in another look (the colours that depend on it)
+     */
+    ViewMenu(JFrame frame, I18nLabels labels, Settings settings, boolean expert, Consumer<Boolean> modeChanged, Runnable lookChanged) {
         this.frame = frame;
         this.labels = labels;
         this.settings = settings;
+        this.expert = expert;
+        this.modeChanged = modeChanged;
         this.lookChanged = lookChanged;
     }
 
     JMenu menu() {
         JMenu view = labels.menu(new JMenu(), "menu.view");
+        view.add(modeMenu());
         view.add(lookMenu());
         JMenuItem age = labels.menu(new JMenuItem(), "menu.view.dbMaxAge");
         age.addActionListener(_ -> chooseDbMaxAge());
         view.add(age);
         return view;
+    }
+
+    /** Whether the window is in expert mode. */
+    boolean expert() {
+        return expert;
+    }
+
+    /** View ▸ Mode: standard or expert, kept for the next time. */
+    private JMenu modeMenu() {
+        JMenu menu = labels.menu(new JMenu(), "menu.mode");
+        labels.tip(labels.menu(standardItem, "menu.mode.standard"), "menu.mode.standard.tip");
+        labels.tip(labels.menu(expertItem, "menu.mode.expert"), "menu.mode.expert.tip");
+        var modes = new ButtonGroup();
+        for (var item : List.of(standardItem, expertItem)) {
+            modes.add(item);
+            menu.add(item);
+        }
+        standardItem.setSelected(!expert);
+        expertItem.setSelected(expert);
+        standardItem.addActionListener(_ -> setExpert(false));
+        expertItem.addActionListener(_ -> setExpert(true));
+        return menu;
+    }
+
+    private void setExpert(boolean on) {
+        if (on == expert) return;
+        expert = on;
+        settings.set(Settings.EXPERT, Boolean.toString(on));
+        modeChanged.accept(on);
     }
 
     /** The days past which a database's newest record is said to be old, as the settings keep it; 30 when not set. */

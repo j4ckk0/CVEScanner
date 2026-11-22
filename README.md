@@ -149,9 +149,10 @@ To see it at work first, scan the `examples` folder beside the program: a Maven,
 declaring real packages at vulnerable versions (Log4Shell, Text4Shell, Spring4Shell…), what a scan finds listed in
 [examples/README.md](examples/README.md).
 
-The table sorts by any column and filters as you type: **Search** (every word must match, across the columns and the
-aliases; Ctrl+F, Esc to clear), the **severity** (the coloured counters do the same), the **ecosystem**, *Only with
-CVE ID*, *Hide approximate (≈) versions*, *Hide name matches ⚠*. Its tabs: **Findings**, one row per
+The table sorts by any column and filters as you type: on the first row **Search** (every word must match, across
+the columns and the aliases; Ctrl+F, Esc to clear); on the second the **Filters**: the **severity** (the coloured
+counters do the same), the **ecosystem**, *Only with CVE ID*, *Hide approximate (≈) versions*, *Hide name matches ⚠*,
+*Hide indirect dependencies*. Its tabs: **Findings**, one row per
 vulnerability and dependency, its details below (the fix, the scores, the match, the links); **Packages to
 upgrade**, one row per package version with the version that fixes all its findings; **Dependencies**, each file's
 dependencies as a tree, each declared one with the packages it brings below it and the dot of its worst finding (the
@@ -161,7 +162,11 @@ those whose version could not be known (an external BOM, a dynamic version like 
 findings the ignore file sets aside (see [Ignoring findings](#ignoring-findings)). A double-click or a right-click
 copies the advisory's link, the CVEs, the package's coordinates; a right-click also ignores a finding. **Export…**
 writes the reports for the rows shown. *Hide indirect dependencies* shows only what the projects declare;
-*Direct dependencies only*, beside the scan mode, scans only that. *View ▸ Look* offers FlatLaf's looks, light and dark; the language is
+*Direct dependencies only*, beside the scan mode, scans only that. *View ▸ Mode*: **Standard**, the first time,
+leaves out the *Ignore file* and *VEX documents* rows and the CVSS version's choice, and scans as the command line
+does by default (the folder's own ignore file and `*.vex.json`, CVSS 4.0 first); **Expert** shows them, and gets back
+what was chosen in them. A command line naming `--ignore`, `--no-ignore`, `--vex` or `--cvss` opens the window in
+expert mode. *View ▸ Look* offers FlatLaf's looks, light and dark; the language is
 on the right of the menus. The choices are kept in `cvescanner.properties`, beside the program.
 
 ![Packages to upgrade: one row per package version and the version that fixes its findings, three ticked for Apply fixes](docs/images/packages.png)
@@ -239,7 +244,8 @@ CVE-2023-1234,osgeo:gdal,,,Driver not built
 In the window, right-click a finding, **Ignore this finding…**: for this version, every version of the package or every
 package; a reason; a last day if any. The entry is written to the file (created the first time) and the table changes
 at once, without scanning again; in the **Ignored** tab, **Stop ignoring** takes the entry's line out, the file's other
-lines and comments kept as written. *Ignore file* above the table names another file, for every folder scanned.
+lines and comments kept as written. *Ignore file* above the table (*View ▸ Mode ▸ Expert*) names another file, for
+every folder scanned.
 
 On the command line `--ignore FILE` names another file, `--no-ignore` reads none (every finding reported, for an
 audit). The file can be edited there too, no scan run: `--ignore-add CVE-2021-44228 --package
@@ -249,7 +255,7 @@ findings aside (it names none, or a line above sets them aside first) — an ent
 
 **VEX documents.** A product team's statements on its vulnerabilities, a CycloneDX VEX document (`*.vex.json` or
 `*.vex.cdx.json`), are read too: those in the folder scanned, those named with `--vex FILE`, and those chosen in the
-window's *VEX documents* row. A statement that a vulnerability does not apply to a package version — analysis state
+window's *VEX documents* row (*View ▸ Mode ▸ Expert*). A statement that a vulnerability does not apply to a package version — analysis state
 `not_affected` or `false_positive` — sets its findings aside like an entry of the ignore file, in the **Ignored** tab
 and the reports' section, with its state, justification and detail and the document it comes from. Its packages are
 named by package URL (`pkg:maven/…`, `pkg:npm/…`, `pkg:pypi/…`, `pkg:generic/…`) or by a component's `bom-ref`. A

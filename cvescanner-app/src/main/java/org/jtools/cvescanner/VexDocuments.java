@@ -55,6 +55,9 @@ final class VexDocuments {
     private final JButton noneButton = new JButton();
     private final List<Path> files = new ArrayList<>();
     private boolean pending;   // chosen since the last scan began: not read yet
+    /** Standard mode: the row hidden, the folder's own documents only read; the choice kept for expert mode. */
+    private boolean standard;
+    private final List<Component> row = new ArrayList<>();
 
     /** @param given those the command line named (--vex), else the ones the settings keep */
     VexDocuments(Component owner, I18nLabels labels, Settings settings, List<Path> given, Supplier<Path> scanFolder) {
@@ -77,7 +80,17 @@ final class VexDocuments {
             pending = false;
             updateField();
         }
-        return List.copyOf(files);
+        return files();
+    }
+
+    /** The documents chosen that a scan reads: none in standard mode. */
+    List<Path> files() {
+        return standard ? List.of() : List.copyOf(files);
+    }
+
+    void standard(boolean on) {
+        standard = on;
+        row.forEach(c -> c.setVisible(!on));
     }
 
     /** Its row of the toolbar, at the row the constraints are set to. */
@@ -89,8 +102,10 @@ final class VexDocuments {
         labels.text(noneButton, "toolbar.noVex");
         noneButton.addActionListener(_ -> set(List.of()));
         field.setEditable(false);
+        var label = labels.text(new JLabel(), "toolbar.vex");
+        row.addAll(List.of(label, field, choose, noneButton));
         c.gridx = 0;
-        rows.add(labels.text(new JLabel(), "toolbar.vex"), c);
+        rows.add(label, c);
         c.gridx = 1;
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 1;

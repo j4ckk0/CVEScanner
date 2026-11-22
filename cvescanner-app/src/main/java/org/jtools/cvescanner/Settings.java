@@ -58,6 +58,8 @@ final class Settings {
     static final String VEX_FILES = "vexFiles";
     /** "true" when a scan keeps the declared dependencies only (the toolbar's Direct dependencies only). */
     static final String DIRECT_ONLY = "directOnly";
+    /** "true" when the window shows the expert's settings too: the ignore file, the VEX documents, the CVSS version (View ▸ Mode). */
+    static final String EXPERT = "expert";
     /** Older settings files' key: "false" (no Maven repository nor Gradle cache read) is read as DIRECT_ONLY. */
     private static final String MAVEN_TRANSITIVE = "mavenTransitive";
     private static final String FILE = "cvescanner.properties";

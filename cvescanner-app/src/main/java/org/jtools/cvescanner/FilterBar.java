@@ -21,6 +21,7 @@ package org.jtools.cvescanner;
  */
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.KeyEvent;
 import java.util.Arrays;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -43,12 +45,12 @@ import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.FindingFilter;
 
 /**
- * What the tables show: the search (every word, over the columns), the lowest severity, the ecosystem, and the four
- * boxes the command line has too (FindingFilter). Says each change through the Runnable given.
+ * What the tables show, in two rows: the search (every word, over the columns); the filters — the lowest severity, the
+ * ecosystem, and the four boxes the command line has too (FindingFilter). Says each change through the Runnable given.
  */
 final class FilterBar {
 
-    private final HintField searchField = new HintField("", 32);
+    private final HintField searchField = new HintField("", 44);
     private final JComboBox<Choice<Severity>> severityCombo = new JComboBox<>(List.of(
             new Choice<Severity>("filter.allSeverities", null), new Choice<>("filter.critical", Severity.CRITICAL),
             new Choice<>("filter.highUp", Severity.HIGH), new Choice<>("filter.mediumUp", Severity.MEDIUM),
@@ -61,7 +63,8 @@ final class FilterBar {
     private final JCheckBox hideApproxBox = new JCheckBox();
     private final JCheckBox hideNameMatchBox = new JCheckBox();
     private final JCheckBox hideTransitiveBox = new JCheckBox();
-    private final JPanel panel = new JPanel(new WrapLayout(FlowLayout.LEFT, 12, 8));
+    private final JPanel panel = new JPanel();
+    private final JLabel searchLabel = new JLabel(), filtersLabel = new JLabel();
 
     /** @param cveOnly --cve-only, the box ticked from the start; @param changed run on each change */
     FilterBar(I18nLabels labels, boolean cveOnly, Runnable changed) {
@@ -69,6 +72,7 @@ final class FilterBar {
         searchTimer.setRepeats(false);
         cveOnlyBox.setSelected(cveOnly);
         ecosystemCombo.setName("ecosystem");   // for the window test and the README's pictures (WindowDriver)
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(6, 8, 2, 8));
         labels.bind(searchField::setHint, "filter.searchHint");
         searchField.getDocument().addDocumentListener(new DocumentListener() {
@@ -98,20 +102,30 @@ final class FilterBar {
             hideTransitiveBox.setSelected(false);
             changed.run();
         });
-        panel.add(labels.text(new JLabel(), "filter.search"));
-        panel.add(searchField);
-        panel.add(severityCombo);
-        panel.add(ecosystemCombo);
-        panel.add(cveOnlyBox);
-        panel.add(hideApproxBox);
-        panel.add(hideNameMatchBox);
-        panel.add(hideTransitiveBox);
-        panel.add(clear);
+        var searchRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 4));
+        searchRow.add(labels.text(searchLabel, "filter.search"));
+        searchRow.add(searchField);
+        var filtersRow = new JPanel(new WrapLayout(FlowLayout.LEFT, 12, 4));
+        for (Component c : List.of(labels.text(filtersLabel, "filter.filters"), severityCombo, ecosystemCombo, cveOnlyBox,
+                hideApproxBox, hideNameMatchBox, hideTransitiveBox, clear))
+            filtersRow.add(c);
+        panel.add(searchRow);
+        panel.add(filtersRow);
+        labels.on(this::alignLabels);
         labels.on(() -> List.<Component>of(severityCombo, ecosystemCombo).forEach(Component::repaint));
     }
 
     JPanel panel() {
         return panel;
+    }
+
+    /** "Search:" and "Filters:" as wide as each other, in every language: the field and the filters begin in one column. */
+    private void alignLabels() {
+        searchLabel.setPreferredSize(null);
+        filtersLabel.setPreferredSize(null);
+        int width = Math.max(searchLabel.getPreferredSize().width, filtersLabel.getPreferredSize().width);
+        searchLabel.setPreferredSize(new Dimension(width, searchLabel.getPreferredSize().height));
+        filtersLabel.setPreferredSize(new Dimension(width, filtersLabel.getPreferredSize().height));
     }
 
     /** The words searched, in lower case. */

@@ -70,6 +70,9 @@ final class IgnoreActions {
     private final JButton ownButton = new JButton();
     /** The ignore file to read: null for the folder's own, Ignores.DISABLED for none (Engine.scan). */
     private Path choice;
+    /** Standard mode: the row hidden, the folder's own file read whatever was chosen. */
+    private boolean standard;
+    private final List<Component> row = new ArrayList<>();
     /** The ignore file in use, the scan's or the one chosen since; read again after the window writes it. */
     private Ignores ignores = Ignores.NONE;
 
@@ -82,9 +85,15 @@ final class IgnoreActions {
         labels.on(this::updateField);
     }
 
-    /** The file a scan is to read (Engine.scan). */
+    /** The file a scan is to read (Engine.scan): in standard mode, the folder's own. */
     Path choice() {
-        return choice;
+        return standard ? null : choice;
+    }
+
+    /** Standard mode: the row hidden, the folder's own file read from the next scan; the choice kept for expert mode. */
+    void standard(boolean on) {
+        standard = on;
+        row.forEach(c -> c.setVisible(!on));
     }
 
     Ignores ignores() {
@@ -100,11 +109,14 @@ final class IgnoreActions {
     void addRow(JPanel rows, GridBagConstraints c) {
         var choose = labels.text(new JButton(), "toolbar.chooseIgnoreFile");
         choose.addActionListener(_ -> choose());
+        choose.setName("ignoreChoose");   // for the window test (WindowDriver)
         labels.text(ownButton, "toolbar.ownIgnoreFile");
         ownButton.addActionListener(_ -> setChoice(null));
         field.setEditable(false);
+        var label = labels.text(new JLabel(), "toolbar.ignoreFile");
+        row.addAll(List.of(label, field, choose, ownButton));
         c.gridx = 0;
-        rows.add(labels.text(new JLabel(), "toolbar.ignoreFile"), c);
+        rows.add(label, c);
         c.gridx = 1;
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 1;

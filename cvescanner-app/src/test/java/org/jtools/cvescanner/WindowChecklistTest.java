@@ -41,8 +41,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 /**
  * The window clicked through, as a person would check it: a scan and its filters, the looks, the packages ticked for
- * Apply fixes, the plan, an installed product, a VEX document, the database age, the Dependencies tab, Direct
- * dependencies only, the other language. Only with -Dcvescanner.windowTest=true, on a virtual display
+ * Apply fixes, the plan, an installed product, standard and expert modes, a VEX document, the database age, the
+ * Dependencies tab, Direct dependencies only, the other language. Only with -Dcvescanner.windowTest=true, on a virtual display
  * (scripts/window-check.sh): never on a desktop, which it would take over.
  */
 class WindowChecklistTest {
@@ -123,6 +123,12 @@ class WindowChecklistTest {
             assertEquals(null, WindowDriver.onEdt(() -> packages.getValueAt(row, 0)), "row " + r + " has a tick box");
         }
 
+        // standard mode: no ignore file, VEX documents nor CVSS version to choose; expert mode shows them
+        for (String name : java.util.List.of("ignoreChoose", "vexChoose", "cvss"))
+            assertEquals(null, w.find(Component.class, k -> name.equals(k.getName())), name + " hidden in standard mode");
+        w.menu("View", "Mode", "Expert");
+        for (String name : java.util.List.of("ignoreChoose", "vexChoose", "cvss")) w.named(name);   // each waited for, shown
+
         // 5. a VEX document: its statements set two findings aside, said with the document
         w.choose(w.named("scanMode", JComboBox.class), I18n.text("toolbar.scanMode.sources"));
         w.type(w.named("folder", JTextField.class), SAMPLES.resolve("projects").toString());
@@ -138,6 +144,11 @@ class WindowChecklistTest {
         w.clickTab(MainWindow.IGNORED_TAB);
         w.clickRow("lodash", 3);
         assertTrue(w.details().contains("stated in the VEX document"), w.details());
+        // standard mode reads the folder's own VEX documents only: scanned again, the chosen one's statements left out
+        w.menu("View", "Mode", "Standard");
+        w.waitUntil("scanned without the chosen VEX document", () -> w.tabTitle(MainWindow.IGNORED_TAB).equals("Ignored (0)"));
+        w.menu("View", "Mode", "Expert");
+        w.waitUntil("scanned with it again", () -> w.tabTitle(MainWindow.IGNORED_TAB).equals("Ignored (2)"));
 
         // 6. the database age: a day; the sample's records carry no date, so none is said old
         w.menu("View", "Database age");

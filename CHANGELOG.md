@@ -3,6 +3,15 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
+## Unreleased
+
+- **Standard and expert modes** (*View ▸ Mode*): standard, the first time, leaves out the *Ignore file* and *VEX
+  documents* rows and the CVSS version's choice, and scans with their defaults (the folder's own ignore file and
+  `*.vex.json`, CVSS 4.0 first); expert shows them and gets back what was chosen. Switching scans again when the files
+  read change.
+- **The search and the filters apart**: the search on a row of its own, the severity, the ecosystem and the boxes on
+  the next, under *Filters*.
+
 ## 1.5.2 — 2026-11-22
 
 - **Fixed**: a jar whose file name gives no version (`commons-lang3.jar`) is checked by its file name and its

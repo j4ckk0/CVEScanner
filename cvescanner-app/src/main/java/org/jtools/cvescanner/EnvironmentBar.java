@@ -57,6 +57,8 @@ final class EnvironmentBar {
             new Choice<>("environment.cvss4First", true), new Choice<>("environment.cvss3First", false)).toArray(Choice[]::new));
     private Environment environment = Environment.NONE;
     private boolean preferV4 = true;
+    /** Standard mode: the CVSS version's choice hidden, 4.0 first whatever was chosen. */
+    private boolean standard;
     /** Set while the controls are made to show the choice: their own events then change nothing. */
     private boolean updating;
 
@@ -74,7 +76,13 @@ final class EnvironmentBar {
     }
 
     boolean preferV4() {
-        return preferV4;
+        return standard || preferV4;
+    }
+
+    /** Standard mode: the CVSS version's choice hidden, 4.0 first; the choice kept for expert mode. */
+    void standard(boolean on) {
+        standard = on;
+        cvssCombo.setVisible(!on);
     }
 
     JPanel panel() {
@@ -85,6 +93,7 @@ final class EnvironmentBar {
         labels.tip(reachCombo, "environment.reach.tip");
         for (var c : List.of(crCombo, irCombo, arCombo)) labels.tip(c, "environment.requirement.tip");
         labels.tip(cvssCombo, "environment.cvss.tip");
+        cvssCombo.setName("cvss");   // for the window test (WindowDriver)
         var help = new JButton("?");
         help.setMargin(new Insets(1, 6, 1, 6));
         help.addActionListener(_ -> JOptionPane.showMessageDialog(owner, new JLabel(I18n.text("environment.help")),
