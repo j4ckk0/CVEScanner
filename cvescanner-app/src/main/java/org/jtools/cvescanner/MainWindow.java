@@ -156,13 +156,15 @@ final class MainWindow extends JFrame {
             rescore();
         });
         filterBar = new FilterBar(labels, opts.cveOnly, this::applyFilters);
-        summaryBar = new SummaryBar(labels, filterBar::minSeverity);
-        details = new DetailsPane(tables, new DetailsPane.Host() {
+        summaryBar = new SummaryBar(labels, filterBar::minSeverity, filterBar::minSeverityIndex);
+        details = new DetailsPane(tables, labels, new DetailsPane.Host() {
             public boolean scanned() { return result != null; }
             public Ignores.Split split() { return split; }
             public Ignores ignores() { return ignoreActions.ignores(); }
             public Environment environment() { return environmentBar.environment(); }
             public void copyLink(String url) { MainWindow.this.copyLink(url); }
+            public void ignore(Finding f) { MainWindow.this.ignore(f); }
+            public void stopIgnoring(IgnoredFinding i) { ignoreActions.stopIgnoring(i); }
         });
         viewMenu = new ViewMenu(this, labels, settings, startsExpert(opts, settings), this::setExpert, this::showSeverityColors);
         setJMenuBar(menuBar());
@@ -416,6 +418,7 @@ final class MainWindow extends JFrame {
     private void applyFilters() {
         tables.filter(filterBar.facets(), filterBar.searchTerms(), filterBar.ecosystem());
         dependencyTab.filter(filterBar.ecosystem(), filterBar.searchTerms(), filterBar.facets().hideTransitive());
+        summaryBar.active();
         updateCounts();
         int shown = tables.findingsTable.getRowCount();
         if (tables.findingsTable.getSelectedRow() < 0 && shown > 0) tables.findingsTable.setRowSelectionInterval(0, 0);

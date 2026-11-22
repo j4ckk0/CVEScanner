@@ -64,7 +64,7 @@ class HostileAdvisoryTest {
 
     /** The tags the page writes itself; any other came from the data. */
     private static final Set<String> PAGE_TAGS = Set.of("html", "head", "body", "div", "b", "font", "p", "table", "tr",
-            "td", "a", "br", "hr", "i");
+            "td", "a", "br", "hr", "i", "span");
 
     private static Finding hostile() {
         Score score = new Score("3.1", BREAKOUT, 9.8, Severity.CRITICAL, BREAKOUT, 9.0);

@@ -151,6 +151,11 @@ final class FilterBar {
         searchField.setText(text);
     }
 
+    /** The index of the severity chosen: 0 for all, 1 for critical… */
+    int minSeverityIndex() {
+        return severityCombo.getSelectedIndex();
+    }
+
     /** Shows this severity and above: the index of its choice, 0 for all. */
     void minSeverity(int index) {
         severityCombo.setSelectedIndex(index);

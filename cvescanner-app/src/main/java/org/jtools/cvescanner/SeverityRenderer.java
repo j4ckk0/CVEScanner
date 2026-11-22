@@ -22,24 +22,44 @@ package org.jtools.cvescanner;
 
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 import org.jtools.cvescanner.cvss.Severity;
 
+/** A severity as a pill in its colour (Pill), on the row's own background: striped, or selected. */
 final class SeverityRenderer extends DefaultTableCellRenderer {
+
+    private Severity severity;
+
     @Override
     public Component getTableCellRendererComponent(JTable t, Object v, boolean sel, boolean focus, int row, int col) {
         super.getTableCellRendererComponent(t, v, sel, focus, row, col);
-        if (v instanceof Severity s) {
-            setText(s.label());
-            setIcon(new DotIcon(SeverityColors.of(s), 10));
-            setFont(getFont().deriveFont(Font.BOLD));
-            if (!sel) setForeground(SeverityColors.of(s));
-        } else {
-            setText("");
-            setIcon(null);
-        }
+        severity = v instanceof Severity s ? s : null;
+        setText(severity == null ? "" : severity.label());   // what a screen reader says; painted as a pill below
+        setIcon(null);
+        setFont(getFont().deriveFont(Font.BOLD, getFont().getSize2D() - 1f));
         return this;
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        if (severity == null) {
+            super.paintComponent(g);
+            return;
+        }
+        g.setColor(getBackground());
+        g.fillRect(0, 0, getWidth(), getHeight());
+        Pill.paint(g, getInsets().left, getHeight(), severity.label(), getFont(), SeverityColors.of(severity), true);
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+        Dimension d = super.getPreferredSize();
+        if (severity == null) return d;
+        Dimension pill = Pill.size(getFontMetrics(getFont()), severity.label());
+        return new Dimension(Math.max(d.width, pill.width + getInsets().left + getInsets().right), Math.max(d.height, pill.height));
     }
 }

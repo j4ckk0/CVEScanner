@@ -65,6 +65,18 @@ final class Looks {
         // room in the tables and the tabs, in FlatLaf's looks: the window is read for long, not glanced at
         UIManager.put("Table.cellMargins", new Insets(3, 8, 3, 8));
         UIManager.put("TabbedPane.tabHeight", 36);
+        // FlatLaf's looks rounder, the tables striped, Scan (the default button) in the accent colour: values each look
+        // works out for itself, light or dark
+        FlatLaf.setGlobalExtraDefaults(Map.ofEntries(
+                Map.entry("Component.arc", "8"), Map.entry("Button.arc", "8"), Map.entry("TextComponent.arc", "8"),
+                Map.entry("CheckBox.arc", "4"), Map.entry("ScrollBar.thumbArc", "999"), Map.entry("ScrollBar.thumbInsets", "2,2,2,2"),
+                Map.entry("ScrollBar.width", "12"), Map.entry("TabbedPane.underlineHeight", "3"),
+                Map.entry("Table.alternateRowColor", "darken($Table.background,3%)"),
+                Map.entry("Button.default.background", "$Component.accentColor"), Map.entry("Button.default.foreground", "#fff"),
+                Map.entry("Button.default.focusedBackground", "$Component.accentColor"),
+                Map.entry("Button.default.borderColor", "$Component.accentColor"),
+                Map.entry("Button.default.hoverBackground", "darken($Component.accentColor,6%)"),
+                Map.entry("Button.default.pressedBackground", "darken($Component.accentColor,12%)")));
         FlatLightLaf.installLafInfo();
         FlatDarkLaf.installLafInfo();
         FlatIntelliJLaf.installLafInfo();
