@@ -3,6 +3,13 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
+## Unreleased
+
+- The window's *Base score* is named **CVSS base score** (*Score CVSS de base*): the findings' column, the details,
+  the header's tooltip, the environment's help.
+- **Fixed**: *Clear the preferences* leaves an empty file, so that an older `cvescanner.properties` beside the program
+  is not taken over again at the next start.
+
 ## 1.7.1 — 2026-11-22
 
 1.7 was tagged but not published: its Linux archive failed to build. 1.7.1 is 1.7 with that fixed.
@@ -22,7 +29,7 @@ checksums.
 - **Findings and Packages to upgrade in one tab**: the findings grouped by package version, a row each in bold with
   its worst severity, the version fixing all its findings (*Upgrade to*), its tick for *Apply fixes* and how many
   advisories it has; ▸ (a click, →) opens its findings below it, ← closes it, a search opens them all. A click on a
-  header sorts, each package keeping its findings; the line under the counters says how many package versions hold the
+  header sorts, each package keeping its findings; the line beside the counters says how many package versions hold the
   findings shown. Its columns: the package, its version, how many advisories, the CVE, the severity, the base and
   environment scores, the CVSS version, the fixed version, the date published, the summary, the advisory, then the
   tick, the ecosystem, the version to upgrade to, the match, the scope, the path, the file.
@@ -31,8 +38,8 @@ checksums.
 - **Path**, a new column of the findings: the folder of the file a finding comes from (`maven-webapp/service`), to
   sort, search and filter by project.
 - The **Dependencies** tab names each file's ecosystem (`pom.xml · Maven`).
-- The severity box is gone from the filters: the coloured counters set the lowest severity shown, for every tab and
-  the export, as it did.
+- The severity box is gone from the filters: the coloured counters set the lowest severity shown, for the findings
+  and their export, as it did.
 - Every column of the tables can be narrowed or widened by hand; a header's ▾ is drawn inside its own column.
 - **The settings collapse**: once the first scan's findings are shown, the databases, the scan and the environment
   rows are collapsed to the folder's row, and the findings' table shows 8 rows, the details having the rest; ▾ at the

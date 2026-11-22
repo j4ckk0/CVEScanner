@@ -79,7 +79,10 @@ final class NpmRange {
         return Optional.of(prereleaseAllowed(v, bounds));
     }
 
-    /** A ceiling npm writes X.Y.Z-0 (^, ~, x, "<1.2"): below it is below X.Y.Z's numbers, any prerelease of it too. */
+    /**
+     * Whether v holds this comparator. A ceiling npm writes X.Y.Z-0 (^, ~, x, "<1.2"): below it is below X.Y.Z's
+     * numbers, X.Y.Z's own prereleases (2.0.0-rc.1 for ^1.0.0) left out too.
+     */
     private static boolean comparator(Exact v, String op, Bound b) {
         int low = compare(v, b);
         return switch (op) {

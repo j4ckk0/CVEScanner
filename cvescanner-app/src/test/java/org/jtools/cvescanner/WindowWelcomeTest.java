@@ -35,8 +35,9 @@ import org.junit.jupiter.api.io.TempDir;
 
 /**
  * The window opened without a folder: the welcome alone, below the toolbar; its Scan, then the findings with the search
- * and the filters, the settings collapsed until ▾ shows them with the environment; the folder among the recent ones. Only with -Dcvescanner.windowTest=true,
- * on a virtual display (scripts/window-check.sh).
+ * and the filters, the settings collapsed until ▾ shows them with the environment; the folder among the recent ones;
+ * Scan greyed until a folder and a database are given. Only with -Dcvescanner.windowTest=true, on a virtual display
+ * (scripts/window-check.sh).
  */
 class WindowWelcomeTest {
 

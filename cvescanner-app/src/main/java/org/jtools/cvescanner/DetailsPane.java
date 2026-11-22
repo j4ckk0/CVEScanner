@@ -41,7 +41,8 @@ import org.jtools.cvescanner.model.Finding;
  * The details of what is selected in the tab shown: a finding; for a package version's row, its most severe
  * finding, in the Dependencies tab the dependency's (given by MainWindow); in the Ignored tab, the finding set aside
  * and why; nothing in the unchecked dependencies' tab. A link in it is copied, never opened. Above it, buttons for what
- * the tables' right-click menus do: copy the advisory's link, the CVEs, the package; ignore it, or stop ignoring it.
+ * the tables' right-click menus do: copy the advisory's link, the CVEs, their NVD links, the package; ignore it, or
+ * stop ignoring it.
  */
 final class DetailsPane {
 
@@ -111,7 +112,10 @@ final class DetailsPane {
         return b;
     }
 
-    /** The actions' row for what is shown: none for nothing, Stop ignoring for a finding set aside, Ignore otherwise. */
+    /**
+     * The actions' row for what is shown: none for nothing; Ignore for a finding; Stop ignoring for one the ignore file
+     * sets aside, neither for one a VEX document does (changed in the document).
+     */
     private void showing(Finding f, IgnoredFinding i) {
         shown = f;
         shownIgnored = i;

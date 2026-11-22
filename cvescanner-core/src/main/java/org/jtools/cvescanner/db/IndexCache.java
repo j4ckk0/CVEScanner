@@ -107,7 +107,7 @@ final class IndexCache {
                     Files.move(tmp, cacheDir.resolve(name(db)), StandardCopyOption.REPLACE_EXISTING);
                 }
             } finally {
-                Files.deleteIfExists(tmp);   // left only when the move failed
+                Files.deleteIfExists(tmp);   // left only when the write or the move failed
             }
         } catch (IOException | RuntimeException _) {
             // no cache: the next scan reads the zip, as this one did

@@ -86,7 +86,7 @@ final class WelcomePanel {
         box.add(c);
     }
 
-    /** Scan, once the folder and the database are given: greyed, its tooltip saying what is missing, before. */
+    /** Scan, once the folder and the database are given: greyed, its tooltip saying what a scan needs, before. */
     void ready(boolean on) {
         scanButton.setEnabled(on);
         scanButton.setToolTipText(on ? null : org.jtools.cvescanner.i18n.I18n.text("toolbar.scan.needs"));

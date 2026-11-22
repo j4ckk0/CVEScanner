@@ -31,7 +31,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/** What a pnpm lockfile says of a package for its override: its versions locked, its dependents, whatever its version. */
+/** What a pnpm lockfile says of a package for its override: its versions locked, its dependents, whichever pnpm wrote it. */
 class NpmDependentsTest {
 
     /** pnpm 5.x: a key and a need with their peers after an underscore, the version alone counting. */

@@ -52,7 +52,7 @@ final class NpmDependents {
     record Found(Set<String> locked, List<Asked> asked, boolean rangesKnown, List<String> descriptors) {}
 
     private static final Pattern YARN_VERSION = Pattern.compile("^\\s+version:?\\s+\"?([^\"\\s]+)\"?\\s*$");
-    /** A pnpm package key's name and version, its peers' suffix cut: 5.x's "_react@18.2.0", 6.0 on "(react@18.2.0)". */
+    /** A pnpm package key's name and version, its peers' suffix apart: 5.x's "_react@18.2.0", 6.0 on "(react@18.2.0)". */
     private static final Pattern PNPM_KEY = Pattern.compile("^  '?/?((?:@[^/@\\s]+/)?[^/@\\s(]+)[@/]([^(:_'\\s]+)(_[^(:'\\s]*)?(\\([^:]*\\))?'?:\\s*(\\{\\})?\\s*$");
     private static final Pattern PNPM_DEP = Pattern.compile("^      '?((?:@[^/@\\s]+/)?[^:'\\s]+)'?:\\s*'?([^(_'\\s]+)");
 

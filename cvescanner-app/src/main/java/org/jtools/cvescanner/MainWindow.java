@@ -135,7 +135,7 @@ final class MainWindow extends JFrame {
     private final JButton collapseButton = new JButton();
     /** The toolbar's grid: Apply fixes moves to the folder's row when the settings are collapsed. */
     private JPanel toolbarRows;
-    /** The settings collapsed to the folder's row once there are findings, the room left to the tables and the details (Settings). */
+    /** The settings collapsed to the folder's row from the first scan, the room left to the tables and the details (Settings). */
     private boolean collapsed;
     /** The findings' table above, the details below. */
     private JSplitPane centre;
@@ -541,7 +541,7 @@ final class MainWindow extends JFrame {
     }
 
     // ----------------------------------------------------------------------------------- filtering
-    /** The filters applied to every table, then the counts; the first finding selected when none is. */
+    /** The filters applied to every table, then the counts; the first row selected when none is. */
     private void applyFilters() {
         tables.filter(filterBar.facets(), filterBar.searchTerms(), filterBar.ecosystem());
         dependencyTab.filter(filterBar.ecosystem(), filterBar.searchTerms(), filterBar.facets().hideTransitive());

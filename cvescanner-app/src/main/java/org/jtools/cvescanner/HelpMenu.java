@@ -41,9 +41,10 @@ import org.jtools.cvescanner.cli.Options;
 import org.jtools.cvescanner.i18n.I18n;
 
 /**
- * The Help menu: the command line's options (its --help), where the preferences are kept, the program's licence, the terms of the Java runtime it carries, and what the program is — its
- * version, its home page. All of it read from the program and its runtime: the home page is an address to copy, never
- * opened, as the program reaches no network (README, "No network").
+ * The Help menu: the command line's options (its --help), where the preferences are kept, the program's licence, the
+ * terms of the Java runtime it carries, and what the program is — its version, its home page. All of it read from the
+ * program and its runtime: the home page is an address to copy, never opened, as the program reaches no network
+ * (README, "No network").
  */
 final class HelpMenu {
 

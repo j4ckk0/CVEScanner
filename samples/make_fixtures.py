@@ -625,8 +625,9 @@ print("fixtures written to", out)
 
 # ------------------------------------------------------------------ db/examples.zip: the examples' packages
 # A made-up database (GitHub Advisory Database layout) with an advisory for each vulnerable package examples/ declares
-# or ships, so that every example shows findings without a real database: the CVE and the fixed version examples/README.md
-# gives, the records' text made up. The components off-the-shelf (cots-app) are in db/cots-cvelist.zip and the NVD feed.
+# or ships, so that every example shows findings without a real database: a CVE of each, mostly the one
+# examples/README.md names, the records' text made up. The components off-the-shelf (cots-app) are in
+# db/cots-cvelist.zip and the NVD feed.
 def ex(n, eco, name, introduced, fixed, cve, sev):
     return osv(f"GHSA-exam-ple{n:02d}-test", eco, name, [{"introduced": introduced}, {"fixed": fixed}], [cve], sev=sev)
 

@@ -111,7 +111,7 @@ public final class JarReader {
      * (log4j-core-2.14.1.jar), else the file name without its extension and the manifest's version. Every group's
      * advisories for that artifactId are matched; its OSGi name, when it has one, tells those of its own group
      * (Dependency.bundle). Its version is the jar's own, not approximate. A jar with no version in either cannot be
-     * checked: said, with its manifest's name.
+     * checked: said, with its manifest's name, else its file's.
      */
     private static void unchecked(Manifest manifest, String shown, String name, DependencyCollector col) {
         String symbolic = null, title = null, manifestVersion = null;

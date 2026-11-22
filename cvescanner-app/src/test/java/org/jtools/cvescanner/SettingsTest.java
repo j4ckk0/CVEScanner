@@ -44,12 +44,13 @@ class SettingsTest {
     }
 
     @Test
-    void clearedTheyAreForgottenAndTheirFileGone() throws IOException {
+    void clearedTheyAreForgottenTheirFileLeftEmpty() throws IOException {
         var settings = Settings.in(folder.resolve("not yet made"));
         settings.set(Settings.LANGUAGE, "en");
         assertTrue(Files.isRegularFile(settings.file()), "its folder made at the first setting");
         settings.clear();
-        assertFalse(Files.exists(settings.file()));
+        assertEquals("the default", Settings.in(folder.resolve("not yet made")).get(Settings.LANGUAGE, "the default"),
+                "an empty file left: an old one beside the program is not taken over again");
         assertEquals("the default", settings.get(Settings.LANGUAGE, "the default"));
         settings.set(Settings.LOOK, "x");
         assertEquals("the default", Settings.in(folder.resolve("not yet made")).get(Settings.LANGUAGE, "the default"), "not written back");

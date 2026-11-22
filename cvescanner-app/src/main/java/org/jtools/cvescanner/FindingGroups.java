@@ -39,9 +39,9 @@ import org.jtools.cvescanner.version.Versions;
 /**
  * The findings grouped by package version, as the findings' table shows them: a row for each package version (its
  * worst severity, the version fixing all its findings, its tick for Apply fixes, how many advisories), and below it,
- * when opened,
- * a row for each of its findings. Sorted here, not by a RowSorter: a package's findings stay below it whatever the
- * order, the packages ordered by their own value of the column (the first of their findings' for a finding's column).
+ * when opened, a row for each of its findings. Sorted here, not by a RowSorter: a package's findings stay below it
+ * whatever the order, the packages ordered by their own value of the column (the first of their findings' for a
+ * finding's column).
  */
 final class FindingGroups extends AbstractTableModel {
 
@@ -106,7 +106,7 @@ final class FindingGroups extends AbstractTableModel {
                 new GColumn("column.vulnerabilities", Integer.class, 115, g -> g.summary().vulnerabilities(), f -> null, natural(), none),
                 new GColumn("column.cve", String.class, 130, g -> "", Finding::cveText, TEXT, Finding::cveText),
                 new GColumn("column.severity", Severity.class, 120, g -> g.summary().worst(), Finding::severity, natural(), Finding::severity),
-                new GColumn("column.base", Double.class, 95, g -> g.most(Finding::cvss), Finding::cvss, natural(), Finding::cvss),
+                new GColumn("column.base", Double.class, 130, g -> g.most(Finding::cvss), Finding::cvss, natural(), Finding::cvss),
                 new GColumn("column.env", Double.class, 120, g -> g.most(Finding::envScore), Finding::envScore, natural(), Finding::envScore),
                 new GColumn("column.cvss", String.class, 90, g -> "", f -> Objects.requireNonNullElse(f.score().version(), ""), TEXT,
                         f -> Objects.requireNonNullElse(f.score().version(), "")),
@@ -146,7 +146,7 @@ final class FindingGroups extends AbstractTableModel {
         layout();
     }
 
-    /** The package versions opened that this scan no longer reports, forgotten. */
+    /** The package versions opened that this scan does not report, forgotten. */
     void retainOpened(Set<FindingTables.PackageKey> reported) {
         expanded.retainAll(reported);
     }
@@ -170,7 +170,7 @@ final class FindingGroups extends AbstractTableModel {
         return ascending;
     }
 
-    /** Sorted by this column, or the other way when it is the one sorted by; a severity or a score the highest first. */
+    /** Sorted by this column, or the other way when it is the one sorted by; a severity, a score or a count the highest first. */
     void sortBy(int column) {
         if (column == EXPAND) return;
         if (column == sortColumn) ascending = !ascending;

@@ -31,9 +31,9 @@ import java.util.Properties;
 /**
  * The program's settings — the folder analyzed last, the databases and VEX documents chosen, its look, its language,
  * how to scan and to score —, kept in cvescanner.properties in the user's own folder (userFolder): each user keeps
- * theirs, whichever copy of the program runs. Those an earlier version kept beside the program are read once, the
- * first time. Written only when a setting changes; a folder that cannot be written in keeps nothing, and the program
- * goes on. Help ▸ Preferences folder says where, and clears them.
+ * theirs, whichever copy of the program runs. A cvescanner.properties beside the program, where older copies keep it,
+ * is taken over whenever the user has none. Written only when a setting changes; a folder that cannot be written in
+ * keeps nothing, and the program goes on. Help ▸ Preferences folder says where, and clears them.
  */
 final class Settings {
 
@@ -63,7 +63,7 @@ final class Settings {
     static final String DIRECT_ONLY = "directOnly";
     /** The folders scanned last, newest first, separated by the system's path separator (RecentFolders). */
     static final String RECENT_FOLDERS = "recentFolders";
-    /** "true", the default, when the toolbar's settings are collapsed to the folder's row once there are findings (▴, ▾). */
+    /** "true", the default, when the toolbar's settings are collapsed to the folder's row from the first scan (▴, ▾). */
     static final String SETTINGS_COLLAPSED = "settingsCollapsed";
     /** "true" when the window shows the expert's settings too: the ignore file, the VEX documents, the CVSS version (View ▸ Mode). */
     static final String EXPERT = "expert";
@@ -102,7 +102,7 @@ final class Settings {
         Path file = userFolder().resolve(FILE);
         Path beside = program == null ? null : program.resolve(FILE);
         if (beside != null && !Files.exists(file) && Files.isRegularFile(beside)) {
-            try {   // an earlier version's, beside the program: taken over, once
+            try {   // the one beside the program, where older copies keep it: taken over
                 Files.createDirectories(file.getParent());
                 Files.copy(beside, file);
             } catch (IOException _) {
@@ -147,10 +147,16 @@ final class Settings {
         return set != null ? Boolean.parseBoolean(set) : "false".equals(get(MAVEN_TRANSITIVE, "true"));
     }
 
-    /** Every setting forgotten, its file deleted: the defaults from the next start (Help ▸ Preferences folder). */
+    /**
+     * Every setting forgotten, the file left empty rather than deleted, so that an old one beside the program is not
+     * taken over again: the defaults from the next start (Help ▸ Preferences folder).
+     */
     void clear() throws IOException {
         values.clear();
-        if (file != null) Files.deleteIfExists(file);
+        if (file == null || !Files.exists(file)) return;
+        try (OutputStream out = Files.newOutputStream(file)) {
+            values.store(out, "CVEScanner's settings");
+        }
     }
 
     String get(String key, String otherwise) {

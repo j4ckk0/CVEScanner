@@ -55,7 +55,7 @@ final class SummaryBar {
     private final IntSupplier current;
 
     /**
-     * @param minSeverity given the index of the severity choice a chip stands for (1: critical…, 0: all)
+     * @param minSeverity given the index of the lowest severity a chip stands for (1: critical…, 0: all)
      * @param current     the index of the severity chosen now
      */
     SummaryBar(I18nLabels labels, IntConsumer minSeverity, IntSupplier current) {

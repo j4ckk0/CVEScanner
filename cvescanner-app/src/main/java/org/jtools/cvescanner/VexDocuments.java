@@ -74,7 +74,7 @@ final class VexDocuments {
         labels.on(this::updateField);
     }
 
-    /** The documents chosen, for Engine.scan (ScanOptions.vexFiles): from now on, the field no longer says "from the next scan". */
+    /** The documents chosen, for Engine.scan (ScanOptions.vexFiles): read by this scan, the field's "from the next scan" taken off. */
     List<Path> filesForScan() {
         if (pending) {
             pending = false;
