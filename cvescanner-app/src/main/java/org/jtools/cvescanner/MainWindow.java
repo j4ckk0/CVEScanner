@@ -122,6 +122,8 @@ final class MainWindow extends JFrame {
     private final RecentFolders recentFolders;
     /** Before the first scan the welcome, then the tables and the details. */
     private final JPanel centreCards = new JPanel(new CardLayout());
+    /** The environment, the search, the filters and the counters: shown from the first scan, the welcome alone before. */
+    private final List<JComponent> afterScan = new ArrayList<>();
 
     private ScanResult result;
     /** The scan's findings scored for the environment, those the ignore file sets aside apart. */
@@ -179,10 +181,8 @@ final class MainWindow extends JFrame {
         // the rows of controls, each group apart: where to scan, how to score, what to show
         north.add(toolbar());
         north.add(separator());
-        north.add(environmentBar.panel());
-        north.add(separator());
-        north.add(filterBar.panel());
-        north.add(summaryBar.panel());
+        afterScan.addAll(List.of(environmentBar.panel(), separator(), filterBar.panel(), summaryBar.panel()));
+        afterScan.forEach(north::add);
         add(north, BorderLayout.NORTH);
         addComponentListener(new ComponentAdapter() {       // let wrapped toolbar rows re-flow when the window is resized
             @Override public void componentResized(ComponentEvent e) { north.revalidate(); }
@@ -242,6 +242,7 @@ final class MainWindow extends JFrame {
         setMinimumSize(new Dimension(1000, 640));
         setLocationRelativeTo(null);
         applyMode(viewMenu.expert());
+        afterScan.forEach(c -> c.setVisible(false));
         if (opts.dirGiven) SwingUtilities.invokeLater(this::startScan);
     }
 
@@ -547,6 +548,8 @@ final class MainWindow extends JFrame {
     private void showResult(ScanResult r) {
         result = r;
         ((CardLayout) centreCards.getLayout()).show(centreCards, "results");
+        afterScan.forEach(c -> c.setVisible(true));
+        getContentPane().revalidate();
         ignoreActions.scanned(r.ignores());
         tables.findingsTable.clearSelection();
         tables.ignoredTable.clearSelection();

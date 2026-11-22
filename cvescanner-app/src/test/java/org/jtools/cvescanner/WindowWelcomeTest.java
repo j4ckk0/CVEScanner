@@ -34,8 +34,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * The window opened without a folder: the welcome where the tables will be, its Scan, then the folder in the recent
- * ones. Only with -Dcvescanner.windowTest=true, on a virtual display (scripts/window-check.sh).
+ * The window opened without a folder: the welcome alone, below the toolbar; its Scan, then the findings with the
+ * environment, the search and the filters; the folder among the recent ones. Only with -Dcvescanner.windowTest=true,
+ * on a virtual display (scripts/window-check.sh).
  */
 class WindowWelcomeTest {
 
@@ -58,11 +59,16 @@ class WindowWelcomeTest {
         w.named("welcome");
         assertEquals(null, w.find(Component.class, k -> "tryExamples".equals(k.getName())), "no examples beside this program");
         assertEquals(null, w.find(Component.class, k -> "tabs".equals(k.getName())), "no table before a scan");
+        assertEquals(null, w.find(Component.class, k -> "ecosystem".equals(k.getName())), "no filters before a scan");
+        assertEquals(null, w.find(Component.class, k -> "reach".equals(k.getName()) || "envCustomise".equals(k.getName())),
+                "no environment before a scan");
         w.type(w.named("folder", JTextField.class), SAMPLES.resolve("projects").toString());
         w.click(w.named("welcomeScan"));
         w.waitUntil("the findings in place of the welcome", () -> w.find(Component.class, k -> "tabs".equals(k.getName())) != null
                 && w.tabTitle(0).equals("Findings (12)"));
         assertEquals(null, w.find(Component.class, k -> "welcome".equals(k.getName())));
+        w.named("ecosystem");   // the filters, shown with the findings
+        w.named("envCustomise");
         w.click(w.named("recentFolders"));
         assertTrue(w.find(javax.swing.JMenuItem.class, i -> i.getText().equals(SAMPLES.resolve("projects").toString())) != null,
                 "the folder among the recent ones");

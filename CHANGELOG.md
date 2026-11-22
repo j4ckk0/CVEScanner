@@ -6,6 +6,8 @@ checksums.
 ## Unreleased
 
 - The first field of the window is *Folder to analyze* (*Dossier à analyser*), no longer *Project folder*.
+- Before the first scan, the welcome alone below the toolbar: the environment, the search, the filters and the counters
+  come with the findings.
 
 ## 1.6 — 2026-11-22
 
