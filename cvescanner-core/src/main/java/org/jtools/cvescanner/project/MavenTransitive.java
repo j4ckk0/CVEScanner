@@ -140,7 +140,7 @@ final class MavenTransitive {
     List<Phrase> warnings() {
         var out = new ArrayList<Phrase>();
         if (!missing.isEmpty())
-            out.add(Phrase.of("warning.mavenPomsMissing", missing.size(), repository.root().toString(), named(missing)));
+            out.add(Phrase.of("warning.mavenPomsMissing", missing.size(), repository.root().toString().replace('\\', '/'), named(missing)));
         if (!unresolved.isEmpty()) out.add(Phrase.of("warning.mavenUnresolved", unresolved.size(), named(unresolved)));
         return out;
     }

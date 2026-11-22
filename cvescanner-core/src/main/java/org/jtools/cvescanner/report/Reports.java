@@ -200,7 +200,7 @@ public final class Reports {
         sb.append("## ").append(I18n.text(language, "markdown.notes")).append("\n\n");
         // the Maven line says whether the transitive dependencies were followed, from which local repository
         sb.append(r.mavenRepository() == null ? I18n.text(language, "markdown.notes.maven")
-                : I18n.text(language, "markdown.notes.mavenTransitive", "`" + code(r.mavenRepository().toString()) + "`")).append('\n');
+                : I18n.text(language, "markdown.notes.mavenTransitive", "`" + code(r.mavenRepository().toString().replace('\\', '/')) + "`")).append('\n');
         // and what it could not follow: the poms not there, the versions not resolved
         for (Phrase w : mavenWarnings(r)) sb.append("  - ").append(md(w.text(language))).append('\n');
         sb.append(I18n.text(language, "markdown.notes.text")).append('\n');
@@ -289,7 +289,7 @@ public final class Reports {
         scoring.put("availability_requirement", env.availability().code);
         root.put("scoring", scoring);
         if (r.mavenRepository() != null) {
-            root.put("maven_repository", r.mavenRepository().toString());
+            root.put("maven_repository", r.mavenRepository().toString().replace('\\', '/'));
             root.put("maven_unchecked", mavenWarnings(r).stream().map(w -> w.text(I18nLanguage.ENGLISH)).toList());
         }
         root.put("findings", findings.stream().map(Reports::json).toList());
