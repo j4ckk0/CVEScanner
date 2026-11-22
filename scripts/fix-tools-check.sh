@@ -47,14 +47,14 @@ failed_step() {
 }
 trap 'failed_step $? $LINENO "$BASH_COMMAND"' ERR
 failures=0
+failed_checks=""
 check() {   # check DESCRIPTION FILE TEXT [absent]: the file holds the text, or does not with "absent"
   if grep -qF -- "$3" "$2"; then found=yes; else found=no; fi
   if { [ "${4:-}" = absent ] && [ $found = no ]; } || { [ "${4:-}" != absent ] && [ $found = yes ]; }; then
     echo "  ok      $1"
   else
     echo "  FAILED  $1 ($2 $([ "${4:-}" = absent ] && echo holds || echo lacks) $3)"; failures=$((failures + 1))
-    # in GitHub Actions, an annotation too: the run's page shows which check failed
-    [ -n "${GITHUB_ACTIONS:-}" ] && echo "::error::fix-tools: $1"
+    failed_checks+="$1"$'\n'
   fi
 }
 
@@ -116,7 +116,8 @@ check "pnpm: the old version gone"     "$r/pnpm/pnpm-lock.yaml"   '4.17.20' abse
 check "pnpm: the pin said"             "$work/fixes.log"          'pnpm cannot resolve a range offline'
 check "Gradle: the build file"         "$r/gradle/build.gradle"   'commons-text:1.10.0'
 check "scanned again: no finding left" "$work/out/report.md"      'lodash' absent
-[ $failures -eq 0 ] || annotate "what the fixes said" "$(sed -n '/^Fixes:/,$p' "$work/fixes.log" | head -n 120)"
+# one annotation for them all: GitHub shows only the first ten of a step
+[ $failures -eq 0 ] || annotate "$failures check(s) failed" "$failed_checks"$'\n'"$(sed -n '/^Fixes:/,$p' "$work/fixes.log" | head -n 120)"
 
 echo "==> Without the tools on the PATH"
 mkdir -p "$work/bare" "$work/nobin"
