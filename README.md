@@ -153,6 +153,8 @@ work first, scan the `examples` folder beside the program: a Maven, a Gradle, an
 declaring real packages at vulnerable versions (Log4Shell, Text4Shell, Spring4Shell…), what a scan finds listed in
 [examples/README.md](examples/README.md).
 
+![Before the first scan: the folder, the database and Scan, the three steps and Try the examples](docs/images/welcome.png)
+
 The table sorts by any column and filters as you type: on the first row **Search** (every word must match, across
 the columns and the aliases; Ctrl+F, Esc to clear); on the second the **Filters**: the **ecosystem**,
 *Only with CVE ID*, *Hide approximate (≈) versions*, *Hide name matches ⚠*, *Hide indirect dependencies*. The coloured
@@ -180,7 +182,10 @@ leaves out the *Ignore file* and *VEX documents* rows and the CVSS version's cho
 does by default (the folder's own ignore file and `*.vex.json`, CVSS 4.0 first); **Expert** shows them, and gets back
 what was chosen in them. A command line naming `--ignore`, `--no-ignore`, `--vex` or `--cvss` opens the window in
 expert mode. *View ▸ Look* offers FlatLaf's looks, light and dark; the language is
-on the right of the menus. The choices are kept in `cvescanner.properties`, beside the program.
+on the right of the menus. *Scan* waits for a folder to analyze and a database, their fields outlined in red until
+then. The choices, the folder analyzed last and the databases among them, are kept in `cvescanner.properties` in your
+own folder (`~/.config/cvescanner` on Linux, `%APPDATA%\CVEScanner` on Windows); *Help ▸ Preferences folder…* says
+where, copies the path and clears them.
 
 ![The findings by package version: each one's worst severity and the version that fixes its findings, three ticked for Apply fixes](docs/images/packages.png)
 
@@ -194,6 +199,10 @@ on the right of the menus. The choices are kept in `cvescanner.properties`, besi
 cvescanner.sh --no-gui -d /src/my-app --env airgapped --fail-on HIGH      (Linux)
 cvescanner-cli.bat --no-gui -d C:\src\my-app --fail-on HIGH               (Windows)
 ```
+
+`--help` lists every option (`cvescanner.sh --help`, `cvescanner-cli.bat --help` or `/?`; `cvescanner.bat --help`
+prints them too); on Linux `cvescanner.sh --man` shows the manual, `cvescanner.1` beside the program. In the window,
+*Help ▸ Command line…* shows the same list.
 
 | Option | |
 |---|---|
@@ -411,6 +420,8 @@ menus, ou `--lang fr`) :
 
 ![Les exemples analysés pour un environnement exposé à Internet : 668 résultats, Log4Shell sélectionné](docs/images/fr/findings.png)
 
+![Avant la première analyse : le dossier, la base et Analyser, les trois étapes et Essayer les exemples](docs/images/fr/welcome.png)
+
 ![Les résultats par version de paquet, trois cochés pour Appliquer les correctifs](docs/images/fr/packages.png)
 
 ![L'onglet Dépendances : les dépendances de chaque fichier en arbre, ce que chacune apporte en dessous](docs/images/fr/dependencies.png)
@@ -501,7 +512,7 @@ Two Maven modules, each a jar and a Java module, built in this order by the pare
 | `cvescanner-core/…/report/`, `…/cli/` | `Reports` (report.md, findings.csv, findings.json, the packages to upgrade); `Options` and `Cli` (the command line) |
 | `cvescanner-core/…/json/`, `…/version/`, `…/i18n/` | `Json` (a small parser and writer), `JsonStream` (a large array's elements one at a time); `Versions` (Maven's and npm's version order); the languages: `I18n`, `I18nLanguage`, `I18nTexts`, `Phrase` |
 | `cvescanner-app/…/` | `Launcher` (the entry point), `MainWindow`, `FindingTables`, `EnvironmentBar`, `IgnoreActions` and `FixActions` with `FixDialog`, `FindingDetails` (a finding's page, escaped), the table's `Column`, `ListTableModel` and renderers, `Settings`, `Looks`, `HelpMenu`, `I18nLabels` and `I18nLanguageBox`, `NoNetworkResolver` |
-| `cvescanner-app/src/dist/`, `…/src/assembly/` | the distributions' launchers, the `database/` folder, FlatLaf's licence, and what goes in each archive |
+| `cvescanner-app/src/dist/`, `…/src/assembly/` | the distributions' launchers, the manual (`cvescanner.1`), the `database/` folder, FlatLaf's licence, and what goes in each archive |
 | `*/src/test/` | core: `GoldenTest` (the samples' reports, case by case), `FrenchReportTest`, `CvssReferenceTest` (9,000 vectors scored by another implementation), `HostileReportTest`, the rules' unit tests, `PomParserTest`, `CoreTextsTest`; app: `NoNetworkTest`, `NoNetworkResolverTest`, `HostileAdvisoryTest`, `AppTextsTest` |
 | `examples/` | Maven, Gradle, npm and yarn projects declaring real packages at vulnerable versions, to scan with a real database; in the distributions too |
 | `samples/` | sample projects and made-up databases, and `make_fixtures.py`, which writes them; for the tests |

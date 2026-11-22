@@ -1,0 +1,205 @@
+.\" CVEScanner's manual page: man ./cvescanner.1, or cvescanner.sh --man. Its options are those of
+.\" cvescanner.sh --help (ManPageTest checks that it names every one of them).
+.TH CVESCANNER 1 "2026-11-22" "CVEScanner" "User Commands"
+.SH NAME
+cvescanner \- which known vulnerabilities apply to a project's dependencies, offline
+.SH SYNOPSIS
+.B cvescanner.sh
+[\fIoptions\fR] [\fIDIR\fR]
+.br
+.B cvescanner.sh \-\-no\-gui
+[\fIoptions\fR] [\fIDIR\fR]
+.br
+.B cvescanner.sh \-\-man
+.SH DESCRIPTION
+CVEScanner tells which known vulnerabilities apply to the dependencies of Maven, Gradle, npm and Python projects, to
+the components off-the-shelf they ship (GDAL, FFmpeg, OpenSSL...) and to an installed product read from its binaries,
+from vulnerability databases downloaded beforehand (the GitHub Advisory Database, the CVE List, OSV.dev's exports,
+NVD's CVE feeds). It never reaches the network.
+.PP
+Without \fB\-\-no\-gui\fR it opens its window, scanning \fIDIR\fR at once when one is given. With \fB\-\-no\-gui\fR it
+scans \fIDIR\fR (the current directory by default) and writes its reports: report.md, findings.csv, dependencies.csv,
+findings.json and bom.cdx.json.
+.PP
+The launcher loads every database zip of the \fIdatabase\fR folder beside it and writes the reports in
+\fIreports\fR beside it, unless the options say otherwise.
+.SH OPTIONS
+.SS Scanning
+.TP
+\fIDIR\fR, \fB\-d\fR, \fB\-\-dir\fR \fIDIR\fR
+The directory to scan (default: the current directory).
+.TP
+\fB\-o\fR, \fB\-\-out\fR \fIDIR\fR
+Where \fB\-\-no\-gui\fR writes its reports (default: ./cve-report; the launcher: reports/).
+.TP
+\fB\-\-db\-dir\fR \fIDIR\fR
+Load every *.zip of \fIDIR\fR as a database (the launcher: database/).
+.TP
+\fB\-\-db\fR \fIFILE\fR
+Load a database from a zip file (repeatable): the GitHub Advisory Database, the CVE List (cvelistV5), an OSV.dev
+ecosystem export or one of NVD's CVE feeds (JSON 2.0).
+.TP
+\fB\-\-ignore\fR \fIFILE\fR
+The ignore file of the findings reviewed (default: cvescanner-ignore.csv in \fIDIR\fR, when there is one); its
+findings are left out of the counts and of \fB\-\-fail\-on\fR.
+.TP
+\fB\-\-no\-ignore\fR
+Read no ignore file: report every finding.
+.TP
+\fB\-\-vex\fR \fIFILE\fR
+A CycloneDX VEX document (repeatable; the *.vex.json of \fIDIR\fR are read anyway): its not_affected and
+false_positive statements set their findings aside.
+.TP
+\fB\-\-db\-max\-age\fR \fIDAYS\fR
+Warn when a database's newest record is older than \fIDAYS\fR (default 30; 0: never).
+.TP
+\fB\-\-maven\-repo\fR \fIDIR\fR
+The local Maven repository, read for the transitive dependencies of the poms (default: the one ~/.m2/settings.xml
+names, else ~/.m2/repository).
+.TP
+\fB\-\-gradle\-cache\fR \fIDIR\fR
+Gradle's cache (its files-2.1 folder), read for the transitive dependencies of the builds without a lockfile
+(default: under GRADLE_USER_HOME, else ~/.gradle).
+.TP
+\fB\-\-direct\-only\fR
+The declared dependencies only: neither the local Maven repository nor Gradle's cache read, the lockfiles' indirect
+packages left out (alias: \fB\-\-no\-transitive\fR).
+.TP
+\fB\-\-cache\-dir\fR \fIDIR\fR
+Keep the databases' index between scans in \fIDIR\fR (the launcher: cache/ beside the program).
+.TP
+\fB\-\-no\-cache\fR
+Read the databases from their zips at every scan.
+.TP
+\fB\-\-installed\fR
+Scan an installed product from what it ships (jars, WARs, EARs, node_modules, site-packages, native libraries)
+rather than source projects.
+.TP
+\fB\-\-cve\-only\fR
+Only report the vulnerabilities that have a CVE ID.
+.SS Scoring
+.TP
+\fB\-\-env\fR \fIPRESET\fR
+The environment of the environmental CVSS score: none (default), internet, internal, airgapped, devci.
+.TP
+\fB\-\-reach\fR \fIR\fR
+Override the reachability: internet, internal or local.
+.TP
+\fB\-\-cr\fR, \fB\-\-ir\fR, \fB\-\-ar\fR \fIV\fR
+Override the confidentiality, integrity, availability requirement: L, M, H or X (not defined).
+.TP
+\fB\-\-cvss\fR \fI4\fR|\fI3\fR
+The CVSS version preferred when an advisory has both (default 4).
+.SS Output
+.TP
+\fB\-\-lang\fR \fIfr\fR|\fIen\fR
+The language of the messages and of report.md (default: the program's setting, else French); the CSV and JSON files
+are in English.
+.TP
+\fB\-\-no\-gui\fR
+Run without the window and write report.md, findings.csv, dependencies.csv (the dependency tree, a row each with its
+path), findings.json and bom.cdx.json (a CycloneDX SBOM).
+.TP
+\fB\-\-fail\-on\fR \fILEVEL\fR
+With \fB\-\-no\-gui\fR: exit 2 when a finding is at or above LOW, MEDIUM, HIGH or CRITICAL.
+.SS Filters (the reports, the counts and \-\-fail\-on keep only what they keep)
+.TP
+\fB\-\-min\-severity\fR \fILEVEL\fR
+Only the findings at or above LOW, MEDIUM, HIGH or CRITICAL.
+.TP
+\fB\-\-ecosystem\fR \fILIST\fR
+Only these ecosystems: Maven, npm, PyPI, COTS (comma-separated).
+.TP
+\fB\-\-hide\-approximate\fR
+Leave out the findings on an approximate (≈) version.
+.TP
+\fB\-\-hide\-transitive\fR
+Leave out the indirect dependencies (those another package brings).
+.TP
+\fB\-\-hide\-name\-matches\fR
+Leave out the name matches (CVE records, jars without coordinates).
+.TP
+\fB\-\-search\fR "\fIWORDS\fR"
+Only the findings holding every word (package, CVE, file, summary...).
+.SS Applying fixes (each project's own build tool, offline; nothing installed)
+.TP
+\fB\-\-apply\-fixes\fR
+Plan the upgrades of the packages the report keeps and say them; nothing changes.
+.TP
+\fB\-\-yes\fR
+Apply them, then scan again; exit 3 when one could not be applied.
+.TP
+\fB\-\-allow\-major\fR
+Apply a major version change too (2.x to 3.x).
+.TP
+\fB\-\-fix\-packages\fR \fILIST\fR
+Only these packages (comma-separated, as the report names them).
+.SS The ignore file, edited without a scan (the one of DIR, or \-\-ignore FILE)
+.TP
+\fB\-\-ignore\-add\fR \fIID\fR
+Add an entry setting \fIID\fR (a CVE or an advisory) aside; needs \fB\-\-reason\fR.
+.TP
+\fB\-\-ignore\-remove\fR \fIID\fR
+Remove the entries naming \fIID\fR (with \fB\-\-package\fR or \fB\-\-version\fR: only those).
+.TP
+\fB\-\-ignore\-list\fR
+List the entries.
+.TP
+\fB\-\-package\fR \fIP\fR, \fB\-\-version\fR \fIV\fR
+The entry's package and version (default: any).
+.TP
+\fB\-\-reason\fR "\fITEXT\fR"
+Why the finding is set aside.
+.TP
+\fB\-\-until\fR \fIYYYY-MM-DD\fR
+The entry's last day (default: none).
+.SS Help
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Show the options, in the language of \fB\-\-lang\fR.
+.TP
+\fB\-\-man\fR
+Show this manual (cvescanner.sh only).
+.SH EXIT STATUS
+.TP
+.B 0
+The scan ran, no finding at or above \fB\-\-fail\-on\fR.
+.TP
+.B 1
+An error: a wrong option, an unreadable database.
+.TP
+.B 2
+With \fB\-\-fail\-on\fR: a finding at or above its level.
+.TP
+.B 3
+With \fB\-\-apply\-fixes \-\-yes\fR: a fix could not be applied.
+.SH FILES
+.TP
+.I database/
+The database zips the launcher loads.
+.TP
+.I reports/
+Where the launcher writes the reports of \fB\-\-no\-gui\fR.
+.TP
+.I cache/
+The databases' index, kept between scans.
+.TP
+.I ~/.config/cvescanner/cvescanner.properties
+The window's settings (under $XDG_CONFIG_HOME when it is set).
+.TP
+.I cvescanner-ignore.csv
+A scanned folder's own ignore file.
+.SH EXAMPLES
+Scan a project in a CI job, failing on a high finding:
+.PP
+.RS
+cvescanner.sh \-\-no\-gui \-d ~/src/my\-app \-\-fail\-on HIGH
+.RE
+.PP
+Scan an installed product for an internet-facing environment:
+.PP
+.RS
+cvescanner.sh \-\-no\-gui \-\-installed \-d /opt/shop \-\-env internet
+.RE
+.SH SEE ALSO
+The README beside the program, and https://github.com/j4ckk0/CVEScanner

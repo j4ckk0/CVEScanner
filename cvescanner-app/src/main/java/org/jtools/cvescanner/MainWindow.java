@@ -121,6 +121,7 @@ final class MainWindow extends JFrame {
     private final StatusLine status;
     private final ViewMenu viewMenu;
     private final RecentFolders recentFolders;
+    private WelcomePanel welcome;
     /** Before the first scan the welcome, then the tables and the details. */
     private final JPanel centreCards = new JPanel(new CardLayout());
     /** The search, the filters and the counters: shown from the first scan, the welcome alone before. */
@@ -153,7 +154,7 @@ final class MainWindow extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         nameForTests();
         labels.bind(this::setTitle, "window.title");
-        dirField.setText(opts.scanDir.toAbsolutePath().normalize().toString());
+        dirField.setText(startFolder(opts, settings).toString());
         status = new StatusLine(labels);
         databases = new DatabaseChoice(this, labels, settings, opts.dbFiles, opts.dbDir);
         recentFolders = new RecentFolders(labels, settings, this::scanFolder);
@@ -227,7 +228,7 @@ final class MainWindow extends JFrame {
         centre.setDividerSize(10);
         centre.setBorder(BorderFactory.createEmptyBorder(0, 16, 0, 16));
         Path examples = examplesFolder();
-        var welcome = new WelcomePanel(labels, this::startScan, examples == null ? null : () -> {
+        welcome = new WelcomePanel(labels, this::startScan, examples == null ? null : () -> {
             scanModeCombo.setSelectedIndex(0);
             scanFolder(examples);
         });
@@ -259,6 +260,13 @@ final class MainWindow extends JFrame {
         setLocationRelativeTo(null);
         collapsed = Boolean.parseBoolean(settings.get(Settings.SETTINGS_COLLAPSED, "true"));
         applyMode(viewMenu.expert());
+        databases.onChange(this::updateReady);
+        dirField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { updateReady(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { updateReady(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { updateReady(); }
+        });
+        labels.on(this::updateReady);
         if (opts.dirGiven) SwingUtilities.invokeLater(this::startScan);
     }
 
@@ -340,6 +348,39 @@ final class MainWindow extends JFrame {
         return Path.of(dirField.getText().strip());
     }
 
+    /** The folder the window opens on: the command line's, else the one analyzed last (Settings), else the working one. */
+    private static Path startFolder(Options opts, Settings settings) {
+        if (!opts.dirGiven) {
+            String last = settings.get(Settings.LAST_FOLDER, "");
+            try {
+                if (!last.isBlank() && Files.isDirectory(Path.of(last))) return Path.of(last);
+            } catch (java.nio.file.InvalidPathException _) {
+                // a path of another system: the working folder
+            }
+        }
+        return opts.scanDir.toAbsolutePath().normalize();
+    }
+
+    /**
+     * Scan, here and in the welcome, only once there is a folder to analyze and a database to read: the field missing
+     * one outlined in red, the button saying why.
+     */
+    private void updateReady() {
+        boolean folder;
+        try {
+            folder = !dirField.getText().isBlank() && Files.isDirectory(scanFolder());
+        } catch (java.nio.file.InvalidPathException _) {
+            folder = false;
+        }
+        boolean database = !databases.files().isEmpty();
+        dirField.putClientProperty("JComponent.outline", folder ? null : "error");
+        databases.outline(!database);
+        boolean ready = folder && database;
+        scanButton.setEnabled(!busy && ready);
+        scanButton.setToolTipText(ready ? null : I18n.text("toolbar.scan.needs"));
+        welcome.ready(ready);
+    }
+
     /** Scans this folder: one picked among the recent ones, dropped on the window, the examples. */
     private void scanFolder(Path folder) {
         if (busy) return;
@@ -347,9 +388,9 @@ final class MainWindow extends JFrame {
         startScan();
     }
 
-    /** The examples beside the program (the folder the settings are kept in, else the working one); null when absent. */
+    /** The examples beside the program (its folder, else the working one); null when absent. */
     private Path examplesFolder() {
-        Path folder = settings.folder() != null ? settings.folder().resolve("examples") : Path.of("examples").toAbsolutePath();
+        Path folder = settings.programFolder() != null ? settings.programFolder().resolve("examples") : Path.of("examples").toAbsolutePath();
         return Files.isDirectory(folder) ? folder : null;
     }
 
@@ -366,7 +407,7 @@ final class MainWindow extends JFrame {
         JMenuBar bar = new JMenuBar();
         bar.add(file);
         bar.add(viewMenu.menu());
-        bar.add(HelpMenu.of(this, labels));
+        bar.add(HelpMenu.of(this, labels, settings));
         // the language on the right of the menus
         bar.add(Box.createHorizontalGlue());
         languageBox.onChoice(this::useLanguage);
@@ -557,6 +598,7 @@ final class MainWindow extends JFrame {
             return;
         }
         recentFolders.scanned(dir);
+        settings.set(Settings.LAST_FOLDER, dir.toAbsolutePath().normalize().toString());
         setBusy(true);
         var dbFiles = databases.files();
         // the Maven and Gradle caches the command line names, else the home folder's; none for a direct-only scan
@@ -591,7 +633,7 @@ final class MainWindow extends JFrame {
 
     private void setBusy(boolean busy) {
         this.busy = busy;
-        scanButton.setEnabled(!busy);
+        updateReady();
         exportButton.setEnabled(!busy && result != null);
         status.busy(busy);
         setCursor(busy ? Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR) : Cursor.getDefaultCursor());

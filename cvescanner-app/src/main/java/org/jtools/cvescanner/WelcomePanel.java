@@ -40,9 +40,11 @@ final class WelcomePanel {
 
     /** A button in the accent colour, as Scan is in the toolbar (Looks): in every FlatLaf look, light or dark. */
     static final String ACCENT = "background: $Component.accentColor; foreground: #fff; borderColor: $Component.accentColor;"
-            + " hoverBackground: darken($Component.accentColor,6%); pressedBackground: darken($Component.accentColor,12%)";
+            + " hoverBackground: darken($Component.accentColor,6%); pressedBackground: darken($Component.accentColor,12%);"
+            + " disabledBackground: $Button.disabledBackground; disabledBorderColor: $Button.disabledBorderColor";
 
     private final JPanel panel = new JPanel(new GridBagLayout());
+    private final JButton scanButton = new JButton();
 
     /** @param tryExamples run by Try the examples; null when there are none beside the program */
     WelcomePanel(I18nLabels labels, Runnable scan, Runnable tryExamples) {
@@ -61,7 +63,7 @@ final class WelcomePanel {
         }
         box.add(Box.createVerticalStrut(18));
         var buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        var scanButton = labels.text(new JButton(), "toolbar.scan");
+        labels.text(scanButton, "toolbar.scan");
         scanButton.putClientProperty("FlatLaf.style", ACCENT);
         scanButton.setFont(scanButton.getFont().deriveFont(Font.BOLD, scanButton.getFont().getSize2D() + 2f));
         scanButton.setName("welcomeScan");
@@ -82,6 +84,12 @@ final class WelcomePanel {
     private static void add(JPanel box, JComponent c) {
         c.setAlignmentX(Component.LEFT_ALIGNMENT);
         box.add(c);
+    }
+
+    /** Scan, once the folder and the database are given: greyed, its tooltip saying what is missing, before. */
+    void ready(boolean on) {
+        scanButton.setEnabled(on);
+        scanButton.setToolTipText(on ? null : org.jtools.cvescanner.i18n.I18n.text("toolbar.scan.needs"));
     }
 
     JPanel component() {

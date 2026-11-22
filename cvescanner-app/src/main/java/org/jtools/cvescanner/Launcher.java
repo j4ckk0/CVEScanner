@@ -66,7 +66,7 @@ public final class Launcher {
             System.err.println("training: no display");
             System.exit(1);
         }
-        Settings settings = Settings.load();
+        Settings settings = Settings.load(!Boolean.getBoolean(TRAINING));
         I18nLanguage requested = Options.requestedLanguage(args);
         I18n.use(requested != null ? requested : I18nLanguage.ofCode(settings.get(Settings.LANGUAGE, I18nLanguage.DEFAULT.code())));
         MainWindow.useSwingLocale();
@@ -79,9 +79,10 @@ public final class Launcher {
             System.exit(1);
             return;
         }
-        // the databases' index kept between scans, beside the program as its settings are
+        // the databases' index kept between scans, beside the program
         // (not in the training run that packaging makes: the archive ships no cache)
-        if (opts.cacheDir == null && settings.folder() != null && !Boolean.getBoolean(TRAINING)) opts.cacheDir = settings.folder().resolve("cache");
+        if (opts.cacheDir == null && settings.programFolder() != null && !Boolean.getBoolean(TRAINING))
+            opts.cacheDir = settings.programFolder().resolve("cache");
         if (opts.help) {
             System.out.println(Options.usage());
             return;

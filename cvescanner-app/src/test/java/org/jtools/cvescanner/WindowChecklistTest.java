@@ -242,6 +242,13 @@ class WindowChecklistTest {
         assertTrue(w.treeRows().contains("  jinja2 2.11.2") && !w.treeRows().contains("  ?"), w.treeRows().toString());
         w.click(w.named("directOnly"));
 
+        // Help ▸ Command line: the options of cvescanner.sh --help, as the program prints them
+        w.menu("Help", "Command line");
+        var commandLine = w.dialog("Command line");
+        assertTrue(w.text(commandLine).contains("--no-gui") && w.text(commandLine).contains("--fail-on"), w.text(commandLine));
+        w.clickButton("OK");
+        w.waitUntil("the command line's dialog closed", () -> !w.dialogShowing());
+
         // 9. French: the window relabelled
         String scanInEnglish = w.text("scan");
         w.choose(w.named("language", JComboBox.class), I18nLanguage.FRENCH.toString());

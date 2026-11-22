@@ -37,10 +37,11 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import org.jtools.cvescanner.cli.Options;
 import org.jtools.cvescanner.i18n.I18n;
 
 /**
- * The Help menu: the program's licence, the terms of the Java runtime it carries, and what the program is — its
+ * The Help menu: the command line's options (its --help), where the preferences are kept, the program's licence, the terms of the Java runtime it carries, and what the program is — its
  * version, its home page. All of it read from the program and its runtime: the home page is an address to copy, never
  * opened, as the program reaches no network (README, "No network").
  */
@@ -63,26 +64,64 @@ final class HelpMenu {
     private static final int COLUMNS = 72;
 
     private final Component owner;
+    private final Settings settings;
 
-    private HelpMenu(Component owner) {
+    private HelpMenu(Component owner, Settings settings) {
         this.owner = owner;
+        this.settings = settings;
     }
 
     /** The menu, its dialogs over owner; its labels bound with these. */
-    static JMenu of(Component owner, I18nLabels labels) {
-        HelpMenu help = new HelpMenu(owner);
+    static JMenu of(Component owner, I18nLabels labels, Settings settings) {
+        HelpMenu help = new HelpMenu(owner, settings);
         JMenu menu = labels.menu(new JMenu(), "menu.help");
         JMenuItem licence = labels.menu(new JMenuItem(), "menu.help.licence");
         licence.addActionListener(_ -> help.show("licence.title", licenceText(), licenceFile()));
         JMenuItem runtime = labels.menu(new JMenuItem(), "menu.help.runtime");
         runtime.addActionListener(_ -> help.show("runtime.title", runtimeText(), runtimeLicence()));
+        JMenuItem commandLine = labels.menu(new JMenuItem(), "menu.help.commandLine");
+        commandLine.setName("commandLineHelp");   // for the window test (WindowDriver)
+        commandLine.addActionListener(_ -> help.show("commandLine.title", I18n.text("commandLine.intro"), Options.usage()));
+        JMenuItem preferences = labels.menu(new JMenuItem(), "menu.help.preferences");
+        preferences.setName("preferencesHelp");   // for the window test (WindowDriver)
+        preferences.addActionListener(_ -> help.preferences());
         JMenuItem about = labels.menu(new JMenuItem(), "menu.help.about");
         about.addActionListener(_ -> help.show("about.title", aboutText(), null));
+        menu.add(commandLine);
+        menu.add(preferences);
+        menu.addSeparator();
         menu.add(licence);
         menu.add(runtime);
         menu.addSeparator();
         menu.add(about);
         return menu;
+    }
+
+    /**
+     * Help ▸ Preferences folder: where the settings are kept, the path to copy (the program opens no file manager, as it
+     * opens no browser: NoNetworkTest), and the settings to clear, the defaults coming back at the next start.
+     */
+    private void preferences() {
+        Path file = settings.file();
+        String title = I18n.text("preferences.title");
+        if (file == null) {
+            JOptionPane.showMessageDialog(owner, content(I18n.text("preferences.none"), null), title, JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        String folder = file.getParent().toString();
+        Object[] options = {I18n.text("preferences.copy"), I18n.text("preferences.clear"), I18n.text("preferences.close")};
+        int choice = JOptionPane.showOptionDialog(owner, content(I18n.text("preferences.where", folder, file.getFileName()), null), title,
+                JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[2]);
+        if (choice == 0) Clipboard.copy(folder);
+        if (choice == 1 && JOptionPane.showConfirmDialog(owner, I18n.text("preferences.clear.confirm"), title, JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.WARNING_MESSAGE) == JOptionPane.OK_OPTION) {
+            try {
+                settings.clear();
+                JOptionPane.showMessageDialog(owner, I18n.text("preferences.cleared"), title, JOptionPane.INFORMATION_MESSAGE);
+            } catch (java.io.IOException e) {
+                JOptionPane.showMessageDialog(owner, SwingText.plain(e.getMessage()), title, JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     /** The program's licence, said, then where its full text is. */
@@ -134,7 +173,7 @@ final class HelpMenu {
                 JOptionPane.INFORMATION_MESSAGE);
     }
 
-    /** What a dialog shows: its text, then the full licence if any (null: none). */
+    /** What a dialog shows: its text, then a text as written (a licence, the command line's options) if any (null: none). */
     static JPanel content(String text, String fullText) {
         JPanel content = new JPanel();
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));

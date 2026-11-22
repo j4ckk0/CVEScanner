@@ -44,6 +44,24 @@ class SettingsTest {
     }
 
     @Test
+    void clearedTheyAreForgottenAndTheirFileGone() throws IOException {
+        var settings = Settings.in(folder.resolve("not yet made"));
+        settings.set(Settings.LANGUAGE, "en");
+        assertTrue(Files.isRegularFile(settings.file()), "its folder made at the first setting");
+        settings.clear();
+        assertFalse(Files.exists(settings.file()));
+        assertEquals("the default", settings.get(Settings.LANGUAGE, "the default"));
+        settings.set(Settings.LOOK, "x");
+        assertEquals("the default", Settings.in(folder.resolve("not yet made")).get(Settings.LANGUAGE, "the default"), "not written back");
+    }
+
+    @Test
+    void theUsersFolderIsTheSystemsOwn() {
+        Path user = Settings.userFolder();
+        assertTrue(user.endsWith("cvescanner") || user.endsWith("CVEScanner"), user.toString());
+    }
+
+    @Test
     void untilOneIsSetNothingIsWritten() {
         assertEquals("the default", Settings.in(folder).get(Settings.LOOK, "the default"));
         assertFalse(Files.exists(folder.resolve("cvescanner.properties")));

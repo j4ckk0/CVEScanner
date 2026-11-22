@@ -77,4 +77,21 @@ class WindowWelcomeTest {
                 "the folder among the recent ones");
         w.key(java.awt.event.KeyEvent.VK_ESCAPE);
     }
+
+    @Test
+    void scanWaitsForTheFolderAndADatabaseTheirFieldsOutlinedUntilThen() throws Exception {
+        Assumptions.assumeTrue(Boolean.getBoolean("cvescanner.windowTest"), "the window test runs with -Dcvescanner.windowTest=true");
+        w = WindowDriver.start(settings);   // no database given, none kept
+        Component scan = w.named("scan"), welcomeScan = w.named("welcomeScan");
+        var folder = w.named("folder", JTextField.class);
+        var databases = w.named("databases", JTextField.class);
+        assertTrue(WindowDriver.onEdt(() -> !scan.isEnabled() && !welcomeScan.isEnabled()), "no database: nothing to scan with");
+        assertEquals("error", WindowDriver.onEdt(() -> databases.getClientProperty("JComponent.outline")));
+        assertEquals(null, WindowDriver.onEdt(() -> folder.getClientProperty("JComponent.outline")), "the working folder is one");
+        w.type(folder, SAMPLES.resolve("no such folder").toString());
+        w.waitUntil("the folder outlined", () -> "error".equals(WindowDriver.onEdt(() -> folder.getClientProperty("JComponent.outline"))));
+        w.type(folder, SAMPLES.resolve("projects").toString());
+        w.waitUntil("the folder no longer outlined", () -> WindowDriver.onEdt(() -> folder.getClientProperty("JComponent.outline")) == null);
+        assertTrue(WindowDriver.onEdt(() -> !welcomeScan.isEnabled()), "still no database");
+    }
 }

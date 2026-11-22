@@ -64,7 +64,7 @@ check() {   # archive, its entries, what it must hold
   done
 }
 linux=releases/cvescanner-$version-linux.tar.gz
-check "$linux" "$(tar tzf "$linux")" cvescanner.jar cvescanner.sh README.md LICENSE NOTICE \
+check "$linux" "$(tar tzf "$linux")" cvescanner.jar cvescanner.sh cvescanner.1 README.md LICENSE NOTICE \
   licenses/FlatLaf-LICENSE.txt database/README.txt examples/README.md jre/bin/java jre/legal/java.base/LICENSE
 check_aot "$linux"
 echo "== releases/ checked: $linux"

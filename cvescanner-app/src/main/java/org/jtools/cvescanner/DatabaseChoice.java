@@ -54,6 +54,8 @@ final class DatabaseChoice {
     private final JTextField field = new JTextField(40);
     private final JButton clearButton = new JButton();
     private final List<Path> files = new ArrayList<>();
+    /** Told when the zips chosen change. */
+    private Runnable onChange = () -> { };
 
     /** @param given the zips the command line named; @param dbDir --db-dir, where the chooser opens when none is chosen */
     DatabaseChoice(Component owner, I18nLabels labels, Settings settings, List<Path> given, Path dbDir) {
@@ -68,6 +70,15 @@ final class DatabaseChoice {
         labels.text(clearButton, "toolbar.clearDatabase");
         clearButton.addActionListener(_ -> set(List.of()));
         labels.on(this::updateField);
+    }
+
+    void onChange(Runnable changed) {
+        onChange = changed;
+    }
+
+    /** The field outlined in red while no zip is chosen: a scan needs one. */
+    void outline(boolean missing) {
+        field.putClientProperty("JComponent.outline", missing ? "error" : null);
     }
 
     /** The zips chosen, for a scan. */
@@ -112,6 +123,7 @@ final class DatabaseChoice {
         files.addAll(chosen);
         settings.set(Settings.DATABASES, chosen.stream().map(Path::toString).collect(Collectors.joining(File.pathSeparator)));
         updateField();
+        onChange.run();
     }
 
     private void restore() {

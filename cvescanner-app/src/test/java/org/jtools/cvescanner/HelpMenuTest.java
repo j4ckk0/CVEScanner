@@ -24,20 +24,25 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-/** The Help menu: the program's licence and the runtime's, read offline, and what the program is. */
+/** The Help menu: the command line's options, the preferences, the program's licence and the runtime's, what the program is. */
 class HelpMenuTest {
 
+    @TempDir
+    Path folder;
+
     @Test
-    void theMenuHoldsTheLicencesAndAbout() {
-        JMenu menu = HelpMenu.of(null, new I18nLabels());
+    void theMenuHoldsTheCommandLineThePreferencesTheLicencesAndAbout() {
+        JMenu menu = HelpMenu.of(null, new I18nLabels(), Settings.in(folder));
         assertEquals("Help", menu.getText());
-        assertEquals(List.of("Licence…", "Embedded Java runtime…", "About CVEScanner…"),
+        assertEquals(List.of("Command line…", "Preferences folder…", "Licence…", "Embedded Java runtime…", "About CVEScanner…"),
                 Arrays.stream(menu.getMenuComponents()).filter(JMenuItem.class::isInstance)
                         .map(item -> ((JMenuItem) item).getText()).toList());
     }

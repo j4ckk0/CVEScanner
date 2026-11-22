@@ -130,6 +130,8 @@ class ScreenshotsTest {
         w.clickRow("log4j-core", FindingGroups.EXPAND);
         for (String pkg : List.of("jackson-databind", "axios", "netty-codec-http")) w.clickRow(pkg, FindingGroups.FIX);
         w.clickRow("jackson-databind", FindingGroups.PACKAGE);
+        javax.swing.JTable list = w.table();   // the ticks clicked far right: the table shown from its first column again
+        WindowDriver.onEdt(() -> { list.scrollRectToVisible(list.getCellRect(list.getSelectedRow(), 0, true)); return null; });
         w.screenshot(dir.resolve("packages.png"));
 
         w.clickTab(MainWindow.DEPENDENCIES_TAB);
