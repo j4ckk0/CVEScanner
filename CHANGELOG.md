@@ -3,7 +3,7 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
-## 1.5 — not released yet
+## 1.5 — 2026-11-22
 
 - **The dependency tree**: each dependency knows the packages that bring it, from Maven's and Gradle's walks and from
   `package-lock.json` (v2, v3), `yarn.lock` (v1, berry), `pnpm-lock.yaml`, `poetry.lock` and `uv.lock`, each package
