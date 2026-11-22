@@ -154,9 +154,10 @@ declaring real packages at vulnerable versions (Log4Shell, Text4Shell, Spring4Sh
 [examples/README.md](examples/README.md).
 
 The table sorts by any column and filters as you type: on the first row **Search** (every word must match, across
-the columns and the aliases; Ctrl+F, Esc to clear); on the second the **Filters**: the **severity** (the coloured
-counters do the same: a click on one shows it and above, filled; a click on the lowest filled one shows all again), the **ecosystem**, *Only with CVE ID*, *Hide approximate (≈) versions*, *Hide name matches ⚠*,
-*Hide indirect dependencies*. In the findings table, the ▾ at the right of each column header lists that column's
+the columns and the aliases; Ctrl+F, Esc to clear); on the second the **Filters**: the **ecosystem**,
+*Only with CVE ID*, *Hide approximate (≈) versions*, *Hide name matches ⚠*, *Hide indirect dependencies*. The coloured
+counters set the **severity**: a click on one shows it and above, filled; a click on the lowest filled one shows all
+again. In the findings table, the ▾ at the right of each column header lists that column's
 values to tick, as a spreadsheet filters (the ▾ of a filtered column in colour; *Clear filters* clears them too); the
 *Path* column gives the folder of the file a finding comes from. Its tabs: **Findings**, one row per
 vulnerability and dependency, its details below (the fix, the scores, the match, the links); **Packages to

@@ -10,6 +10,9 @@ checksums.
 - **Path**, a new column of the findings: the folder of the file a finding comes from (`maven-webapp/service`), to
   sort, search and filter by project.
 - The **Dependencies** tab names each file's ecosystem (`pom.xml · Maven`).
+- The severity box is gone from the filters: the coloured counters set the lowest severity shown, for every tab and
+  the export, as it did.
+- Every column of the tables can be narrowed or widened by hand; a header's ▾ is drawn inside its own column.
 - `samples/db/examples.zip`: made-up advisories for every vulnerable package of the examples, so that each shows its
   findings when the program runs from the repository without a real database.
 

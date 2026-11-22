@@ -45,16 +45,19 @@ import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.FindingFilter;
 
 /**
- * What the tables show, in two rows: the search (every word, over the columns); the filters — the lowest severity, the
- * ecosystem, and the four boxes the command line has too (FindingFilter). Says each change through the Runnable given.
+ * What the tables show, in two rows: the search (every word, over the columns); the filters — the ecosystem and the four
+ * boxes the command line has too (FindingFilter). The lowest severity is the counters' (SummaryBar), kept here with the
+ * others. Says each change through the Runnable given.
  */
 final class FilterBar {
 
+    /** The severities a counter shows from, by its index: 0 all, 1 critical, 2 high and above… */
+    private static final List<Severity> FROM = java.util.Arrays.asList(null, Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM, Severity.LOW);
+
     private final HintField searchField = new HintField("", 44);
-    private final JComboBox<Choice<Severity>> severityCombo = new JComboBox<>(List.of(
-            new Choice<Severity>("filter.allSeverities", null), new Choice<>("filter.critical", Severity.CRITICAL),
-            new Choice<>("filter.highUp", Severity.HIGH), new Choice<>("filter.mediumUp", Severity.MEDIUM),
-            new Choice<>("filter.lowUp", Severity.LOW)).toArray(Choice[]::new));
+    private final Runnable changed;
+    /** The lowest severity shown, as the counters set it: an index of FROM. */
+    private int minSeverity;
     private final JComboBox<Choice<Ecosystem>> ecosystemCombo = new JComboBox<>(List.of(
             new Choice<Ecosystem>("filter.allEcosystems", null), new Choice<>("filter.maven", Ecosystem.MAVEN),
             new Choice<>("filter.npm", Ecosystem.NPM), new Choice<>("filter.pypi", Ecosystem.PYPI),
@@ -70,6 +73,7 @@ final class FilterBar {
 
     /** @param cveOnly --cve-only, the box ticked from the start; @param changed run on each change */
     FilterBar(I18nLabels labels, boolean cveOnly, Runnable changed) {
+        this.changed = changed;
         var searchTimer = new Timer(200, _ -> changed.run());
         searchTimer.setRepeats(false);
         cveOnlyBox.setSelected(cveOnly);
@@ -84,7 +88,6 @@ final class FilterBar {
         });
         searchField.registerKeyboardAction(_ -> searchField.setText(""), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
                 JComponent.WHEN_FOCUSED);
-        severityCombo.addActionListener(_ -> changed.run());
         ecosystemCombo.addActionListener(_ -> changed.run());
         labels.text(cveOnlyBox, "filter.onlyWithCve").addActionListener(_ -> changed.run());
         labels.text(hideApproxBox, "filter.hideApproximate").addActionListener(_ -> changed.run());
@@ -96,7 +99,7 @@ final class FilterBar {
         var clear = labels.text(new JButton(), "filter.clear");
         clear.addActionListener(_ -> {
             searchField.setText("");
-            severityCombo.setSelectedIndex(0);
+            minSeverity = 0;
             ecosystemCombo.setSelectedIndex(0);
             cveOnlyBox.setSelected(false);
             hideApproxBox.setSelected(false);
@@ -109,13 +112,13 @@ final class FilterBar {
         searchRow.add(labels.text(searchLabel, "filter.search"));
         searchRow.add(searchField);
         var filtersRow = new JPanel(new WrapLayout(FlowLayout.LEFT, 12, 4));
-        for (Component c : List.of(labels.text(filtersLabel, "filter.filters"), severityCombo, ecosystemCombo, cveOnlyBox,
-                hideApproxBox, hideNameMatchBox, hideTransitiveBox, clear))
+        for (Component c : List.of(labels.text(filtersLabel, "filter.filters"), ecosystemCombo, cveOnlyBox, hideApproxBox,
+                hideNameMatchBox, hideTransitiveBox, clear))
             filtersRow.add(c);
         panel.add(searchRow);
         panel.add(filtersRow);
         labels.on(this::alignLabels);
-        labels.on(() -> List.<Component>of(severityCombo, ecosystemCombo).forEach(Component::repaint));
+        labels.on(ecosystemCombo::repaint);
     }
 
     JPanel panel() {
@@ -148,9 +151,8 @@ final class FilterBar {
 
     /** The filters chosen, the command line's own rule (FindingFilter); the search is the table's, over its columns. */
     FindingFilter facets() {
-        var min = severityCombo.getSelectedItem() instanceof Choice<?> choice ? (Severity) choice.value() : null;
         Ecosystem ecosystem = ecosystem();
-        return new FindingFilter(min, ecosystem == null ? Set.of() : Set.of(ecosystem), cveOnlyBox.isSelected(),
+        return new FindingFilter(FROM.get(minSeverity), ecosystem == null ? Set.of() : Set.of(ecosystem), cveOnlyBox.isSelected(),
                 hideApproxBox.isSelected(), hideNameMatchBox.isSelected(), hideTransitiveBox.isSelected(), List.of());
     }
 
@@ -161,12 +163,13 @@ final class FilterBar {
 
     /** The index of the severity chosen: 0 for all, 1 for critical… */
     int minSeverityIndex() {
-        return severityCombo.getSelectedIndex();
+        return minSeverity;
     }
 
-    /** Shows this severity and above: the index of its choice, 0 for all. */
+    /** Shows this severity and above (a counter clicked): its index, 0 for all. */
     void minSeverity(int index) {
-        severityCombo.setSelectedIndex(index);
+        minSeverity = index;
+        changed.run();
     }
 
     /** The search field focused, its text selected (Ctrl+F). */
