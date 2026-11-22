@@ -622,3 +622,68 @@ with zipfile.ZipFile(os.path.join(out, "db/pypi.zip"), "w", zipfile.ZIP_DEFLATED
         z.writestr(f"advisories/github-reviewed/2021/06/{r['id']}/{r['id']}.json", json.dumps(r, indent=2))
 
 print("fixtures written to", out)
+
+# ------------------------------------------------------------------ db/examples.zip: the examples' packages
+# A made-up database (GitHub Advisory Database layout) with an advisory for each vulnerable package examples/ declares
+# or ships, so that every example shows findings without a real database: the CVE and the fixed version examples/README.md
+# gives, the records' text made up. The components off-the-shelf (cots-app) are in db/cots-cvelist.zip and the NVD feed.
+def ex(n, eco, name, introduced, fixed, cve, sev):
+    return osv(f"GHSA-exam-ple{n:02d}-test", eco, name, [{"introduced": introduced}, {"fixed": fixed}], [cve], sev=sev)
+
+examples = [
+    # maven-webapp
+    ex(1, "Maven", "org.apache.logging.log4j:log4j-core", "2.0-beta9", "2.15.0", "CVE-2021-44228", "CRITICAL"),
+    ex(2, "Maven", "org.apache.commons:commons-text", "1.5", "1.10.0", "CVE-2022-42889", "CRITICAL"),
+    ex(3, "Maven", "org.springframework:spring-beans", "5.3.0", "5.3.18", "CVE-2022-22965", "CRITICAL"),
+    ex(4, "Maven", "org.springframework:spring-webmvc", "5.3.0", "5.3.18", "CVE-2022-22965", "CRITICAL"),
+    ex(5, "Maven", "com.fasterxml.jackson.core:jackson-databind", "2.9.0", "2.9.9.1", "CVE-2019-12384", "MODERATE"),
+    ex(6, "Maven", "org.yaml:snakeyaml", "0", "2.0", "CVE-2022-1471", "HIGH"),
+    ex(7, "Maven", "commons-collections:commons-collections", "3.0", "3.2.2", "CVE-2015-7501", "CRITICAL"),
+    ex(8, "Maven", "ch.qos.logback:logback-classic", "0", "1.2.13", "CVE-2023-6378", "HIGH"),
+    ex(9, "Maven", "com.h2database:h2", "1.4.198", "2.0.206", "CVE-2021-42392", "CRITICAL"),
+    # gradle-app
+    ex(10, "Maven", "com.google.guava:guava", "1.0", "32.0.0-android", "CVE-2023-2976", "HIGH"),
+    ex(11, "Maven", "io.netty:netty-codec-http", "0", "4.1.71.Final", "CVE-2021-43797", "MODERATE"),
+    ex(12, "Maven", "com.google.protobuf:protobuf-java", "3.21.0", "3.21.7", "CVE-2022-3171", "HIGH"),
+    ex(13, "Maven", "com.thoughtworks.xstream:xstream", "0", "1.4.18", "CVE-2021-39139", "HIGH"),
+    ex(14, "Maven", "commons-io:commons-io", "0", "2.7", "CVE-2021-29425", "MODERATE"),
+    ex(15, "Maven", "org.apache.httpcomponents:httpclient", "0", "4.5.13", "CVE-2020-13956", "MODERATE"),
+    ex(16, "Maven", "junit:junit", "4.7", "4.13.1", "CVE-2020-15250", "MODERATE"),
+    # npm-app
+    ex(17, "npm", "lodash", "0", "4.17.21", "CVE-2021-23337", "HIGH"),
+    ex(18, "npm", "axios", "0", "0.21.1", "CVE-2020-28168", "MODERATE"),
+    ex(19, "npm", "follow-redirects", "0", "1.14.7", "CVE-2022-0155", "HIGH"),
+    ex(20, "npm", "jquery", "1.2.0", "3.5.0", "CVE-2020-11022", "MODERATE"),
+    ex(21, "npm", "moment", "1.0.1", "2.29.2", "CVE-2022-24785", "HIGH"),
+    ex(22, "npm", "node-fetch", "0", "2.6.7", "CVE-2022-0235", "HIGH"),
+    ex(23, "npm", "json5", "2.0.0", "2.2.2", "CVE-2022-46175", "HIGH"),
+    ex(24, "npm", "semver", "0", "5.7.2", "CVE-2022-25883", "MODERATE"),
+    ex(25, "npm", "minimist", "0", "1.2.6", "CVE-2021-44906", "CRITICAL"),
+    # yarn-app
+    ex(26, "npm", "async", "2.0.0", "2.6.4", "CVE-2021-43138", "HIGH"),
+    ex(27, "npm", "glob-parent", "0", "5.1.2", "CVE-2020-28469", "HIGH"),
+    ex(28, "npm", "marked", "1.1.0", "4.0.10", "CVE-2022-21680", "HIGH"),
+    ex(29, "npm", "shell-quote", "0", "1.7.3", "CVE-2021-42740", "CRITICAL"),
+    ex(30, "npm", "ua-parser-js", "0", "0.7.24", "CVE-2021-27292", "HIGH"),
+    ex(31, "npm", "ws", "7.0.0", "7.4.6", "CVE-2021-32640", "MODERATE"),
+    ex(32, "npm", "lodash", "0", "4.17.12", "CVE-2019-10744", "CRITICAL"),
+    # installed-app: the jars, node_modules and site-packages it ships
+    ex(33, "Maven", "org.apache.struts:struts2-core", "2.0.0", "2.5.26", "CVE-2020-17530", "CRITICAL"),
+    ex(34, "Maven", "org.apache.tomcat.embed:tomcat-embed-core", "9.0.0", "9.0.43", "CVE-2021-25122", "HIGH"),
+    ex(35, "Maven", "commons-fileupload:commons-fileupload", "0", "1.3.3", "CVE-2016-1000031", "CRITICAL"),
+    ex(36, "npm", "qs", "6.7.0", "6.7.3", "CVE-2022-24999", "HIGH"),
+    ex(37, "npm", "node-forge", "0", "1.3.0", "CVE-2022-24771", "HIGH"),
+    ex(38, "npm", "jsonwebtoken", "0", "9.0.0", "CVE-2022-23529", "HIGH"),
+    ex(39, "npm", "express", "0", "4.19.2", "CVE-2024-29041", "MODERATE"),
+    ex(40, "PyPI", "django", "3.1", "3.1.6", "CVE-2021-3281", "MODERATE"),
+    ex(41, "PyPI", "pillow", "0", "8.1.1", "CVE-2021-25289", "CRITICAL"),
+    ex(42, "PyPI", "requests", "2.3.0", "2.31.0", "CVE-2023-32681", "MODERATE"),
+    ex(43, "PyPI", "urllib3", "0", "1.26.5", "CVE-2021-33503", "HIGH"),
+    ex(44, "PyPI", "jinja2", "0", "2.11.3", "CVE-2020-28493", "MODERATE"),
+    ex(45, "PyPI", "pyyaml", "0", "5.4", "CVE-2020-14343", "CRITICAL"),
+    ex(46, "npm", "axios", "0", "0.21.2", "CVE-2021-3749", "HIGH"),
+]
+with zipfile.ZipFile(os.path.join(out, "db/examples.zip"), "w", zipfile.ZIP_DEFLATED) as z:
+    z.writestr("advisory-database-main/README.md", "# GitHub Advisory Database (made up for the examples)")
+    for r in examples:
+        z.writestr(f"advisory-database-main/advisories/github-reviewed/2021/12/{r['id']}/{r['id']}.json", json.dumps(r, indent=2))

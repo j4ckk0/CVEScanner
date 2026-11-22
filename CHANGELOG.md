@@ -3,6 +3,16 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
+## Unreleased
+
+- **Filters in the column headers**: in the findings table, a ▾ at the right of each header lists the column's values
+  to tick, as a spreadsheet filters; a filtered column's ▾ is drawn in colour, and *Clear filters* clears them too.
+- **Path**, a new column of the findings: the folder of the file a finding comes from (`maven-webapp/service`), to
+  sort, search and filter by project.
+- The **Dependencies** tab names each file's ecosystem (`pom.xml · Maven`).
+- `samples/db/examples.zip`: made-up advisories for every vulnerable package of the examples, so that each shows its
+  findings when the program runs from the repository without a real database.
+
 ## 1.6.1 — 2026-11-22
 
 - The first field of the window is *Folder to analyze* (*Dossier à analyser*), no longer *Project folder*.

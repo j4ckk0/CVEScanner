@@ -40,10 +40,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * The window clicked through, as a person would check it: a scan and its filters, the looks, the packages ticked for
- * Apply fixes, the plan, an installed product, standard and expert modes, a VEX document, the database age, the
- * Dependencies tab, Direct dependencies only, the other language. Only with -Dcvescanner.windowTest=true, on a virtual display
- * (scripts/window-check.sh): never on a desktop, which it would take over.
+ * The window clicked through, as a person would check it: a scan and its filters, a header's ▾, the looks, the packages
+ * ticked for Apply fixes, the plan, an installed product, standard and expert modes, a VEX document, the database age,
+ * the Dependencies tab, Direct dependencies only, the other language. Only with -Dcvescanner.windowTest=true, on a
+ * virtual display (scripts/window-check.sh): never on a desktop, which it would take over.
  */
 class WindowChecklistTest {
 
@@ -84,6 +84,26 @@ class WindowChecklistTest {
         // Hide indirect dependencies: the lockfile's indirect minimist finding left out, then back
         w.click(w.named("hideTransitive"));
         w.waitUntil("the indirect finding hidden", () -> w.tabTitle(0).equals("Findings (11 of 12)"));
+        w.clickButton("Clear filters");
+        w.waitUntil("every finding shown", () -> w.tabTitle(0).equals("Findings (12)"));
+
+        // the Ecosystem header's ▾: npm unticked leaves the other ecosystems' findings, Clear filters them all again
+        JTable findings = w.table();
+        var header = findings.getTableHeader();
+        java.awt.Rectangle ecosystem = WindowDriver.onEdt(() -> {
+            for (int c = 0; c < findings.getColumnCount(); c++)
+                if ("Ecosystem".equals(findings.getColumnModel().getColumn(c).getHeaderValue())) return header.getHeaderRect(c);
+            throw new AssertionError("no Ecosystem column");
+        });
+        w.clickAt(header, ecosystem.x + ecosystem.width - 10, ecosystem.height / 2);
+        w.named("headerFilter");   // the list of the column's values, waited for
+        w.click(w.find(javax.swing.JCheckBox.class, b -> "npm".equals(b.getText())));
+        w.waitUntil("the npm findings left out", () -> w.tabTitle(0).startsWith("Findings (") && w.tabTitle(0).contains(" of 12"));
+        assertTrue(WindowDriver.onEdt(() -> {
+            for (int r = 0; r < findings.getRowCount(); r++) if ("npm".equals(findings.getValueAt(r, findings.convertColumnIndexToView(4)))) return false;
+            return true;
+        }), "no npm row");
+        w.clickButton("Close");
         w.clickButton("Clear filters");
         w.waitUntil("every finding shown", () -> w.tabTitle(0).equals("Findings (12)"));
 

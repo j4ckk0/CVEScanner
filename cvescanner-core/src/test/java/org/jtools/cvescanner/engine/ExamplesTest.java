@@ -67,4 +67,30 @@ class ExamplesTest {
         assertEquals(List.of(), result.unresolved(), "a dependency left unchecked");
         assertEquals(List.of(), result.warnings(), "a file skipped");
     }
+
+    /**
+     * With the samples' made-up databases for them (db/examples.zip, and the components' CVE List and NVD feed) every
+     * example shows its vulnerable packages, each folder's and the installed product's: see make_fixtures.py.
+     */
+    @Test
+    void everyExampleShowsItsVulnerablePackagesWithTheExamplesDatabase() throws Exception {
+        ScanListener quiet = message -> { };
+        var db = ROOT.resolve("samples/db");
+        var sources = Engine.scan(ROOT.resolve("examples"), List.of(db.resolve("examples.zip"), db.resolve("cots-cvelist.zip"),
+                db.resolve("nvdcve-2.0-2024.json.zip")), quiet);
+        var vulnerable = new java.util.TreeMap<String, Set<String>>();
+        for (var f : sources.findings())
+            vulnerable.computeIfAbsent(f.file().substring(0, f.file().indexOf('/')), _ -> new TreeSet<>()).add(f.pkg() + "@" + f.version());
+        assertEquals(java.util.Map.of("cots-app", 7, "gradle-app", 7, "maven-webapp", 9, "npm-app", 9, "yarn-app", 8),
+                sizes(vulnerable), vulnerable.toString());
+        var installed = Engine.scan(ROOT.resolve("examples/installed-app"), List.of(db.resolve("examples.zip")), null,
+                org.jtools.cvescanner.model.ScanMode.INSTALLED, quiet);
+        assertEquals(22, installed.findings().stream().map(f -> f.pkg() + "@" + f.version()).distinct().count());
+    }
+
+    private static java.util.Map<String, Integer> sizes(java.util.Map<String, Set<String>> byFolder) {
+        var out = new java.util.HashMap<String, Integer>();
+        byFolder.forEach((k, v) -> out.put(k, v.size()));
+        return out;
+    }
 }

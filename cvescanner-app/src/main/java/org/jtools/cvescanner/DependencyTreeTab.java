@@ -48,8 +48,8 @@ import org.jtools.cvescanner.model.Finding;
  */
 final class DependencyTreeTab {
 
-    /** A file of the scan, and how many dependencies it holds. */
-    record FileEntry(String file, int count) {}
+    /** A file of the scan, the ecosystems of its dependencies ("Maven", "npm"), and how many it holds. */
+    record FileEntry(String file, String ecosystems, int count) {}
 
     /** A dependency, its findings and the worst of their severities (null for none). */
     record DependencyEntry(Dependency dependency, List<Finding> findings, Severity worst) {}
@@ -66,6 +66,8 @@ final class DependencyTreeTab {
     private final JScrollPane scroll = new JScrollPane(tree);
     private List<DependencyTree> trees = List.of();
     private Map<String, List<Finding>> findings = Map.of();
+    /** Each file's ecosystems, in the order its dependencies give them. */
+    private Map<String, String> ecosystems = Map.of();
     private int total, shown;
 
     DependencyTreeTab(Runnable selectionChanged) {
@@ -81,7 +83,7 @@ final class DependencyTreeTab {
                 super.getTreeCellRendererComponent(t, value, selected, expanded, leaf, row, focus);
                 Object entry = ((DefaultMutableTreeNode) value).getUserObject();
                 switch (entry) {
-                    case FileEntry f -> setText(I18n.text("tree.file", f.file(), f.count()));
+                    case FileEntry f -> setText(I18n.text("tree.file", f.file(), f.ecosystems(), f.count()));
                     case UnrecordedEntry u -> setText(I18n.text("tree.unrecorded", u.count()));
                     case DependencyEntry d -> {
                         setText(text(d));
@@ -111,6 +113,10 @@ final class DependencyTreeTab {
         trees = DependencyTree.of(dependencies);
         findings = DependencyTree.findingsBy(active);
         total = dependencies.size();
+        ecosystems = dependencies.stream().collect(java.util.stream.Collectors.groupingBy(Dependency::file,
+                java.util.stream.Collectors.mapping(d -> d.ecosystem().id(),
+                        java.util.stream.Collectors.collectingAndThen(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new),
+                                set -> String.join(", ", set)))));
     }
 
     /** The tree rebuilt for these filters; the paths down to a finding opened, every path while searching. */
@@ -139,7 +145,7 @@ final class DependencyTreeTab {
                 }
             }
             if (file.getChildCount() == 0) continue;
-            file.setUserObject(new FileEntry(t.file(), count));
+            file.setUserObject(new FileEntry(t.file(), ecosystems.getOrDefault(t.file(), ""), count));
             root.add(file);
             shown += count;
         }

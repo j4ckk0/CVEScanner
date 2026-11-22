@@ -65,6 +65,8 @@ final class FilterBar {
     private final JCheckBox hideTransitiveBox = new JCheckBox();
     private final JPanel panel = new JPanel();
     private final JLabel searchLabel = new JLabel(), filtersLabel = new JLabel();
+    /** Run by Clear filters, before the change is said: the tables' own filters (their headers' ▾) cleared too. */
+    private Runnable alsoCleared = () -> { };
 
     /** @param cveOnly --cve-only, the box ticked from the start; @param changed run on each change */
     FilterBar(I18nLabels labels, boolean cveOnly, Runnable changed) {
@@ -100,6 +102,7 @@ final class FilterBar {
             hideApproxBox.setSelected(false);
             hideNameMatchBox.setSelected(false);
             hideTransitiveBox.setSelected(false);
+            alsoCleared.run();
             changed.run();
         });
         var searchRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 4));
@@ -117,6 +120,11 @@ final class FilterBar {
 
     JPanel panel() {
         return panel;
+    }
+
+    /** What Clear filters clears besides the bar's own. */
+    void onClear(Runnable also) {
+        alsoCleared = also;
     }
 
     /** "Search:" and "Filters:" as wide as each other, in every language: the field and the filters begin in one column. */

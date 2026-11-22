@@ -68,6 +68,7 @@ final class FindingTables {
             new Column<Finding>("column.advisory", String.class, 150, Finding::id),
             new Column<Finding>("column.match", String.class, 125, f -> f.basis().label()),
             new Column<Finding>("column.scope", String.class, 160, Finding::scope),
+            new Column<Finding>("column.path", String.class, 180, f -> folderOf(f.file())),
             new Column<Finding>("column.file", String.class, 220, Finding::file),
             new Column<Finding>("column.published", String.class, 85, Finding::publishedDate),
             new Column<Finding>("column.summary", String.class, 380, Finding::summary));
@@ -122,7 +123,11 @@ final class FindingTables {
     final JTable packagesTable = new ScrollingTable(packagesModel);
     final JTable unresolvedTable = new ScrollingTable(unresolvedModel);
     final JTable ignoredTable = new ScrollingTable(ignoredModel);
-    final TableRowSorter<ListTableModel<Finding>> findingsSorter = new TableRowSorter<>(findingsModel);
+    final HeaderFilters.FilteringSorter<ListTableModel<Finding>> findingsSorter = new HeaderFilters.FilteringSorter<>(findingsModel);
+    /** The findings' ▾ in each header: the values to show, column by column. */
+    final HeaderFilters<Finding> headerFilters;
+    /** Told whenever the values ticked in a header change. */
+    Runnable onHeaderFilter = () -> { };
     final TableRowSorter<ListTableModel<PackageSummary>> packagesSorter = new TableRowSorter<>(packagesModel);
     final TableRowSorter<ListTableModel<Unresolved>> unresolvedSorter = new TableRowSorter<>(unresolvedModel);
     final TableRowSorter<ListTableModel<IgnoredFinding>> ignoredSorter = new TableRowSorter<>(ignoredModel);
@@ -169,7 +174,20 @@ final class FindingTables {
         findingsTable.getColumnModel().getColumn(column(FINDING_COLUMNS, "column.env")).setCellRenderer(envRenderer);
         ignoredTable.getColumnModel().getColumn(column(IGNORED_COLUMNS, "column.env")).setCellRenderer(envRenderer);
         labels.tip(findingsTable.getTableHeader(), "column.header.tip");
+        headerFilters = new HeaderFilters<>(findingsTable, findingsModel, HeaderFilters::text, () -> onHeaderFilter.run());
+        findingsSorter.filters(headerFilters);
         labels.tip(packagesTable, "packages.tip");
+    }
+
+    /**
+     * The folder of the file a finding comes from, as the scan names it ("maven-webapp/service"); for a jar inside a
+     * jar, the outer one's ("opt/shop/lib"); "." for the folder scanned itself.
+     */
+    static String folderOf(String file) {
+        int nested = file.indexOf("!/");
+        String outer = nested < 0 ? file : file.substring(0, nested);
+        int slash = Math.max(outer.lastIndexOf('/'), outer.lastIndexOf('\\'));
+        return slash < 0 ? "." : outer.substring(0, slash);
     }
 
     static <T> int column(List<Column<T>> columns, String key) {
@@ -258,8 +276,9 @@ final class FindingTables {
     private FindingFilter facets = FindingFilter.NONE;
 
     /**
-     * The filters applied to every table: the findings by the facets and the search; the package view rebuilt from the
-     * findings that pass the facets, then searched; the others by the ecosystem and the search.
+     * The filters applied to every table: the findings by the facets, the values ticked in their headers and the search;
+     * the package view rebuilt from the findings that pass the facets and the headers, then searched; the others by the
+     * ecosystem and the search.
      */
     void filter(FindingFilter facets, List<String> terms, Ecosystem ecosystem) {
         this.facets = facets;
@@ -267,10 +286,12 @@ final class FindingTables {
             @Override
             public boolean include(Entry<? extends ListTableModel<Finding>, ? extends Integer> e) {
                 var f = e.getModel().row(e.getIdentifier());
-                return facets.test(f) && matchesSearch(e, terms, String.join(" ", f.aliases()));
+                return facets.test(f) && headerFilters.test(e.getIdentifier()) && matchesSearch(e, terms, String.join(" ", f.aliases()));
             }
         });
-        packagesModel.setRows(PackageSummary.of(findingsModel.rows().stream().filter(facets::test).toList()));
+        var rows = findingsModel.rows();
+        packagesModel.setRows(PackageSummary.of(java.util.stream.IntStream.range(0, rows.size())
+                .filter(i -> facets.test(rows.get(i)) && headerFilters.test(i)).mapToObj(rows::get).toList()));
         packagesSorter.setRowFilter(new RowFilter<>() {
             @Override
             public boolean include(Entry<? extends ListTableModel<PackageSummary>, ? extends Integer> e) {

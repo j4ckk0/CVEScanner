@@ -163,6 +163,8 @@ final class MainWindow extends JFrame {
             rescore();
         });
         filterBar = new FilterBar(labels, opts.cveOnly, this::applyFilters);
+        filterBar.onClear(tables.headerFilters::clear);
+        tables.onHeaderFilter = this::applyFilters;
         summaryBar = new SummaryBar(labels, filterBar::minSeverity, filterBar::minSeverityIndex);
         details = new DetailsPane(tables, labels, new DetailsPane.Host() {
             public boolean scanned() { return result != null; }

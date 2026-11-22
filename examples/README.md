@@ -10,6 +10,11 @@ cvescanner.sh --no-gui -d examples            (Linux, from the unpacked archive)
 cvescanner-cli.bat --no-gui -d examples       (Windows)
 ```
 
+Without a real database, from the repository: choose `samples/db/examples.zip`, made-up advisories for every
+vulnerable package below (their CVE and fixed version as the tables give them, their text invented), and for
+`cots-app` also `samples/db/cots-cvelist.zip` and `samples/db/nvdcve-2.0-2024.json.zip`. Each example then shows its
+vulnerable packages; a real database adds the many other advisories they have.
+
 They are not projects to build or install: nothing in them runs, and the lockfiles were written by hand, without the
 integrity hashes npm and yarn add (CVEScanner reads only the versions).
 
