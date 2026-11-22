@@ -5,6 +5,8 @@ checksums.
 
 ## Unreleased
 
+- After the welcome the settings are **collapsed at each start**, whatever was chosen the time before; ▾ shows them
+  for the session.
 - The welcome shows the **environment** line too, to be chosen before the first scan; the search, the filters and the
   counters still come with the findings.
 

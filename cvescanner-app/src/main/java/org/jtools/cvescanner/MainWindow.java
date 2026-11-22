@@ -135,8 +135,11 @@ final class MainWindow extends JFrame {
     private final JButton collapseButton = new JButton();
     /** The toolbar's grid: Apply fixes moves to the folder's row when the settings are collapsed. */
     private JPanel toolbarRows;
-    /** The settings collapsed to the folder's row from the first scan, the room left to the tables and the details (Settings). */
-    private boolean collapsed;
+    /**
+     * The settings collapsed to the folder's row from the first scan, the room left to the tables and the details: so at
+     * each start, whatever was chosen before; ▾ shows them again for the session.
+     */
+    private boolean collapsed = true;
     /** The findings' table above, the details below. */
     private JSplitPane centre;
     /** The findings rows the table shows when the first scan's findings appear; the details have the rest. */
@@ -258,7 +261,6 @@ final class MainWindow extends JFrame {
         setSize(1480, 940);
         setMinimumSize(new Dimension(1000, 640));
         setLocationRelativeTo(null);
-        collapsed = Boolean.parseBoolean(settings.get(Settings.SETTINGS_COLLAPSED, "true"));
         applyMode(viewMenu.expert());
         databases.onChange(this::updateReady);
         dirField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
@@ -316,10 +318,9 @@ final class MainWindow extends JFrame {
         centre.setDividerLocation(Math.max(0, centre.getDividerLocation() + delta));
     }
 
-    /** ▴ / ▾ at the end of the folder's row: the settings collapsed or shown again, kept for the next time. */
+    /** ▴ / ▾ at the end of the folder's row: the settings collapsed or shown again, for this session. */
     private void toggleCollapsed() {
         collapsed = !collapsed;
-        settings.set(Settings.SETTINGS_COLLAPSED, Boolean.toString(collapsed));
         showBlocks();
     }
 

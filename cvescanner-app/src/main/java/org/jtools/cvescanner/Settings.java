@@ -63,8 +63,6 @@ final class Settings {
     static final String DIRECT_ONLY = "directOnly";
     /** The folders scanned last, newest first, separated by the system's path separator (RecentFolders). */
     static final String RECENT_FOLDERS = "recentFolders";
-    /** "true", the default, when the toolbar's settings are collapsed to the folder's row from the first scan (▴, ▾). */
-    static final String SETTINGS_COLLAPSED = "settingsCollapsed";
     /** "true" when the window shows the expert's settings too: the ignore file, the VEX documents, the CVSS version (View ▸ Mode). */
     static final String EXPERT = "expert";
     /** Older settings files' key: "false" (no Maven repository nor Gradle cache read) is read as DIRECT_ONLY. */

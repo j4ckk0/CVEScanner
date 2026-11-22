@@ -84,9 +84,12 @@ class ScreenshotsTest {
     private void open(I18nLanguage language, String folder, Path settingsFolder, List<String> more) throws Exception {
         var args = new ArrayList<>(List.of("-d", folder));
         args.addAll(more);
-        Settings.in(settingsFolder).set(Settings.SETTINGS_COLLAPSED, "false");   // the pictures show every setting
         w = WindowDriver.start(settingsFolder, args.toArray(String[]::new));
         SwingUtilities.invokeAndWait(() -> w.window.setSize(SIZE));
+        // the pictures show every setting: once the scan has collapsed them after the welcome, ▾
+        w.waitUntil("the scan's findings", () -> w.find(java.awt.Component.class, k -> "tabs".equals(k.getName())) != null);
+        w.click(w.named("collapseSettings"));
+        w.named("databases");
         if (language != I18nLanguage.ENGLISH) {
             w.choose(w.named("language", JComboBox.class), language.toString());
             w.waitUntil("the window in " + language, () -> I18n.language() == language);
