@@ -42,6 +42,7 @@ import org.jtools.cvescanner.ignore.Ignores;
 import org.jtools.cvescanner.model.Ecosystem;
 import org.jtools.cvescanner.model.FindingFilter;
 import org.jtools.cvescanner.model.ScanMode;
+import org.jtools.cvescanner.project.MavenRepository;
 
 public final class Options {
     /** The options and what they do, in the language in use. */
@@ -84,6 +85,10 @@ public final class Options {
     public final List<Path> vexFiles = new ArrayList<>();
     /** --db-max-age: a database whose newest record is older than this many days is said to be; 0 for never. */
     public int dbMaxAgeDays = ScanOptions.DEFAULT_DB_MAX_AGE_DAYS;
+    /** --maven-repo DIR: the local Maven repository read for the transitive dependencies; null for the home folder's. */
+    public Path mavenRepository;
+    /** --no-transitive: no local Maven repository read, the poms' declared dependencies only. */
+    public boolean noTransitive;
     /** The day the scan counts from: today, a fixed one in the tests. */
     LocalDate today = LocalDate.now();
 
@@ -113,6 +118,8 @@ public final class Options {
                 case "--ignore" -> o.ignoreFile = Path.of(value(args, ++i, a));
                 case "--no-ignore" -> o.noIgnore = true;
                 case "--vex" -> o.vexFiles.add(Path.of(value(args, ++i, a)));
+                case "--maven-repo" -> o.mavenRepository = Path.of(value(args, ++i, a));
+                case "--no-transitive" -> o.noTransitive = true;
                 case "--installed" -> o.installed = true;
                 case "--min-severity" -> {
                     o.minSeverity = Severity.fromRating(value(args, ++i, a));
@@ -162,6 +169,7 @@ public final class Options {
             }
         }
         if (o.noIgnore && o.ignoreFile != null) throw new IllegalArgumentException(I18n.text("option.ignoreBoth"));
+        if (o.noTransitive && o.mavenRepository != null) throw new IllegalArgumentException(I18n.text("option.mavenRepoBoth"));
         long edits = (o.ignoreAdd != null ? 1 : 0) + (o.ignoreRemove != null ? 1 : 0) + (o.ignoreList ? 1 : 0);
         if (edits > 1 || (edits == 1 && o.noIgnore)) throw new IllegalArgumentException(I18n.text("option.ignoreEdit"));
         if (o.ignoreAdd != null && (o.ignoreReason == null || o.ignoreReason.isBlank()))
@@ -209,9 +217,15 @@ public final class Options {
         return ignoreAdd != null || ignoreRemove != null || ignoreList;
     }
 
-    /** How Engine.scan runs: the ignore file, the mode, the databases' age limit, today. */
+    /** How Engine.scan runs: the ignore file, the mode, the databases' age limit, today, the VEX documents, the Maven repository. */
+    /** The local Maven repository a scan reads: --maven-repo's, else the home folder's; null with --no-transitive. */
+    public Path mavenRepository() {
+        if (noTransitive) return null;
+        return mavenRepository != null ? mavenRepository : MavenRepository.locate(Path.of(System.getProperty("user.home")));
+    }
+
     public ScanOptions scanOptions() {
-        return new ScanOptions(ignoreChoice(), mode(), dbMaxAgeDays, today, vexFiles);
+        return new ScanOptions(ignoreChoice(), mode(), dbMaxAgeDays, today, vexFiles, mavenRepository());
     }
 
     public ScanMode mode() {

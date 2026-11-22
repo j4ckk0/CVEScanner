@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Pattern;
-import org.jtools.cvescanner.project.ProjectFiles;
+import org.jtools.cvescanner.project.MavenRepository;
 
 /**
  * The machine the fixes would run on, as far as they need it: where its programs are (PATH) and its caches (the
@@ -88,16 +88,7 @@ public record Machine(List<Path> path, boolean windows, List<String> pathExt, Pa
 
     /** The local Maven repository: the one ~/.m2/settings.xml names, else ~/.m2/repository. */
     public Path mavenRepository() {
-        Path settings = home.resolve(".m2").resolve("settings.xml");
-        try {
-            if (Files.isRegularFile(settings)) {
-                var m = Pattern.compile("<localRepository>\\s*([^<]+?)\\s*</localRepository>").matcher(ProjectFiles.readText(settings));
-                if (m.find()) return Path.of(m.group(1).replace("${user.home}", home.toString()));
-            }
-        } catch (Exception _) {
-            // the default, then
-        }
-        return home.resolve(".m2").resolve("repository");
+        return MavenRepository.locate(home);
     }
 
     /** Gradle's downloads: under GRADLE_USER_HOME when it is set, else ~/.gradle. */

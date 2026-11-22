@@ -119,7 +119,11 @@ public final class FixPlanner {
         String group = r.pkg().substring(0, colon), artifact = r.pkg().substring(colon + 1);
         var steps = new LinkedHashMap<String, Step>();   // one per file and action, two modules sharing one parent's
         OptionalInt target = OptionalInt.empty();
-        for (var d : r.declarations()) {
+        // a transitive one follows its direct one, upgraded where declared; none declared, nothing to edit
+        var declared = r.declarations().stream().filter(d -> !d.scope().startsWith("transitive")).toList();
+        if (declared.isEmpty()) return FixPlan.not(r, Phrase.of("fix.reason.transitiveMaven"));
+        boolean someTransitive = declared.size() < r.declarations().size();
+        for (var d : declared) {
             String name = d.file().getFileName().toString();
             OptionalInt t;
             if (name.equals("pom.xml")) {
@@ -156,7 +160,7 @@ public final class FixPlanner {
         }
         // a pom needs the version in the local Maven repository: versions:use-dep-version resolves nothing, and a version
         // only Gradle has would leave a pom no offline Maven build resolves. Gradle's own check resolves it, offline.
-        boolean pom = r.declarations().stream().anyMatch(d -> d.file().getFileName().toString().equals("pom.xml"));
+        boolean pom = declared.stream().anyMatch(d -> d.file().getFileName().toString().equals("pom.xml"));
         boolean inMaven = ArtifactJava.inMavenRepository(machine, group, artifact, r.to());
         if (pom && !inMaven) return FixPlan.not(r, Phrase.of("fix.reason.notCachedMaven", r.to()));
         if (!inMaven && !ArtifactJava.inGradleCache(machine, group, artifact, r.to()))
@@ -171,7 +175,8 @@ public final class FixPlanner {
                 return FixPlan.not(r, Phrase.of("fix.reason.javaTooNew", r.to(), needs.getAsInt(), target.getAsInt()));
             requirement = Phrase.of("fix.requirement.java", needs.getAsInt(), target.getAsInt());
         }
-        return new FixPlan(r, List.copyOf(steps.values()), null, requirement, majorJump(r), List.of());
+        return new FixPlan(r, List.copyOf(steps.values()), null, requirement, majorJump(r),
+                someTransitive ? List.of(Phrase.of("fix.note.transitiveFollow")) : List.of());
     }
 
     private MavenReader.Tree poms() throws IOException {

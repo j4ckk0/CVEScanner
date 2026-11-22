@@ -77,6 +77,7 @@ import org.jtools.cvescanner.model.ScanListener;
 import org.jtools.cvescanner.model.ScanMode;
 import org.jtools.cvescanner.model.ScanResult;
 import org.jtools.cvescanner.model.Scoring;
+import org.jtools.cvescanner.project.MavenRepository;
 
 /**
  * The window: the folder and the databases to scan, the ignore file to read, the environment to score for, the
@@ -408,7 +409,9 @@ final class MainWindow extends JFrame {
         }
         setBusy(true);
         var dbFiles = databases.files();
-        var options = new ScanOptions(ignoreActions.choice(), scanMode(), viewMenu.dbMaxAge(), LocalDate.now(), vexDocuments.filesForScan());
+        Path mavenRepository = viewMenu.mavenTransitive() ? MavenRepository.locate(Path.of(System.getProperty("user.home"))) : null;
+        var options = new ScanOptions(ignoreActions.choice(), scanMode(), viewMenu.dbMaxAge(), LocalDate.now(), vexDocuments.filesForScan(),
+                mavenRepository);
         new SwingWorker<ScanResult, Void>() {
             @Override
             protected ScanResult doInBackground() throws Exception {

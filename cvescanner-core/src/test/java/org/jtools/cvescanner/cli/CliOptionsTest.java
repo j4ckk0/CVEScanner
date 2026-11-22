@@ -68,6 +68,15 @@ class CliOptionsTest {
     }
 
     @Test
+    void theMavenRepositoryIsTheHomeFoldersUnlessNamedOrTurnedOff() {
+        assertEquals(Path.of("/repo"), Options.parse(new String[]{"--maven-repo", "/repo"}).scanOptions().mavenRepository());
+        assertEquals(null, Options.parse(new String[]{"--no-transitive"}).scanOptions().mavenRepository());
+        assertTrue(Options.parse(new String[0]).scanOptions().mavenRepository().endsWith(Path.of(".m2", "repository"))
+                || Files.isRegularFile(Path.of(System.getProperty("user.home"), ".m2", "settings.xml")));
+        assertThrows(IllegalArgumentException.class, () -> Options.parse(new String[]{"--maven-repo", "/repo", "--no-transitive"}));
+    }
+
+    @Test
     void applyFixesSaysEachPlanAndChangesNothingWithoutYes() throws Exception {
         Path samples = Path.of("..", "samples").toAbsolutePath().normalize();
         var r = Engine.scan(samples.resolve("projects"), List.of(samples.resolve("db/advisory-database-main.zip")),

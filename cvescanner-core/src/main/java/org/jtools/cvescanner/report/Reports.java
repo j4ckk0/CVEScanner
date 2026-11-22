@@ -192,7 +192,11 @@ public final class Reports {
             sb.append('\n');
         }
         if (split.ignores().said()) ignored(sb, split, language);
-        sb.append("## ").append(I18n.text(language, "markdown.notes")).append("\n\n").append(I18n.text(language, "markdown.notes.text")).append('\n');
+        sb.append("## ").append(I18n.text(language, "markdown.notes")).append("\n\n");
+        // the Maven line says whether the transitive dependencies were followed, from which local repository
+        sb.append(r.mavenRepository() == null ? I18n.text(language, "markdown.notes.maven")
+                : I18n.text(language, "markdown.notes.mavenTransitive", "`" + code(r.mavenRepository().toString()) + "`")).append('\n');
+        sb.append(I18n.text(language, "markdown.notes.text")).append('\n');
         // how components off-the-shelf are found and matched: said when the report holds some
         if (findings.stream().anyMatch(f -> f.ecosystem() == Ecosystem.COTS)
                 || r.unresolved().stream().anyMatch(u -> u.ecosystem() == Ecosystem.COTS))

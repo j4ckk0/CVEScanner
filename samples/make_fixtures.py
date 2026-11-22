@@ -5,6 +5,7 @@ Usage: python3 samples/make_fixtures.py OUTDIR    (the repository's: samples)
 Writes in OUTDIR:
   projects/  Maven, Gradle, npm, yarn            cots-projects/  inventory, SBOMs, manifests, binaries
   ignore/    an ignore file                      db/  OSV.dev exports, GitHub Advisory Database, CVE List, NVD
+  m2/        a local Maven repository, its poms only (--maven-repo)
 The results expected are the golden files: cvescanner-core/src/test/resources/org/jtools/cvescanner/cli/golden/.
 """
 import io, json, os, sys, zipfile
@@ -365,5 +366,50 @@ with zipfile.ZipFile(os.path.join(out, "db/installed.zip"), "w", zipfile.ZIP_DEF
     z.writestr("cves/2021/CVE-2021-3711.json", json.dumps(cve("CVE-2021-3711", [{"vendor": "OpenSSL", "product": "OpenSSL",
         "versions": [{"version": "1.1.1", "lessThan": "1.1.1l", "status": "affected"}]}], title="SM2 decryption buffer overflow",
         metrics=v31("CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H", 9.8)), indent=2))
+
+# ------------------------------------------------------------------ a local Maven repository (m2/), for --maven-repo
+# what log4j-core and jackson-databind of projects/maven bring: guava through log4j-core (its failureaccess excluded),
+# snakeyaml through guava, its version from a BOM guava's parent imports; commons-text optional, junit for tests only,
+# neither followed; checker-qual and jackson's own poms missing; a version range left unresolved
+def m2_pom(g, a, v, body):
+    deps_xml = body
+    write(f"m2/{g.replace('.', '/')}/{a}/{v}/{a}-{v}.pom",
+          f'<project xmlns="http://maven.apache.org/POM/4.0.0">\n  <modelVersion>4.0.0</modelVersion>\n'
+          f'  <groupId>{g}</groupId><artifactId>{a}</artifactId><version>{v}</version>\n{deps_xml}</project>\n')
+
+def m2_dep(g, a, v=None, extra=""):
+    return (f"    <dependency><groupId>{g}</groupId><artifactId>{a}</artifactId>"
+            + (f"<version>{v}</version>" if v else "") + extra + "</dependency>\n")
+
+def m2_deps(*deps):
+    return "  <dependencies>\n" + "".join(deps) + "  </dependencies>\n"
+
+def m2_parent(g, a, v):
+    return f"  <parent><groupId>{g}</groupId><artifactId>{a}</artifactId><version>{v}</version></parent>\n"
+
+def m2_managed(*deps):
+    return "  <dependencyManagement>\n" + m2_deps(*deps) + "  </dependencyManagement>\n"
+
+m2_pom("org.apache.logging.log4j", "log4j", "2.14.1",
+       "  <packaging>pom</packaging>\n  <properties><commons-text.version>1.9</commons-text.version></properties>\n")
+m2_pom("org.apache.logging.log4j", "log4j-core", "2.14.1", m2_parent("org.apache.logging.log4j", "log4j", "2.14.1") + m2_deps(
+    m2_dep("org.apache.logging.log4j", "log4j-api", "${project.version}"),
+    m2_dep("org.apache.commons", "commons-text", "${commons-text.version}", "<optional>true</optional>"),
+    m2_dep("com.google.guava", "guava", "31.0-jre",
+           "<exclusions><exclusion><groupId>com.google.guava</groupId><artifactId>failureaccess</artifactId></exclusion></exclusions>"),
+    m2_dep("junit", "junit", "4.13", "<scope>test</scope>")))
+m2_pom("org.apache.logging.log4j", "log4j-api", "2.14.1", "")
+m2_pom("com.google.guava", "guava-parent", "31.0-jre", "  <packaging>pom</packaging>\n" + m2_managed(
+    m2_dep("org.example", "example-bom", "1.0", "<type>pom</type><scope>import</scope>")))
+m2_pom("com.google.guava", "guava", "31.0-jre", m2_parent("com.google.guava", "guava-parent", "31.0-jre") + m2_deps(
+    m2_dep("com.google.guava", "failureaccess", "1.0.1"),
+    m2_dep("org.checkerframework", "checker-qual", "3.12.0"),
+    m2_dep("org.yaml", "snakeyaml"),
+    m2_dep("org.example", "ranged", "[1.0,2.0)")))
+m2_pom("org.example", "example-bom", "1.0", "  <packaging>pom</packaging>\n" + m2_managed(m2_dep("org.yaml", "snakeyaml", "1.33")))
+m2_pom("org.yaml", "snakeyaml", "1.33", "")
+m2_pom("com.fasterxml.jackson.core", "jackson-databind", "2.9.8", m2_deps(
+    m2_dep("com.fasterxml.jackson.core", "jackson-annotations", "2.9.0"),
+    m2_dep("com.fasterxml.jackson.core", "jackson-core", "2.9.8")))
 
 print("fixtures written to", out)

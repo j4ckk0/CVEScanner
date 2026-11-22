@@ -49,7 +49,19 @@ import org.jtools.cvescanner.model.Ecosystem;
 public final class MavenReader {
     private static final Pattern PROP = Pattern.compile("\\$\\{([^}]+)\\}");
 
-    record PomDep(String group, String artifact, String version, String scope) {}
+    /**
+     * A dependency as a pom writes it, its texts unresolved.
+     *
+     * @param exclusions the "group:artifact" its own dependencies leave out, either part "*" for any
+     * @param type "jar" unless written: an import of dependency management is a "pom"
+     * @param scopeWritten whether the pom writes its scope: when not, a dependency takes its management's
+     */
+    record PomDep(String group, String artifact, String version, String scope, boolean optional, List<String> exclusions,
+                  String type, boolean scopeWritten) {
+        PomDep(String group, String artifact, String version, String scope) {
+            this(group, artifact, version, scope, false, List.of(), "jar", true);
+        }
+    }
 
     static final class Pom {
         final Path path;
@@ -95,6 +107,16 @@ public final class MavenReader {
     }
 
     public static void scan(List<Path> paths, DependencyCollector col, Consumer<Phrase> warn) {
+        scan(paths, col, warn, null);
+    }
+
+    /**
+     * The dependencies the poms declare and manage; with a local repository, their transitive dependencies too
+     * (MavenTransitive), and a version an external parent or an imported BOM manages.
+     *
+     * @param repository the local Maven repository; null, the declared dependencies only
+     */
+    public static void scan(List<Path> paths, DependencyCollector col, Consumer<Phrase> warn, MavenRepository repository) {
         DocumentBuilder builder = pomParser();
         var poms = new ArrayList<Pom>();
         for (Path p : paths) {
@@ -105,6 +127,7 @@ public final class MavenReader {
             }
         }
         var index = new PomIndex(poms);
+        var transitive = repository == null ? null : new MavenTransitive(repository, index);
         for (Pom pom : poms) {
             var entries = new ArrayList<Map.Entry<PomDep, Boolean>>();
             pom.deps.forEach(d -> entries.add(Map.entry(d, false)));
@@ -117,16 +140,23 @@ public final class MavenReader {
                 String name = g + ":" + a;
                 String raw = d.version() != null ? d.version() : managed ? null : index.managedVersion(pom, g, a);
                 String scope = managed ? "dependencyManagement" : d.scope();
+                if (raw == null && transitive != null && !managed) {   // managed by a parent or a BOM outside the folder
+                    var m = transitive.model(pom).managed().get(name);
+                    if (m != null) raw = m.version();
+                }
                 if (raw == null) {
                     col.miss(Ecosystem.MAVEN, name, "", pom.path, Phrase.of("reason.managedOutside"));
                     continue;
                 }
                 String v = index.resolve(pom, raw);
+                if (v.contains("${") && transitive != null) v = transitive.model(pom).resolve(v);   // a parent's outside
                 if (v.contains("${")) col.miss(Ecosystem.MAVEN, name, raw, pom.path, Phrase.of("reason.unresolvedProperty"));
                 else if (v.startsWith("[") || v.startsWith("(")) col.miss(Ecosystem.MAVEN, name, raw, pom.path, Phrase.of("reason.versionRange"));
                 else col.add(Ecosystem.MAVEN, name, v, pom.path, scope, false);
             }
+            if (transitive != null) transitive.resolve(pom, col);
         }
+        if (transitive != null) transitive.warnings().forEach(warn);
     }
 
     private static String local(Node n) { return n.getLocalName() != null ? n.getLocalName() : n.getNodeName(); }
@@ -144,7 +174,7 @@ public final class MavenReader {
         return t.isEmpty() ? null : t;
     }
 
-    private static Pom parse(Path path, Element root) {
+    static Pom parse(Path path, Element root) {
         var pom = new Pom(path);
         Element parent = child(root, "parent");
         if (parent != null) {
@@ -187,11 +217,21 @@ public final class MavenReader {
             }
             if (tag.equals("dependency")) {
                 String scope = Objects.requireNonNullElse(text(c, "scope"), "compile");
+                boolean optional = "true".equalsIgnoreCase(text(c, "optional"));
+                var exclusions = new ArrayList<String>();
+                Element excl = child(c, "exclusions");
+                if (excl != null)
+                    for (Node x = excl.getFirstChild(); x != null; x = x.getNextSibling())
+                        if (x instanceof Element e && local(e).equals("exclusion"))
+                            exclusions.add(Objects.requireNonNullElse(text(e, "groupId"), "*") + ":" + Objects.requireNonNullElse(text(e, "artifactId"), "*"));
+                String type = Objects.requireNonNullElse(text(c, "type"), "jar");
+                boolean scopeWritten = text(c, "scope") != null;
                 if (ancestors.contains("dependencyManagement")) {
-                    pom.managed.add(new PomDep(text(c, "groupId"), text(c, "artifactId"), text(c, "version"), scope));
+                    pom.managed.add(new PomDep(text(c, "groupId"), text(c, "artifactId"), text(c, "version"), scope, optional,
+                            List.copyOf(exclusions), type, scopeWritten));
                 } else {
                     pom.deps.add(new PomDep(text(c, "groupId"), text(c, "artifactId"), text(c, "version"),
-                            ancestors.contains("plugin") ? "plugin" : scope));
+                            ancestors.contains("plugin") ? "plugin" : scope, optional, List.copyOf(exclusions), type, scopeWritten));
                 }
             } else if (!tag.equals("properties")) {
                 ancestors.push(tag);
@@ -201,7 +241,7 @@ public final class MavenReader {
         }
     }
 
-    private static final class PomIndex {
+    static final class PomIndex {
         private final Map<String, Pom> byCoordinates = new HashMap<>();
         private final Map<Path, Pom> byPath = new HashMap<>();
 
@@ -210,6 +250,11 @@ public final class MavenReader {
                 byCoordinates.put(p.groupId + ":" + p.artifactId, p);
                 byPath.put(p.path, p);
             }
+        }
+
+        /** The scanned pom of this group and artifact, whatever its version; null when none. */
+        Pom byCoordinates(String group, String artifact) {
+            return byCoordinates.get(group + ":" + artifact);
         }
 
         Pom parentOf(Pom pom) {

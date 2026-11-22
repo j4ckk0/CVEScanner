@@ -51,7 +51,7 @@ class FrenchReportTest {
         I18n.use(I18nLanguage.FRENCH);
         int exit = Cli.run(Options.parse(new String[] {"--no-gui", "-d", SAMPLES.resolve("projects").toString(),
                 "-o", out.toString(), "--db", SAMPLES.resolve("db/advisory-database-main.zip").toString(),
-                "--db", SAMPLES.resolve("db/2026-11-19_all_CVEs_at_midnight.zip.zip").toString(), "--env", "airgapped"}));
+                "--db", SAMPLES.resolve("db/2026-11-19_all_CVEs_at_midnight.zip.zip").toString(), "--env", "airgapped", "--no-transitive"}));
         I18n.use(I18nLanguage.ENGLISH);
 
         assertEquals(0, exit);

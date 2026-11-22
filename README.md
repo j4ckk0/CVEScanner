@@ -72,8 +72,10 @@ to install, a Java runtime is inside: unpack it anywhere, drop a database zip in
 
 ## No network
 
-The program reads the folder it scans and the database zips it is given, and writes its reports and its settings
-beside it — and the ignore file, when you ask the window to ignore a finding; that is all. No download, no update
+The program reads the folder it scans, the database zips it is given and, for the transitive dependencies of a Maven
+project, the poms of the local Maven repository (`~/.m2`; `--no-transitive` or *View ▸ Maven transitive dependencies*
+turns that off); it writes its reports and its settings beside it — and the ignore file, when you ask the window to
+ignore a finding; that is all. No download, no update
 check, no browser, no file manager: a link is copied to the clipboard, to open elsewhere, and after an export the
 folder's path is offered to copy. **The one program it starts** is the scanned project's own build tool, when you
 click Apply fixes and confirm the commands shown, and only in its offline mode (`mvn -o`, `--offline`,
@@ -181,6 +183,8 @@ cvescanner-cli.bat --no-gui -d C:\src\my-app --fail-on HIGH               (Windo
 | `--ignore-add ID --reason "TEXT"` [`--package P`] [`--version V`] [`--until YYYY-MM-DD`], `--ignore-remove ID` [`--package P`] [`--version V`], `--ignore-list` | the ignore file edited or listed, as the window's *Ignore this finding…* and *Stop ignoring* do, without a scan (see [Ignoring findings](#ignoring-findings)) |
 | `--vex FILE` | a CycloneDX VEX document to read (repeatable), besides the folder's `*.vex.json` (see [Ignoring findings](#ignoring-findings)) |
 | `--db-max-age DAYS` | warn of a database whose newest record is older (default 30; 0: never) |
+| `--maven-repo DIR` | the local Maven repository read for the transitive dependencies of the poms (default: the one `~/.m2/settings.xml` names, else `~/.m2/repository`) |
+| `--no-transitive` | read no local Maven repository: the poms' declared dependencies only |
 | `--installed` | scan an installed product from what it ships, rather than source projects (see [Installed products](#installed-products)) |
 | `--min-severity LEVEL`, `--ecosystem LIST`, `--hide-approximate`, `--hide-name-matches`, `--search "WORDS"` | the window's filters: the reports, the counts and `--fail-on` keep only what they keep, and `report.md` says them |
 | `--apply-fixes` [`--yes`] [`--allow-major`] [`--fix-packages LIST`] | the window's *Apply fixes* (see [Applying fixes](#applying-fixes)): the plan of each package the report keeps is said, and nothing changes without `--yes`; then the folder is scanned again before the reports are written |
@@ -261,7 +265,9 @@ so. **A fix is not applied** when:
   or Gradle's cache — or a **newer Node** than its `package.json`'s `engines` (read from npm's cache);
 - the new version is **not in the machine's caches** (the local Maven repository, Gradle's or npm's cache): an offline
   build could not use it, nor can its needs be read;
-- it is a **transitive** npm dependency, a peer dependency, or a component off-the-shelf;
+- it is a **transitive** npm or Maven dependency, a peer dependency, or a component off-the-shelf (a transitive Maven
+  one follows its declared one where the project declares it: that one is upgraded, the plan says so; declared
+  nowhere, pin its version in the project's `dependencyManagement`);
 - its version is written in a way no tool can change.
 
 A fix that changes the **major version** (2.x to 3.x) is applied only once ticked in the dialog: its API may have
@@ -309,8 +315,13 @@ any other.
 - **Fixed in**: the first version without the vulnerability (— when no fix is published).
 - **≈ version**: an npm project without a lockfile is checked at the *lowest* version its range allows (`^4.17.0` →
   `4.17.0`); the version installed may be newer. Commit a lockfile for exact results.
-- **Maven and Gradle** results cover the **declared** dependencies (and `dependencyManagement`); their transitive
-  ones are only known to the build tool: run `mvn dependency:tree`, or enable Gradle's dependency locking.
+- **Maven** results include the **transitive** dependencies, resolved as Maven does (the nearest version, the
+  project's `dependencyManagement`, the exclusions; optional, test and provided ones of a dependency not followed)
+  from the poms of the local Maven repository, a sibling module's from its own pom. A dependency whose pom is not
+  there is checked, not what it brings: the scan says which, in one warning — building the project once fills the
+  repository. The *Scope* column says `transitive via` the dependency the project declares that brings it.
+- **Gradle** results cover the **declared** dependencies only: run `gradle dependencies`, or enable Gradle's
+  dependency locking.
 - A finding means the version is in an advisory's affected range; whether the vulnerable code is used by your
   application still needs a human eye.
 

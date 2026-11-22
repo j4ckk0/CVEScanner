@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import javax.swing.ButtonGroup;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -39,7 +40,10 @@ import javax.swing.UIManager;
 import org.jtools.cvescanner.engine.ScanOptions;
 import org.jtools.cvescanner.i18n.I18n;
 
-/** The View menu: the look the window is shown in, and how old a database may be before a scan says so. */
+/**
+ * The View menu: the look the window is shown in, how old a database may be before a scan says so, whether a scan
+ * reads the local Maven repository for the poms' transitive dependencies.
+ */
 final class ViewMenu {
 
     private static final String LOOK_CLASS = "lookClass";   // each look item's class, as a client property
@@ -64,7 +68,17 @@ final class ViewMenu {
         JMenuItem age = labels.menu(new JMenuItem(), "menu.view.dbMaxAge");
         age.addActionListener(_ -> chooseDbMaxAge());
         view.add(age);
+        var transitive = labels.menu(new JCheckBoxMenuItem(), "menu.view.mavenTransitive");
+        transitive.setSelected(mavenTransitive());
+        transitive.addActionListener(_ -> settings.set(Settings.MAVEN_TRANSITIVE, String.valueOf(transitive.isSelected())));
+        labels.tip(transitive, "menu.view.mavenTransitive.tip");
+        view.add(transitive);
         return view;
+    }
+
+    /** Whether a scan reads the local Maven repository for the poms' transitive dependencies: yes unless turned off. */
+    boolean mavenTransitive() {
+        return !"false".equals(settings.get(Settings.MAVEN_TRANSITIVE, "true"));
     }
 
     /** The days past which a database's newest record is said to be old, as the settings keep it; 30 when not set. */

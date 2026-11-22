@@ -56,6 +56,8 @@ final class Settings {
     static final String DB_MAX_AGE = "dbMaxAge";
     /** The VEX documents chosen, their paths separated by the system's path separator. */
     static final String VEX_FILES = "vexFiles";
+    /** "false" when a scan reads no local Maven repository (View ▸ Maven transitive dependencies); read otherwise. */
+    static final String MAVEN_TRANSITIVE = "mavenTransitive";
     private static final String FILE = "cvescanner.properties";
 
     private final Path file;

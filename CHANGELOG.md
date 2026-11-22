@@ -5,6 +5,13 @@ checksums.
 
 ## 1.4 — not released yet
 
+- **Maven transitive dependencies**: what a project's dependencies bring is checked too, resolved as Maven does (the
+  nearest version, the widest scope, the project's dependency management, BOM imports, exclusions; optional, test and
+  provided ones not followed) from the poms of the local Maven repository, a sibling module's from its own pom; shown
+  `transitive via` the dependency declared. A pom not in the repository is said in one warning. A version an
+  external parent or an imported BOM manages is now resolved too. `--maven-repo DIR`, `--no-transitive`, *View ▸
+  Maven transitive dependencies*. Checked against `mvn dependency:list` on a Spring Boot project: the same 85
+  dependencies, versions and scopes.
 - **The window tested on every build**: `WindowChecklistTest` starts the window and clicks it through on a virtual
   display (a scan, the packages ticked and the plan of Apply fixes, an installed product, a VEX document, the database
   age, French), in `scripts/ci.sh` and the build workflow; `scripts/window-check.sh` runs it alone.

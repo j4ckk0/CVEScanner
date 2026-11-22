@@ -50,6 +50,7 @@ import org.jtools.cvescanner.model.ScanResult;
 import org.jtools.cvescanner.project.DependencyCollector;
 import org.jtools.cvescanner.project.GradleReader;
 import org.jtools.cvescanner.project.MavenReader;
+import org.jtools.cvescanner.project.MavenRepository;
 import org.jtools.cvescanner.project.NpmReader;
 import org.jtools.cvescanner.project.ProjectFiles;
 
@@ -109,7 +110,8 @@ public final class Engine {
         var files = ProjectFiles.find(root, mode);
         ignores = withVex(ignores, root, files.vexFiles, options.vexFiles(), l);
         var col = new DependencyCollector(root);
-        MavenReader.scan(files.poms, col, l::warn);
+        MavenReader.scan(files.poms, col, l::warn,
+                options.mavenRepository() == null ? null : new MavenRepository(options.mavenRepository()));
         GradleReader.scan(files.gradle, files.gradleProps, col);
         GradleReader.scanCatalogs(files.catalogs, col);
         NpmReader.scan(files.packageJsons, root, col, l::warn);
@@ -164,6 +166,6 @@ public final class Engine {
         if (manifests > 0) counts.put("files.manifests", manifests);
         if (!files.binaries.isEmpty()) counts.put("files.binaries", files.binaries.size());
         return new ScanResult(root, List.copyOf(findings), List.copyOf(col.deps), List.copyOf(col.unresolved),
-                index.sources, counts, List.copyOf(warnings), ignores, mode);
+                index.sources, counts, List.copyOf(warnings), ignores, mode, mode == ScanMode.SOURCES ? options.mavenRepository() : null);
     }
 }

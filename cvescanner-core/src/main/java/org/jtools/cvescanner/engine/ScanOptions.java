@@ -33,14 +33,20 @@ import org.jtools.cvescanner.model.ScanMode;
  * @param dbMaxAgeDays a database whose newest record is older than this many days is said to be; 0 for never
  * @param today        the day the ages and the ignore file's last days are counted from
  * @param vexFiles     VEX documents named (--vex), read besides the *.vex.json of the folder scanned
+ * @param mavenRepository the local Maven repository, read for the transitive dependencies of the poms; null for none
  */
-public record ScanOptions(Path ignoreFile, ScanMode mode, int dbMaxAgeDays, LocalDate today, List<Path> vexFiles) {
+public record ScanOptions(Path ignoreFile, ScanMode mode, int dbMaxAgeDays, LocalDate today, List<Path> vexFiles,
+                          Path mavenRepository) {
 
     /** A database older than a month is said to be. */
     public static final int DEFAULT_DB_MAX_AGE_DAYS = 30;
 
     public ScanOptions {
         vexFiles = List.copyOf(vexFiles);
+    }
+
+    public ScanOptions(Path ignoreFile, ScanMode mode, int dbMaxAgeDays, LocalDate today, List<Path> vexFiles) {
+        this(ignoreFile, mode, dbMaxAgeDays, today, vexFiles, null);
     }
 
     public ScanOptions(Path ignoreFile, ScanMode mode, int dbMaxAgeDays, LocalDate today) {

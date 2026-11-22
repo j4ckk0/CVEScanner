@@ -106,6 +106,23 @@ class FixPlannerTest {
     }
 
     @Test
+    void aTransitiveMavenDependencyFollowsItsDeclaredSiteAndAloneIsNotApplied() throws IOException {
+        mavenParentAndChild(null);
+        fake.program("mvn", "exit 0");
+        fake.versionsPlugin();
+        fake.jar("com.fasterxml.jackson.core", "jackson-databind", "2.9.10.7", 8);
+        // declared in the parent's management, transitive in another module: the declared site upgraded, said so
+        var mixed = plan(Ecosystem.MAVEN, "com.fasterxml.jackson.core:jackson-databind", "2.9.8", "2.9.10.7",
+                "pom.xml", "dependencyManagement", "other/pom.xml", "transitive via g:child");
+        assertTrue(mixed.applicable(), String.valueOf(mixed.notApplicable()));
+        assertEquals(1, mixed.steps().size());
+        assertEquals(List.of("fix.note.transitiveFollow"), mixed.notes().stream().map(n -> n.key()).toList());
+        // transitive only: nothing the project writes to change
+        var alone = plan(Ecosystem.MAVEN, "org.yaml:snakeyaml", "1.33", "2.0", "child/pom.xml", "transitive via g:x");
+        assertEquals("fix.reason.transitiveMaven", reason(alone));
+    }
+
+    @Test
     void aMavenVersionFromAPropertyIsChangedWhereThePropertyIs() throws IOException {
         mavenParentAndChild(null);
         write("mvnw", "#!/bin/sh\n").toFile().setExecutable(true);
