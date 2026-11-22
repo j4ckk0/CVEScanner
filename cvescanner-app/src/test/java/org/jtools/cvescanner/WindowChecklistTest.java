@@ -246,8 +246,10 @@ class WindowChecklistTest {
         w.menu("Help", "Command line");
         var commandLine = w.dialog("Command line");
         assertTrue(w.text(commandLine).contains("--no-gui") && w.text(commandLine).contains("--fail-on"), w.text(commandLine));
-        w.clickButton("OK");
-        w.waitUntil("the command line's dialog closed", () -> !w.dialogShowing());
+        w.waitUntil("the command line's dialog closed", () -> {   // Esc, as every message closes on it, until it has
+            if (w.dialogShowing()) w.key(java.awt.event.KeyEvent.VK_ESCAPE);
+            return !w.dialogShowing();
+        });
 
         // 9. French: the window relabelled
         String scanInEnglish = w.text("scan");

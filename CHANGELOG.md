@@ -3,7 +3,11 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
-## 1.7 — 2026-11-22
+## 1.7.1 — 2026-11-22
+
+1.7 was tagged but not published: its Linux archive failed to build. 1.7.1 is 1.7 with that fixed.
+
+- **Fixed**: the Linux archive is built again (the descriptor of its files, which names the new manual, did not read).
 
 - **Scan waits for what it needs**: on the welcome and in the toolbar, *Scan* is greyed until a folder to analyze and a
   database are given, their fields outlined in red until then.
