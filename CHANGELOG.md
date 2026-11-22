@@ -3,6 +3,17 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
+## 1.5.2 — 2026-11-22
+
+- **Fixed**: a jar whose file name gives no version (`commons-lang3.jar`) is checked by its file name and its
+  manifest's version (`Implementation-Version`, else `Bundle-Version`); it was only said unchecked.
+- **Fixed**, in *Apply fixes* for npm: a pre-release (`1.2.4-beta`) is within a range only when the range names a
+  pre-release of the same version, as npm has it; `^1.2.3` took it.
+- **Fixed**: a fix in a numbered pre-release (`2.0-beta1`, `2.0-rc.2`) is no longer preferred for a version in the same
+  one: `1.1` is the fix for `1.0-beta1`, not `2.0-beta1`.
+- **Fixed**: a `cots.csv` line whose CPE names no vendor or no product is said unchecked, with why; it was checked as
+  an empty name.
+
 ## 1.5.1 — 2026-11-22
 
 1.5 was tagged but not published: its Windows build failed. 1.5.1 is 1.5 with that fixed.
