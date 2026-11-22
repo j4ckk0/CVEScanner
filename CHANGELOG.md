@@ -7,6 +7,11 @@ checksums.
 
 - After the welcome the settings are **collapsed at each start**, whatever was chosen the time before; ▾ shows them
   for the session.
+- **`findings.csv` in the window's order**: its columns are those of the findings table, in its order and under its
+  English names (Package, Version, Vulnerabilities, CVE, Severity, CVSS base score, Environment score, CVSS version,
+  Fixed in, Published, Summary, Advisory, Ecosystem, Upgrade to, Match, Scope, Path, File), then Base severity, CVSS
+  base vector, Environment vector, Environment, Approximate, URL. Published, Path, Vulnerabilities and Upgrade to are
+  new. **A script reading the file by its old headers (`severity`, `package`, `fixed_in`…) needs them changed.**
 - **A warning when no database covers an ecosystem found**: the Maven, npm or PyPI packages with NVD's feeds alone,
   the components off-the-shelf with the advisories alone, are said unchecked, in the window's status line ("⚠ no
   database for Maven, npm: not checked"), on the command line and in the reports.

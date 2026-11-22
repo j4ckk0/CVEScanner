@@ -225,17 +225,6 @@ final class FindingTables {
         return viewColumn >= 0 && findingsTable.convertColumnIndexToModel(viewColumn) == FindingGroups.FIX;
     }
 
-    /**
-     * The folder of the file a finding comes from, as the scan names it ("maven-webapp/service"); for a jar inside a
-     * jar, the outer one's ("opt/shop/lib"); "." for the folder scanned itself.
-     */
-    static String folderOf(String file) {
-        int nested = file.indexOf("!/");
-        String outer = nested < 0 ? file : file.substring(0, nested);
-        int slash = Math.max(outer.lastIndexOf('/'), outer.lastIndexOf('\\'));
-        return slash < 0 ? "." : outer.substring(0, slash);
-    }
-
     static <T> int column(List<Column<T>> columns, String key) {
         for (int i = 0; i < columns.size(); i++) if (columns.get(i).key().equals(key)) return i;
         throw new IllegalArgumentException(key);

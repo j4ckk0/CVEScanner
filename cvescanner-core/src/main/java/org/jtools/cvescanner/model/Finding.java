@@ -58,6 +58,17 @@ public record Finding(Severity severity, Score score, Ecosystem ecosystem, Strin
 
     public String publishedDate() { return published.length() >= 10 ? published.substring(0, 10) : published; }
 
+    /**
+     * The folder of the file it comes from, as the scan names it ("maven-webapp/service"); for a jar inside a jar, the
+     * outer one's ("opt/shop/lib"); "." for the folder scanned itself: the window's Path column, findings.csv's.
+     */
+    public String folder() {
+        int nested = file.indexOf("!/");
+        String outer = nested < 0 ? file : file.substring(0, nested);
+        int slash = Math.max(outer.lastIndexOf('/'), outer.lastIndexOf('\\'));
+        return slash < 0 ? "." : outer.substring(0, slash);
+    }
+
     /** How many findings of each severity, every severity counted, none left out. */
     public static Map<Severity, Long> countBySeverity(List<Finding> findings) {
         var m = new EnumMap<Severity, Long>(Severity.class);

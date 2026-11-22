@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -327,14 +328,25 @@ public final class Reports {
         return s.contains(",") || s.contains("\"") || s.contains("\n") || s.contains("\r") ? "\"" + s.replace("\"", "\"\"") + "\"" : s;
     }
 
+    /**
+     * findings.csv: a row per finding, its columns in the order and under the English names of the window's findings
+     * table (its package's advisory count and version to upgrade to repeated on each of its rows), then what only the
+     * file gives: the base severity, the two vectors, the environment, whether the version is approximate, the link.
+     */
     static String csv(List<Finding> findings, Environment env) {
-        var sb = new StringBuilder("severity,base_severity,base_score,cvss_version,base_vector,env_score,env_vector,environment,"
-                + "ecosystem,package,version,approximate,scope,file,id,cves,match,fixed_in,summary,url\n");
-        for (var f : findings)
-            sb.append(Stream.of(f.severity(), f.score().baseSeverity(), f.cvss(), f.score().version(), f.score().baseVector(),
-                    f.envScore(), f.score().envVector(), env.name(I18nLanguage.ENGLISH), f.ecosystem().id(), f.pkg(), f.version(), f.approximate(), f.scope(), f.file(),
-                    f.id(), String.join(" ", f.cves()), f.basis().name(), f.fixedIn(), f.summary(), f.url()).map(Reports::cell)
-                    .collect(Collectors.joining(","))).append('\n');
+        var sb = new StringBuilder("Package,Version,Vulnerabilities,CVE,Severity,CVSS base score,Environment score,CVSS version,"
+                + "Fixed in,Published,Summary,Advisory,Ecosystem,Upgrade to,Match,Scope,Path,File,"
+                + "Base severity,CVSS base vector,Environment vector,Environment,Approximate,URL\n");
+        var packages = new HashMap<List<Object>, PackageSummary>();
+        for (PackageSummary p : PackageSummary.of(findings)) packages.put(List.of(p.ecosystem(), p.pkg(), p.version()), p);
+        for (var f : findings) {
+            PackageSummary p = packages.get(List.of(f.ecosystem(), f.pkg(), f.version()));
+            sb.append(Stream.of(f.pkg(), f.version(), p.vulnerabilities(), String.join(" ", f.cves()), f.severity(), f.cvss(),
+                    f.envScore(), f.score().version(), f.fixedIn(), f.publishedDate(), f.summary(), f.id(), f.ecosystem().id(),
+                    p.upgradeTo(I18nLanguage.ENGLISH), f.basis().name(), f.scope(), f.folder(), f.file(),
+                    f.score().baseSeverity(), f.score().baseVector(), f.score().envVector(), env.name(I18nLanguage.ENGLISH),
+                    f.approximate(), f.url()).map(Reports::cell).collect(Collectors.joining(","))).append('\n');
+        }
         return sb.toString();
     }
 

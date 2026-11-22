@@ -122,8 +122,7 @@ final class FindingGroups extends AbstractTableModel {
                 new GColumn("column.match", String.class, 125, g -> "", f -> f.basis().label(), TEXT, f -> f.basis().label()),
                 new GColumn("column.scope", String.class, 160, g -> "", Finding::scope, TEXT, Finding::scope),
                 new GColumn("column.path", String.class, 180, g -> String.join(", ", new TreeSet<>(g.findings().stream()
-                        .map(f -> FindingTables.folderOf(f.file())).toList())), f -> FindingTables.folderOf(f.file()), TEXT,
-                        f -> FindingTables.folderOf(f.file())),
+                        .map(Finding::folder).toList())), Finding::folder, TEXT, Finding::folder),
                 new GColumn("column.file", String.class, 220, g -> g.summary().files(), Finding::file, TEXT, Finding::file));
     }
 

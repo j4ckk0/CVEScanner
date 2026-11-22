@@ -235,7 +235,9 @@ prints them too); on Linux `cvescanner.sh --man` shows the manual, `cvescanner.1
 Exit codes: `0`, `1` on an error (and when `--ignore-remove` finds no entry to remove), `2` past `--fail-on`, `3` when
 a fix confirmed by `--yes` could not be applied. Without a display the program goes to the command line by itself.
 
-The reports, in the `-o` folder: `report.md` (in the language chosen), `findings.csv` and `findings.json` (in English),
+The reports, in the `-o` folder: `report.md` (in the language chosen), `findings.csv` and `findings.json` (in English;
+`findings.csv` a row per finding, its columns in the order and under the names of the window's findings table, then
+the base severity, the two CVSS vectors, the environment, whether the version is approximate and the advisory's link),
 `dependencies.csv`, the dependency tree in a spreadsheet (a row per dependency, each followed by what it brings, with
 its depth, its path from the declared one, `jackson-dataformat-yaml 2.14.2 > snakeyaml 1.33`, and its findings' count,
 worst severity and advisories; empty depth when the lockfile does not record what brings it, as Gradle's lockfile
