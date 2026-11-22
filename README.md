@@ -139,7 +139,7 @@ reported as affecting it; a range NVD bounds by dates (FFmpeg's git snapshots) i
 
 Start `cvescanner.bat` or `CVEScanner.exe` (Windows), `cvescanner.sh` (Linux); give it a folder to scan it at once.
 
-1. **Project folder**: the folder of your project(s), its sub-folders scanned too; or drop the folder on the window.
+1. **Folder to analyze**: the folder of your project(s), its sub-folders scanned too; or drop the folder on the window.
    The ▾ beside it lists the folders scanned last.
 2. **Vulnerability database**: the zips of `database/` are already there; *Choose database zip…* for others.
 3. **Environment** (optional): where the scanned software runs, for the environmental score; changing it re-scores

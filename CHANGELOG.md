@@ -3,6 +3,10 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
+## Unreleased
+
+- The first field of the window is *Folder to analyze* (*Dossier à analyser*), no longer *Project folder*.
+
 ## 1.6 — 2026-11-22
 
 - **Standard and expert modes** (*View ▸ Mode*): standard, the first time, leaves out the *Ignore file* and *VEX
