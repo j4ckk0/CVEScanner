@@ -121,13 +121,27 @@ public final class FixPlanner {
         String group = r.pkg().substring(0, colon), artifact = r.pkg().substring(colon + 1);
         var steps = new LinkedHashMap<String, Step>();   // one per file and action, two modules sharing one parent's
         OptionalInt target = OptionalInt.empty();
-        // a transitive one follows its direct one, upgraded where declared; none declared, nothing to edit
+        // per declaration: a declared one upgraded where written; a transitive Maven one follows a declared pom of its
+        // chain (a parent managing it, the module itself), else is pinned in its topmost pom's dependencyManagement;
+        // a transitive Gradle one is left (a constraint to write by hand)
         var declared = r.declarations().stream().filter(d -> !d.scope().startsWith("transitive")).toList();
-        if (declared.isEmpty()) {
-            boolean gradle = r.declarations().stream().noneMatch(d -> d.file().getFileName().toString().equals("pom.xml"));
-            return FixPlan.not(r, Phrase.of(gradle ? "fix.reason.transitiveGradle" : "fix.reason.transitiveMaven"));
+        var declaredPoms = new java.util.HashSet<Path>();
+        for (var d : declared) if (d.file().getFileName().toString().equals("pom.xml")) declaredPoms.add(d.file().toAbsolutePath().normalize());
+        var pins = new LinkedHashMap<Path, List<FixRequest.Declaration>>();
+        boolean governed = false, gradleLeft = false;
+        for (var d : r.declarations()) {
+            if (!d.scope().startsWith("transitive")) continue;
+            if (!d.file().getFileName().toString().equals("pom.xml")) {
+                gradleLeft = true;
+                continue;
+            }
+            var chain = poms().chain(d.file());
+            if (chain.stream().anyMatch(declaredPoms::contains)) governed = true;
+            else if (!chain.isEmpty()) pins.computeIfAbsent(chain.getLast(), _ -> new ArrayList<>()).add(d);
         }
-        boolean someTransitive = declared.size() < r.declarations().size();
+        if (declared.isEmpty() && pins.isEmpty())
+            return FixPlan.not(r, Phrase.of(gradleLeft && !governed ? "fix.reason.transitiveGradle" : "fix.reason.transitiveMaven"));
+        var notes = new ArrayList<Phrase>();
         for (var d : declared) {
             String name = d.file().getFileName().toString();
             OptionalInt t;
@@ -172,9 +186,25 @@ public final class FixPlanner {
             }
             if (t.isPresent() && (target.isEmpty() || t.getAsInt() < target.getAsInt())) target = t;
         }
+        // a pin: an entry in the topmost pom's dependencyManagement, the pom then read by Maven offline (validate)
+        for (var pin : pins.entrySet()) {
+            Path rootPom = pin.getKey();
+            Optional<Path> mvn = machine.program("mvn");
+            if (mvn.isEmpty()) return FixPlan.not(r, Phrase.of("fix.reason.notInstalled", "mvn"));
+            var command = List.of(mvn.get().toString(), "-o", "-B", "-q", "-N", "validate", "-f", rootPom.toString());
+            steps.putIfAbsent("pin " + rootPom, new Step(new PomManagedEntry(rootPom, group, artifact, r.to()), command, rootPom.getParent(),
+                    Map.of(), List.of(rootPom)));
+            notes.add(Phrase.of("fix.note.pinnedMaven", rel(rootPom), r.from()));
+            for (var d : pin.getValue()) {
+                OptionalInt t = poms().javaTarget(d.file());
+                if (t.isPresent() && (target.isEmpty() || t.getAsInt() < target.getAsInt())) target = t;
+            }
+        }
+        if (governed) notes.add(Phrase.of("fix.note.transitiveFollow"));
+        if (gradleLeft) notes.add(Phrase.of("fix.note.transitiveGradleLeft"));
         // a pom needs the version in the local Maven repository: versions:use-dep-version resolves nothing, and a version
         // only Gradle has would leave a pom no offline Maven build resolves. Gradle's own check resolves it, offline.
-        boolean pom = declared.stream().anyMatch(d -> d.file().getFileName().toString().equals("pom.xml"));
+        boolean pom = !pins.isEmpty() || declared.stream().anyMatch(d -> d.file().getFileName().toString().equals("pom.xml"));
         boolean inMaven = ArtifactJava.inMavenRepository(machine, group, artifact, r.to());
         if (pom && !inMaven) return FixPlan.not(r, Phrase.of("fix.reason.notCachedMaven", r.to()));
         if (!inMaven && !ArtifactJava.inGradleCache(machine, group, artifact, r.to()))
@@ -189,8 +219,8 @@ public final class FixPlanner {
                 return FixPlan.not(r, Phrase.of("fix.reason.javaTooNew", r.to(), needs.getAsInt(), target.getAsInt()));
             requirement = Phrase.of("fix.requirement.java", needs.getAsInt(), target.getAsInt());
         }
-        return new FixPlan(r, List.copyOf(steps.values()), null, requirement, majorJump(r),
-                someTransitive ? List.of(Phrase.of("fix.note.transitiveFollow")) : List.of());
+        // a pin asks first: the library that brings it did not choose that version
+        return new FixPlan(r, List.copyOf(steps.values()), null, requirement, majorJump(r) || !pins.isEmpty(), List.copyOf(notes));
     }
 
     private MavenReader.Tree poms() throws IOException {

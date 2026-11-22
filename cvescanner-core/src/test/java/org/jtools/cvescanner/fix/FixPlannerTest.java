@@ -106,20 +106,42 @@ class FixPlannerTest {
     }
 
     @Test
-    void aTransitiveMavenDependencyFollowsItsDeclaredSiteAndAloneIsNotApplied() throws IOException {
+    void aTransitiveMavenDependencyFollowsTheDeclaredPomOfItsChainElseIsPinned() throws IOException {
         mavenParentAndChild(null);
         fake.program("mvn", "exit 0");
         fake.versionsPlugin();
         fake.jar("com.fasterxml.jackson.core", "jackson-databind", "2.9.10.7", 8);
-        // declared in the parent's management, transitive in another module: the declared site upgraded, said so
-        var mixed = plan(Ecosystem.MAVEN, "com.fasterxml.jackson.core:jackson-databind", "2.9.8", "2.9.10.7",
-                "pom.xml", "dependencyManagement", "other/pom.xml", "transitive via g:child");
-        assertTrue(mixed.applicable(), String.valueOf(mixed.notApplicable()));
-        assertEquals(1, mixed.steps().size());
-        assertEquals(List.of("fix.note.transitiveFollow"), mixed.notes().stream().map(n -> n.key()).toList());
-        // transitive only: nothing the project writes to change
-        var alone = plan(Ecosystem.MAVEN, "org.yaml:snakeyaml", "1.33", "2.0", "child/pom.xml", "transitive via g:x");
-        assertEquals("fix.reason.transitiveMaven", reason(alone));
+        // managed in the parent, transitive in the child: the parent's entry governs it, upgraded, said so
+        var governed = plan(Ecosystem.MAVEN, "com.fasterxml.jackson.core:jackson-databind", "2.9.8", "2.9.10.7",
+                "pom.xml", "dependencyManagement", "child/pom.xml", "transitive via g:x");
+        assertTrue(governed.applicable(), String.valueOf(governed.notApplicable()));
+        assertEquals(1, governed.steps().size());
+        assertFalse(governed.majorJump());
+        assertEquals(List.of("fix.note.transitiveFollow"), governed.notes().stream().map(Phrase::key).toList());
+
+        // transitive only: pinned in the topmost pom's dependencyManagement, Maven reading the pom offline; asked first
+        assertEquals("fix.reason.notCachedMaven", reason(plan(Ecosystem.MAVEN, "org.yaml:snakeyaml", "1.33", "2.0",
+                "child/pom.xml", "transitive via g:x")));
+        fake.jar("org.yaml", "snakeyaml", "2.0", 8);
+        var pinned = plan(Ecosystem.MAVEN, "org.yaml:snakeyaml", "1.33", "2.0", "child/pom.xml", "transitive via g:x");
+        assertTrue(pinned.applicable(), String.valueOf(pinned.notApplicable()));
+        var step = pinned.steps().getFirst();
+        assertEquals(new PomManagedEntry(root.resolve("pom.xml"), "org.yaml", "snakeyaml", "2.0"), step.edit());
+        assertEquals(List.of("-o", "-B", "-q", "-N", "validate", "-f", root.resolve("pom.xml").toString()), step.command().subList(1, 8));
+        assertTrue(pinned.majorJump(), "a pin asks first");
+        assertEquals(List.of(Phrase.of("fix.note.pinnedMaven", "pom.xml", "1.33")), pinned.notes());
+
+        // a Gradle build declares it, a Maven module has it transitively: both fixed, the Gradle edit and the Maven pin
+        write("build.gradle", "dependencies {\n    implementation 'org.yaml:snakeyaml:1.33'\n}\n");
+        fake.program("gradle", "exit 0");
+        var both = plan(Ecosystem.MAVEN, "org.yaml:snakeyaml", "1.33", "2.0", "build.gradle", "implementation", "child/pom.xml", "transitive via g:x");
+        assertEquals(2, both.steps().size(), String.valueOf(both.notApplicable()));
+        assertTrue(both.steps().get(0).edit() instanceof Step.TextEdit);
+        assertTrue(both.steps().get(1).edit() instanceof PomManagedEntry);
+
+        // transitive in Gradle builds only: nothing written by hand to edit
+        assertEquals("fix.reason.transitiveGradle", reason(plan(Ecosystem.MAVEN, "org.yaml:snakeyaml", "1.33", "2.0",
+                "build.gradle", "transitive via g:x")));
     }
 
     @Test

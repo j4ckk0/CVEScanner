@@ -83,4 +83,87 @@ class OverrideEditsTest {
         assertEquals("overrides:\n  'minimist@1.2.5': 1.2.6\nx: 1\n", edit.apply("overrides: {}\nx: 1\n"));
         assertEquals("pnpm-workspace.yaml: overrides 'minimist@1.2.5': 1.2.6", edit.shown());
     }
+    private static final PomManagedEntry PIN = new PomManagedEntry(Path.of("pom.xml"), "org.yaml", "snakeyaml", "2.0");
+
+    @Test
+    void aPinIsAddedToThePomsOwnDependencyManagement() {
+        String pom = """
+                <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <dependencyManagement>
+                    <dependencies>
+                      <dependency>
+                        <groupId>g</groupId>
+                        <artifactId>a</artifactId>
+                        <version>1</version>
+                      </dependency>
+                    </dependencies>
+                  </dependencyManagement>
+                </project>
+                """;
+        assertEquals("""
+                <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <dependencyManagement>
+                    <dependencies>
+                      <dependency>
+                        <groupId>g</groupId>
+                        <artifactId>a</artifactId>
+                        <version>1</version>
+                      </dependency>
+                      <dependency>
+                        <groupId>org.yaml</groupId>
+                        <artifactId>snakeyaml</artifactId>
+                        <version>2.0</version>
+                      </dependency>
+                    </dependencies>
+                  </dependencyManagement>
+                </project>
+                """, PIN.apply(pom));
+        assertEquals(PIN.apply(pom), PIN.apply(PIN.apply(pom)), "managed already: left alone");
+    }
+
+    @Test
+    void theManagementIsMadeBeforeTheDependenciesAProfilesAndACommentsNotCounting() {
+        String pom = """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <!-- <dependencyManagement><dependencies></dependencies></dependencyManagement> -->
+                    <profiles><profile><dependencyManagement><dependencies></dependencies></dependencyManagement></profile></profiles>
+                    <dependencies>
+                        <dependency><groupId>g</groupId><artifactId>a</artifactId><version>1</version></dependency>
+                    </dependencies>
+                </project>
+                """;
+        assertEquals("""
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <!-- <dependencyManagement><dependencies></dependencies></dependencyManagement> -->
+                    <profiles><profile><dependencyManagement><dependencies></dependencies></dependencyManagement></profile></profiles>
+                    <dependencyManagement>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.yaml</groupId>
+                                <artifactId>snakeyaml</artifactId>
+                                <version>2.0</version>
+                            </dependency>
+                        </dependencies>
+                    </dependencyManagement>
+                    <dependencies>
+                        <dependency><groupId>g</groupId><artifactId>a</artifactId><version>1</version></dependency>
+                    </dependencies>
+                </project>
+                """, PIN.apply(pom));
+    }
+
+    @Test
+    void aBarePomGetsItLastAndItsLineEndsKept() {
+        String pom = "<project>\r\n\t<modelVersion>4.0.0</modelVersion>\r\n</project>\r\n";
+        assertEquals("<project>\r\n\t<modelVersion>4.0.0</modelVersion>\r\n\t<dependencyManagement>\r\n\t\t<dependencies>\r\n"
+                + "\t\t\t<dependency>\r\n\t\t\t\t<groupId>org.yaml</groupId>\r\n\t\t\t\t<artifactId>snakeyaml</artifactId>\r\n"
+                + "\t\t\t\t<version>2.0</version>\r\n\t\t\t</dependency>\r\n\t\t</dependencies>\r\n\t</dependencyManagement>\r\n"
+                + "</project>\r\n", PIN.apply(pom));
+        assertEquals(null, PIN.apply("not a pom"));
+        assertEquals("pom.xml: dependencyManagement org.yaml:snakeyaml 2.0", PIN.shown());
+    }
 }

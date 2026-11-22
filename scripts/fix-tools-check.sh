@@ -23,7 +23,7 @@ root=$PWD
 jar=$root/cvescanner-app/target/cvescanner.jar
 db=$root/samples/db/advisory-database-main.zip
 [ -f "$jar" ] || { echo "$jar missing: build first (scripts/build.sh)" >&2; exit 1; }
-for tool in java node npm yarn pnpm gradle; do command -v "$tool" >/dev/null || { echo "$tool not found on the PATH" >&2; exit 1; }; done
+for tool in java node npm yarn pnpm gradle mvn; do command -v "$tool" >/dev/null || { echo "$tool not found on the PATH" >&2; exit 1; }; done
 export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 # A path as Java reads it: Git Bash's /c/... is C:/... on Windows.
 native() { if command -v cygpath >/dev/null; then cygpath -m "$1"; else echo "$1"; fi; }
@@ -75,6 +75,7 @@ cp -a samples/fix-tools/. "$work/prime/"
 (cd "$work/prime/yarn4" && online yarn install --immutable)
 (cd "$work/prime/pnpm" && online pnpm install --frozen-lockfile)
 (cd "$work/prime/gradle" && online gradle dependencies)
+(cd "$work/prime/maven" && online mvn -B -q dependency:resolve)
 # the fixed versions, through a project of its own, resolved: an override makes the tool resolve again, offline, from
 # the metadata a resolution leaves in its cache (pnpm's above, from the lockfile alone, left none)
 for tool in yarn1 yarn4 pnpm; do
@@ -94,6 +95,10 @@ cp samples/fix-tools/gradle/settings.gradle "$work/prime/fixed-gradle/"
 sed 's/commons-text:1.9/commons-text:1.10.0/' samples/fix-tools/gradle/build.gradle > "$work/prime/fixed-gradle/build.gradle"
 echo "tasks.register('fetch') { doLast { configurations.runtimeClasspath.files } }" >> "$work/prime/fixed-gradle/build.gradle"
 (cd "$work/prime/fixed-gradle" && online gradle fetch)
+mkdir -p "$work/prime/fixed-maven"
+sed 's|<artifactId>jackson-dataformat-yaml</artifactId>|<artifactId>snakeyaml</artifactId>|; s|<groupId>com.fasterxml.jackson.dataformat</groupId>|<groupId>org.yaml</groupId>|; s|<version>2.14.2</version>|<version>2.0</version>|' \
+  samples/fix-tools/maven/pom.xml > "$work/prime/fixed-maven/pom.xml"
+(cd "$work/prime/fixed-maven" && online mvn -B -q dependency:resolve)
 
 echo "==> Applying the fixes (the tools offline)"
 mkdir -p "$work/run"
@@ -143,8 +148,25 @@ check "pnpm: minimist locked"          "$r/pnpm/pnpm-lock.yaml"   'minimist@1.2.
 check "pnpm: minimist 1.2.5 gone"      "$r/pnpm/pnpm-lock.yaml"   'minimist@1.2.5: {}' absent
 check "scanned again: no finding left" "$work/out/report.md"      'lodash' absent
 check "scanned again: minimist too"    "$work/out/report.md"      'minimist' absent
+# snakeyaml, which the Maven project has only through jackson-dataformat-yaml: its pin asks first, left without --allow-major
+check "Maven: the pin asked first"     "$work/fixes.log"          '--allow-major'
+check "Maven: the pom left as it was"  "$r/maven/pom.xml"         'snakeyaml' absent
 # one annotation for them all: GitHub shows only the first ten of a step
 [ $failures -eq 0 ] || annotate "$failures check(s) failed" "$failed_checks"$'\n'"$(sed -n '/^Fixes:/,$p' "$work/fixes.log" | head -n 120)"
+
+echo "==> The pin, allowed (--allow-major)"
+set +e
+java -jar "$(native "$jar")" --no-gui --lang en -d "$(native "$work/run")" --db "$(native "$db")" -o "$(native "$work/out-pin")" \
+  --apply-fixes --yes --allow-major --fix-packages org.yaml:snakeyaml > "$work/pin.log" 2>&1
+code=$?
+set -e
+sed -n '/^Fixes:/,/^====/p' "$work/pin.log"
+[ $code -eq 0 ] || { echo "  FAILED  exit code $code, not 0"; cat "$work/pin.log"; failures=$((failures + 1)); failed_checks+="the pin exited $code"$'\n'; }
+check "Maven: snakeyaml pinned"        "$r/maven/pom.xml"         '<artifactId>snakeyaml</artifactId>'
+check "Maven: at its fixed version"    "$r/maven/pom.xml"         '<version>2.0</version>'
+check "Maven: in a dependencyManagement" "$r/maven/pom.xml"       '<dependencyManagement>'
+check "scanned again: snakeyaml gone"  "$work/out-pin/report.md"  'snakeyaml' absent
+[ $failures -eq 0 ] || annotate "$failures check(s) failed" "$failed_checks"$'\n'"$(sed -n '/^Fixes:/,$p' "$work/pin.log" | head -n 60)"
 
 echo "==> Without the tools on the PATH"
 mkdir -p "$work/bare" "$work/nobin"

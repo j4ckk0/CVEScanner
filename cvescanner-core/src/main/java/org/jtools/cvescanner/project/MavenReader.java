@@ -373,6 +373,12 @@ public final class MavenReader {
             return Optional.empty();
         }
 
+        /** The pom and its parents among the scanned ones, the pom first; empty when it is not in the tree. */
+        public List<Path> chain(Path pomPath) {
+            Pom pom = index.byPath.get(pomPath.toAbsolutePath().normalize());
+            return pom == null ? List.of() : index.chain(pom).stream().map(p -> p.path).toList();
+        }
+
         /** The Java version the pom is built for (8 for "1.8"), from the compiler's properties or plugin; empty when none says. */
         public OptionalInt javaTarget(Path pomPath) {
             Pom pom = index.byPath.get(pomPath.toAbsolutePath().normalize());

@@ -268,9 +268,8 @@ so. **A fix is not applied** when:
   or Gradle's cache — or a **newer Node** than its `package.json`'s `engines` (read from npm's cache);
 - the new version is **not in the machine's caches** (the local Maven repository, Gradle's or npm's cache): an offline
   build could not use it, nor can its needs be read;
-- it is a peer dependency, a component off-the-shelf, or a **transitive** Maven dependency the project declares
-  nowhere (pin its version in the project's `dependencyManagement`; where the project declares it, that one is
-  upgraded and the transitive ones follow, the plan says so);
+- it is a peer dependency, a component off-the-shelf, or a **transitive** Gradle dependency (add a constraint for it
+  in the build file);
 - it is a **transitive** npm package and yarn 1, which overrides every copy of a package, would change other versions
   of it the lockfile holds too.
 - its version is written in a way no tool can change.
@@ -282,6 +281,12 @@ key naming the package's own version once a lockfile is there), `overrides` in `
 and every copy of it for yarn 1, which cannot say a version. The lockfile tells which ranges its dependents ask (for
 pnpm, their `package.json` in `node_modules`, once the project is installed): a fix outside one of them, or when they
 are not known, is applied only once ticked, `--allow-major` on the command line.
+
+A **transitive Maven dependency** is **pinned**: an entry with the fixed version added to the `dependencyManagement`
+of the module's topmost pom in the folder (made when missing), then the pom read by Maven offline (`mvn -o validate`).
+Where a declared pom of its chain (the module's own, a parent managing it) is upgraded, it follows that one instead,
+and the plan says so. A pin is applied only once ticked, `--allow-major` on the command line: the library that brings
+it did not choose that version.
 
 A fix that changes the **major version** (2.x to 3.x) is applied only once ticked in the dialog: its API may have
 changed. Packages whose version is one shared place (a property such as `spring.version`) are raised together to the

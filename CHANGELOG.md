@@ -12,6 +12,11 @@ checksums.
   `--gradle-cache DIR`; `--no-transitive` and *View ▸ Transitive dependencies* turn off Gradle's cache with Maven's.
   Checked against `gradle dependencies`.
 
+- **Apply fixes for transitive Maven dependencies**: one the project has only through a library is pinned, its fixed
+  version added to the `dependencyManagement` of the module's topmost pom, then the pom read by Maven offline; applied
+  only once ticked. Decided per declaration: one a declared pom of its chain governs follows that one's upgrade. Checked
+  with the real Maven by `scripts/fix-tools-check.sh` (snakeyaml through jackson-dataformat-yaml).
+
 ## 1.4 — 2026-11-22
 
 - **Apply fixes for transitive npm packages**: a package the project has only through others is overridden, its
