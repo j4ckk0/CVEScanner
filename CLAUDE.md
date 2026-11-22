@@ -1,8 +1,9 @@
 # CVEScanner — orientation for Claude
 
 A desktop program (and a command line) that tells which known vulnerabilities apply to the dependencies of Maven,
-Gradle and npm projects, from vulnerability database zips the user downloads (GitHub Advisory Database, CVE List,
-OSV.dev exports), scored with CVSS 3.x/4.0 for the environment the software runs in. `README.md` is the map.
+Gradle, npm and Python projects, to the components off-the-shelf they ship and to installed products, from
+vulnerability database zips the user downloads (GitHub Advisory Database, CVE List, OSV.dev exports, NVD's CVE feeds),
+scored with CVSS 3.x/4.0 for the environment the software runs in. `README.md` is the map.
 
 ## Decisions (taken with the user, not to be undone without asking)
 
@@ -17,11 +18,13 @@ OSV.dev exports), scored with CVSS 3.x/4.0 for the environment the software runs
   no `java.desktop`) and `cvescanner-app` (the window, the distributions).
 - **FlatLaf** (the version the parent pom names) is the only library shipped; the enforcer rule keeps any other out.
 - **French and English**, French by default; `findings.csv` / `findings.json` keep English keys (machine formats).
-- **Settings** in `cvescanner.properties` beside the program, never `java.util.prefs`.
+- **Settings** in `cvescanner.properties` in the user's folder (`~/.config/cvescanner`, `%APPDATA%\CVEScanner`;
+  `Settings.userFolder`), never `java.util.prefs`; the databases' index in `cache/` beside the program.
 - **GitHub releases only** (tag `vX.Y`, PUBLISHING.md); no Maven Central.
 - Commits as `j4ckk0 <j4ckk057@gmail.com>`.
 - **Ignore file** `cvescanner-ignore.csv` (id,package,version,until,reason) at the root of the folder scanned, or
-  `--ignore`; the window may write it there (Ignore… / Stop ignoring), the only file it writes into a scanned project.
+  `--ignore`; the window may write it there (Ignore… / Stop ignoring), the only file it writes into a scanned project besides
+  those Apply fixes changes once confirmed.
   Ignored findings are out of the counts, `findings.csv` and `--fail-on`, listed apart in `report.md`/`findings.json`.
 
 ## Commands

@@ -1,7 +1,7 @@
 # Examples
 
 Small projects that declare **real packages at versions with known, published vulnerabilities**, one per kind of
-build CVEScanner reads, and an installed product to scan as such. Scan this folder to see the program at work: drop
+build CVEScanner reads (Python and pnpm aside), and an installed product to scan as such. Scan this folder to see the program at work: drop
 a database zip in `database/` (see the main README, "The databases"), start CVEScanner, choose this `examples`
 folder, press *Scan*. Or:
 
@@ -11,7 +11,7 @@ cvescanner-cli.bat --no-gui -d examples       (Windows)
 ```
 
 Without a real database, from the repository: choose `samples/db/examples.zip`, made-up advisories for every
-vulnerable package below (their CVE and fixed version as the tables give them, their text invented), and for
+vulnerable package below (their CVE as the tables give it, their text invented), and for
 `cots-app` also `samples/db/cots-cvelist.zip` and `samples/db/nvdcve-2.0-2024.json.zip`. Each example then shows its
 vulnerable packages; a real database adds the many other advisories they have.
 
@@ -117,10 +117,11 @@ those NVD files under `haxx:curl`, the same component's other name.
 
 ## What a scan does not find
 
-What Maven and Gradle would add themselves, transitive dependencies, is not read: `logback-classic` 1.2.3 brings
-`logback-core` 1.2.3, which carries CVE-2021-42550 (fixed in 1.2.8), and is not reported because it is not declared.
-Run `mvn dependency:tree` to see them, or declare them. npm and yarn give their transitive dependencies in their
-lockfiles: those are reported.
+What Maven and Gradle would add themselves, transitive dependencies, is read from the poms of the local Maven
+repository and of Gradle's cache, not from the project: on a machine where they are not there, `logback-classic` 1.2.3
+is checked but not what it brings, `logback-core` 1.2.3, which carries CVE-2021-42550 (fixed in 1.2.8), and the scan says
+so. Building the project once fills them; `--direct-only` reads the declared dependencies only. npm and
+yarn give their transitive dependencies in their lockfiles: those are reported.
 
 ## Installed product
 

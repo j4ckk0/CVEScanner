@@ -3,7 +3,9 @@ Every .zip here is loaded when the program starts.
 
   advisory-database-main.zip                  GitHub Advisory Database (recommended)
   YYYY-MM-DD_all_CVEs_at_midnight.zip.zip     CVE List (optional)
-  Maven-all.zip, npm-all.zip                  OSV.dev exports (optional)
+  Maven-all.zip, npm-all.zip, PyPI-all.zip    OSV.dev exports (optional)
+  nvdcve-2.0-YYYY.json.zip                    NVD CVE feeds, for components off-the-shelf (one a year,
+  nvdcve-2.0-modified.json.zip                and the modified one)
 
 Download links: see ../README.md, "The databases". When you update, delete the old zip files.
 

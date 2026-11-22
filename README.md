@@ -76,9 +76,10 @@ to install, a Java runtime is inside: unpack it anywhere, drop a database zip in
 
 The program reads the folder it scans, the database zips it is given and, for the transitive dependencies of Maven and
 Gradle projects, the poms of the local Maven repository (`~/.m2`) and of Gradle's cache (`~/.gradle/caches`;
-`--direct-only` or the toolbar's *Direct dependencies only* turns both off); it writes its reports, and beside it its
-settings and its `cache/` folder (the databases' index kept between scans; `--no-cache` reads the zips every time) — and the ignore file, when you ask the window to
-ignore a finding; that is all. No download, no update
+`--direct-only` or the toolbar's *Direct dependencies only* turns both off); it writes its reports, its settings in
+your own folder (see [The window](#the-window)), and beside it its `cache/` folder (the databases' index kept between
+scans; `--no-cache` reads the zips every time) — and the ignore file, when you ask the window to ignore a finding, and
+the project's files, for the fixes you confirm; that is all. No download, no update
 check, no browser, no file manager: a link is copied to the clipboard, to open elsewhere, and after an export the
 folder's path is offered to copy. **The one program it starts** is the scanned project's own build tool, when you
 click Apply fixes and confirm the commands shown, and only in its offline mode (`mvn -o`, `--offline`,
@@ -126,14 +127,14 @@ matches them against **NVD's CVE feeds** and the CVE List. It finds them four wa
 | **A C/C++ build manifest** | pkg-config `*.pc` (`Name:`, `Version:`); `vcpkg.json` (an override's version, or the `version>=` minimum, ≈); Conan's `conanfile.txt`, `conanfile.py`, `conan.lock` |
 | **A binary** | a Windows DLL or EXE's version resource (ProductName, ProductVersion), read without loading it; otherwise its file name, its version only when spelled out (`ffmpeg-4.4.2.exe`, ≈) |
 
-A name CVEScanner knows (GDAL, FFmpeg and its libraries, OpenSSL, zlib, curl, SQLite, libxml2, libpng, libtiff,
+A name CVEScanner knows (GDAL, FFmpeg and its libraries, OpenSSL, zlib, curl, SQLite, libxml2, libxslt, libpng, libtiff,
 libjpeg-turbo, expat, Poppler, ImageMagick, Boost, Qt, libwebp, FreeType, libarchive, OpenJPEG, HDF5, NetCDF, PCRE2,
 nghttp2, libssh2, protobuf, glibc, VLC, LibRaw, JasPer) gives the vendor:product NVD uses: a match by both is a
 **CPE match**. Any other name is matched by product alone, a **CPE product match ⚠** to check; give its vendor or its
 CPE in the inventory to make it exact. Limits: a binary's ABI number (`avcodec-58.dll`, `libgdal.so.30`) is not the
 product's version, so such a binary is unchecked; a CVE NVD says affects a component only on some platform is
 reported as affecting it; a range NVD bounds by dates (FFmpeg's git snapshots) is not compared with a release number.
-`examples/cots-app` shows all four, with what a scan of NVD's real feeds finds in it.
+`examples/cots-app` shows the first three, with what a scan of NVD's real feeds finds in it.
 
 ## The window
 
@@ -159,19 +160,20 @@ The table sorts by any column and filters as you type: on the first row **Search
 the columns and the aliases; Ctrl+F, Esc to clear); on the second the **Filters**: the **ecosystem**,
 *Only with CVE ID*, *Hide approximate (≈) versions*, *Hide name matches ⚠*, *Hide indirect dependencies*. The coloured
 counters set the **severity**: a click on one shows it and above, filled; a click on the lowest filled one shows all
-again. In the findings table, the ▾ at the right of each column header lists that column's
+again. In the findings table, the ▾ at the right of a column header lists that column's
 values to tick, as a spreadsheet filters (the ▾ of a filtered column in colour; *Clear filters* clears them too); the
 *Path* column gives the folder of the file a finding comes from. Its tabs: **Findings**, a row per vulnerable
 package version, in bold: its worst severity, the version that fixes all its findings (*Upgrade to*), its tick for
-*Apply fixes*, how many findings it has; its ▸ (a click, →) shows below it a row per finding, ← closes it again, and a
+*Apply fixes*, how many vulnerabilities it has; its ▸ (a click, →) shows below it a row per finding, ← closes it again, and a
 search opens them all. A click on a header sorts, each package keeping its findings below it. The details below show
 the finding selected, or a package's most severe one (the fix, the scores, the match, the links); **Dependencies**, each file's
 dependencies as a tree (each file with its ecosystem), each declared one with the packages it brings below it and the dot of its worst finding (the
 lockfiles that do not record what brings a package, Gradle's and `Pipfile.lock`, list their indirect ones apart);
 **Unchecked dependencies**,
-those whose version could not be known (an external BOM, a dynamic version like `1.+`), and why; **Ignored**, the
+those whose version could not be known (an external parent or BOM not in the local Maven repository, a dynamic
+version like `1.+`), and why; **Ignored**, the
 findings the ignore file sets aside (see [Ignoring findings](#ignoring-findings)). A double-click on a package opens or closes it; on a finding,
-as a right-click, it copies the advisory's link, the CVEs, the package's coordinates; a right-click also ignores a finding. The buttons
+it copies the advisory's link; a right-click copies the link, the CVEs, the package's coordinates, and ignores a finding. The buttons
 above the details do the same for the finding shown. **Export…**
 writes the reports for the rows shown. *Hide indirect dependencies* shows only what the projects declare;
 *Direct dependencies only*, beside the scan mode, scans only that. Once the first scan's findings are shown, the settings
@@ -187,7 +189,7 @@ then. The choices, the folder analyzed last and the databases among them, are ke
 own folder (`~/.config/cvescanner` on Linux, `%APPDATA%\CVEScanner` on Windows); *Help ▸ Preferences folder…* says
 where, copies the path and clears them.
 
-![The findings by package version: each one's worst severity and the version that fixes its findings, three ticked for Apply fixes](docs/images/packages.png)
+![The findings by package version, the most vulnerable first: each one's worst severity and scores, three ticked for Apply fixes (3)](docs/images/packages.png)
 
 ![The Dependencies tab: each file's dependencies as a tree, axios with follow-redirects below it, the dot of each one's worst finding](docs/images/dependencies.png)
 
@@ -310,7 +312,7 @@ so. **A fix is not applied** when:
   or Gradle's cache — or a **newer Node** than its `package.json`'s `engines` (read from npm's cache);
 - the new version is **not in the machine's caches** (the local Maven repository, Gradle's or npm's cache): an offline
   build could not use it, nor can its needs be read;
-- it is a peer dependency, a component off-the-shelf, or a **transitive** Gradle dependency (add a constraint for it
+- it is a peer dependency, a Python package, a component off-the-shelf, or a **transitive** Gradle dependency (add a constraint for it
   in the build file);
 - it is a **transitive** npm package and yarn 1, which overrides every copy of a package, would change other versions
   of it the lockfile holds too.
@@ -336,8 +338,9 @@ highest of their fixes. Each step's files are kept and **put back if it fails**;
 pnpm, is not. A tool that ends well without changing any file has not applied the fix, and that is said. The files are
 changed in place: keep the project under version control.
 
-Tested with the real tools — npm 11, yarn 1.22 and 4.9, pnpm 12 and Gradle 9.9 — by `scripts/fix-tools-check.sh`,
-which upgrades the projects of `samples/fix-tools` with each and checks the files they wrote; the `fix-tools` workflow
+Tested with the real tools — npm 11, yarn 1.22 and 4.9, pnpm 12 and Gradle 9.9, and Maven for the pin of a transitive
+dependency — by `scripts/fix-tools-check.sh`, which upgrades the projects of `samples/fix-tools` with each and checks
+the files they wrote; the `fix-tools` workflow
 runs it on Linux and Windows. Maven's fixes are checked with the real `mvn` on the examples.
 
 ## Installed products
@@ -456,7 +459,7 @@ scripts\setup.bat, scripts\run.bat    # same, on Windows
 | `scripts/package.sh` / `.bat` | builds the distribution into `releases/` (see "Packaging") |
 | `scripts/ci.sh` | a clean build with every test, run by `.githooks/pre-push` |
 | `scripts/release.sh` | by hand, the GitHub release of a pushed tag (the release workflow does it on its own, see PUBLISHING.md) |
-| `scripts/fix-tools-check.sh` | *Apply fixes* with the real npm, yarn, pnpm and Gradle on `samples/fix-tools`; uses the tools on the `PATH`, which it lets fill their caches online first (see [Applying fixes](#applying-fixes)) |
+| `scripts/fix-tools-check.sh` | *Apply fixes* with the real npm, yarn, pnpm, Gradle and Maven on `samples/fix-tools`; uses the tools on the `PATH`, which it lets fill their caches online first (see [Applying fixes](#applying-fixes)) |
 | `scripts/cvss-reference.py` | writes the CVSS scores `CvssReferenceTest` expects, with Red Hat's Python library `cvss` (used at development time only, never shipped) |
 
 Every script but `fix-tools-check.sh` uses the externals of `external/` and nothing installed on the machine. The version lives in `pom.xml`,
@@ -476,11 +479,11 @@ Each system builds its own self-contained distribution into `releases/`: `script
 
 | Archive | Built by | Holds |
 |---|---|---|
-| `cvescanner-<version>-linux.tar.gz` | `scripts/package.sh` | `cvescanner.sh` |
+| `cvescanner-<version>-linux.tar.gz` | `scripts/package.sh` | `cvescanner.sh`, its manual `cvescanner.1` |
 | `cvescanner-<version>-windows.zip` | `scripts\package.bat` | `cvescanner.bat` (the signed `javaw.exe`, no console), `CVEScanner.exe` (not signed), `cvescanner-cli.bat` (the command line) |
 
 Each holds `cvescanner.jar`, its runtime `jre/` — linked by `jlink` from the JDK that builds: the program's two
-modules, FlatLaf, the JDK's modules they need, the French and English locale data —, the `database/` folder, `LICENSE`,
+modules, FlatLaf, the JDK's modules they need, the French and English locale data —, the `database/` folder, `README.md`, `LICENSE`,
 `NOTICE`, FlatLaf's licence in `licenses/`, the `examples/` projects, and Java's AOT cache of the program, `cvescanner.aot`, for a faster start:
 the build makes it by running the program once on the samples (it needs a display, or `xvfb-run` on Linux); should that
 fail, the archive goes without it, with a warning.
@@ -502,21 +505,22 @@ Two Maven modules, each a jar and a Java module, built in this order by the pare
 | Path | What it holds |
 |---|---|
 | `cvescanner-core/…/project/` | the projects' dependencies: `ProjectFiles` (the files found), `MavenReader` (POMs, their properties and parents), `GradleReader` (build files, catalogs, lockfiles; Gradle's cache through `GradleTransitive`), `MavenTransitive` (a pom's transitive dependencies), `NpmReader` (package.json and its lockfiles), `PythonProjectReader` (requirements, pyproject, Pipfile and their lockfiles, read with `TomlLite`), `DependencyCollector` |
-| `cvescanner-core/…/db/` | the databases: `VulnDb` (the zips streamed, nested ones followed, only what the projects use kept), `Osv` (OSV records, their ranges), `CveList` (CVE JSON 5 records, their package and name matches), `NvdFeed` (NVD's feeds, read a record at a time: CPE rules) |
+| `cvescanner-core/…/db/` | the databases: `VulnDb` (the zips streamed, nested ones followed, only what the projects use kept), `Osv` (OSV records, their ranges), `CveList` (CVE JSON 5 records, their package and name matches), `NvdFeed` (NVD's feeds, read a record at a time: CPE rules), `IndexCache` (the index kept in `cache/`) |
 | `cvescanner-core/…/cots/` | components off-the-shelf: `InventoryReader` (cots.csv), `SbomReader` (CycloneDX, SPDX), `ManifestReader` (pkg-config, vcpkg, Conan), `BinaryReader` and `PeVersionInfo` (a DLL's version resource, read in bounded reads), `KnownProducts` (names to vendor:product) |
 | `cvescanner-core/…/engine/` | `Engine` (a scan: files, dependencies, databases, matches), `Matcher` (which database reports what, in which order) |
 | `cvescanner-core/…/installed/` | an installed product: `JarReader` (jars inside jars, their pom.properties), `InstalledNpmReader` (node_modules), `PythonReader` (site-packages) |
 | `cvescanner-core/…/fix/` | applying fixes: `FixPlanner` (the command per project, or why not: Java and Node checks, tools found without running them), `GradleEdit`, `ArtifactJava` and `NodeEngines` (the new version's needs, from the local caches), `ToolRunner` (the one class that starts a program: the build tool, offline, its files put back on failure) |
 | `cvescanner-core/…/cvss/` | `Cvss` (vectors, the 3.x formulas, the 4.0 macrovectors), `Severity`, `Environment`, `Reach`, `Requirement`, `Rating`, `Score` |
 | `cvescanner-core/…/model/` | what a scan finds: `Finding`, `Dependency` (its `Ecosystem`: Maven, npm, PyPI, COTS), `Unresolved`, `PackageSummary`, `ScanResult`, `MatchBasis`; `Scoring` (a finding scored for an environment), `ScanListener` (a scan's progress) |
-| `cvescanner-core/…/report/`, `…/cli/` | `Reports` (report.md, findings.csv, findings.json, the packages to upgrade); `Options` and `Cli` (the command line) |
-| `cvescanner-core/…/json/`, `…/version/`, `…/i18n/` | `Json` (a small parser and writer), `JsonStream` (a large array's elements one at a time); `Versions` (Maven's and npm's version order); the languages: `I18n`, `I18nLanguage`, `I18nTexts`, `Phrase` |
+| `cvescanner-core/…/ignore/` | the findings set aside: `IgnoreFile` (cvescanner-ignore.csv, read and edited), `VexFile` (VEX documents), `Ignores` (the findings split) |
+| `cvescanner-core/…/report/`, `…/cli/` | `Reports` (report.md, findings.csv, dependencies.csv, findings.json, the packages to upgrade), `CycloneDx` (bom.cdx.json); `Options` and `Cli` (the command line) |
+| `cvescanner-core/…/json/`, `…/version/`, `…/i18n/` | `Json` (a small parser and writer), `JsonStream` (a large array's elements one at a time); `Versions` (Maven's, npm's and Python's version order); the languages: `I18n`, `I18nLanguage`, `I18nTexts`, `Phrase` |
 | `cvescanner-app/…/` | `Launcher` (the entry point), `MainWindow`, `FindingTables`, `EnvironmentBar`, `IgnoreActions` and `FixActions` with `FixDialog`, `FindingDetails` (a finding's page, escaped), the table's `Column`, `ListTableModel` and renderers, `Settings`, `Looks`, `HelpMenu`, `I18nLabels` and `I18nLanguageBox`, `NoNetworkResolver` |
 | `cvescanner-app/src/dist/`, `…/src/assembly/` | the distributions' launchers, the manual (`cvescanner.1`), the `database/` folder, FlatLaf's licence, and what goes in each archive |
 | `*/src/test/` | core: `GoldenTest` (the samples' reports, case by case), `FrenchReportTest`, `CvssReferenceTest` (9,000 vectors scored by another implementation), `HostileReportTest`, the rules' unit tests, `PomParserTest`, `CoreTextsTest`; app: `NoNetworkTest`, `NoNetworkResolverTest`, `HostileAdvisoryTest`, `AppTextsTest` |
 | `examples/` | Maven, Gradle, npm and yarn projects declaring real packages at vulnerable versions, to scan with a real database; in the distributions too |
 | `samples/` | sample projects and made-up databases, and `make_fixtures.py`, which writes them; for the tests |
-| `.github/workflows/` | `build.yml`, the build and the tests on every push; `release.yml`, the release on a tag `vX.Y` |
+| `.github/workflows/` | `build.yml`, the build and the tests on every push; `release.yml`, the release on a tag `vX.Y`; `fix-tools.yml`, *Apply fixes* with the real tools |
 
 ## Licence
 
