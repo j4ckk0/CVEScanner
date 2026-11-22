@@ -42,7 +42,9 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JComponent;
 import javax.swing.UIManager;
+import javax.swing.border.Border;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableRowSorter;
@@ -69,6 +71,8 @@ final class HeaderFilters<T> {
     /** The look's own header renderer, which the ▾ is put beside, and the look it is of: made anew in another look. */
     private TableCellRenderer plain;
     private Object plainLook;
+    /** The look's header border, taken from its renderer, which sets it on each cell or once. */
+    private Border border;
 
     /**
      * @param text    a cell's value as the list names it
@@ -92,6 +96,13 @@ final class HeaderFilters<T> {
             }
             var cell = new JPanel(new BorderLayout());
             cell.setOpaque(false);
+            // the look's border (its padding, the line between two headers) around the title and its ▾ both: on the
+            // title alone, the line would fall between them, the ▾ seeming the next column's
+            if (c instanceof JComponent title) {
+                if (title.getBorder() != null) border = title.getBorder();
+                title.setBorder(null);
+                cell.setBorder(border);
+            }
             cell.add(c, BorderLayout.CENTER);
             cell.add(arrow, BorderLayout.EAST);
             return cell;
@@ -111,6 +122,7 @@ final class HeaderFilters<T> {
         if (plain == null || plainLook != UIManager.getLookAndFeel()) {
             plainLook = UIManager.getLookAndFeel();
             plain = new JTableHeader().getDefaultRenderer();
+            border = null;
         }
         return plain;
     }

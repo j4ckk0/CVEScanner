@@ -190,6 +190,9 @@ final class FindingTables {
         return slash < 0 ? "." : outer.substring(0, slash);
     }
 
+    /** The narrowest a column can be dragged to. */
+    private static final int MIN_WIDTH = 40;
+
     static <T> int column(List<Column<T>> columns, String key) {
         for (int i = 0; i < columns.size(); i++) if (columns.get(i).key().equals(key)) return i;
         throw new IllegalArgumentException(key);
@@ -208,7 +211,7 @@ final class FindingTables {
         for (int c = 0; c < columns.size(); c++) {
             var col = table.getColumnModel().getColumn(c);
             col.setPreferredWidth(columns.get(c).width());
-            if (columns.get(c).width() <= 175) col.setMinWidth(columns.get(c).width());   // keep short columns readable
+            col.setMinWidth(MIN_WIDTH);   // any column narrowed by hand, down to its first letters
         }
         // the headers in the language in use: each column by its model index, wherever it was dragged
         labels.on(() -> {
