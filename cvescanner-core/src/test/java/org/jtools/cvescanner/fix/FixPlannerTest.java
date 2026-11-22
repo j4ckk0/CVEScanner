@@ -276,7 +276,8 @@ class FixPlannerTest {
         assertTrue(p.applicable(), String.valueOf(p.notApplicable()));
         assertFalse(p.majorJump(), "1.2.6 within ^1.2.5: nothing to ask");
         var step = p.steps().getFirst();
-        assertEquals(new PackageJsonMembers(root.resolve("a/package.json"), List.of("overrides"), Map.of("minimist@1.2.5", "1.2.6")), step.edit());
+        assertEquals(new PackageJsonMembers(root.resolve("a/package.json"), List.of("overrides"), Map.of("minimist@1.2.5", "1.2.6"),
+                root.resolve("a/package-lock.json")), step.edit());
         assertEquals(List.of("install", "--offline", "--ignore-scripts"), step.command().subList(1, 4));
         assertEquals("package.json: overrides \"minimist@1.2.5\": \"1.2.6\"", step.edit().shown());
         // a fix outside what the dependent asks: applied only when ticked, said so
@@ -319,7 +320,8 @@ class FixPlannerTest {
         assertTrue(unknown.majorJump(), "not installed: mkdirp's range unknown, asked first");
         assertEquals(List.of(Phrase.of("fix.note.rangesUnknown")), unknown.notes());
         var step = unknown.steps().getFirst();
-        assertEquals(new PnpmWorkspaceOverride(root.resolve("d/pnpm-workspace.yaml"), "minimist@1.2.5", "1.2.6"), step.edit());
+        assertEquals(new PnpmWorkspaceOverride(root.resolve("d/pnpm-workspace.yaml"), "minimist@1.2.5", "1.2.6",
+                root.resolve("d/pnpm-lock.yaml")), step.edit());
         assertEquals(List.of("install", "--offline", "--ignore-scripts", "--no-frozen-lockfile"), step.command().subList(1, 5));
         write("d/node_modules/.pnpm/mkdirp@0.5.5/node_modules/mkdirp/package.json", "{\"dependencies\":{\"minimist\":\"^1.2.5\"}}");
         var installed = plan(Ecosystem.NPM, "minimist", "1.2.5", "1.2.6", "d/pnpm-lock.yaml", "transitive");

@@ -30,12 +30,18 @@ import org.jtools.cvescanner.json.Json;
  * Members written into an object of package.json, at a path from its root (["overrides"], ["pnpm", "overrides"]),
  * its objects made as needed; the rest of the file left as written, its indentation and line ends followed. A member
  * already there takes the new value.
+ *
+ * @param proof the lockfile the tool must then change (Step.Edit.proof); null for none
  */
-record PackageJsonMembers(Path file, List<String> path, Map<String, String> members) implements Step.Edit {
+record PackageJsonMembers(Path file, List<String> path, Map<String, String> members, Path proof) implements Step.Edit {
 
     PackageJsonMembers {
         path = List.copyOf(path);
         members = new LinkedHashMap<>(members);
+    }
+
+    PackageJsonMembers(Path file, List<String> path, Map<String, String> members) {
+        this(file, path, members, null);
     }
 
     @Override

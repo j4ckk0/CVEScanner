@@ -71,8 +71,8 @@ class CliOptionsTest {
     void theMavenRepositoryIsTheHomeFoldersUnlessNamedOrTurnedOff() {
         assertEquals(Path.of("/repo"), Options.parse(new String[]{"--maven-repo", "/repo"}).scanOptions().mavenRepository());
         assertEquals(null, Options.parse(new String[]{"--no-transitive"}).scanOptions().mavenRepository());
-        assertTrue(Options.parse(new String[0]).scanOptions().mavenRepository().endsWith(Path.of(".m2", "repository"))
-                || Files.isRegularFile(Path.of(System.getProperty("user.home"), ".m2", "settings.xml")));
+        Path home = Options.parse(new String[0]).scanOptions().mavenRepository();
+        assertTrue(home == null || Files.isDirectory(home), "the home folder's, when there is one: " + home);
         assertThrows(IllegalArgumentException.class, () -> Options.parse(new String[]{"--maven-repo", "/repo", "--no-transitive"}));
     }
 

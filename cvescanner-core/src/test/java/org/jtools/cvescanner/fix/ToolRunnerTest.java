@@ -116,6 +116,25 @@ class ToolRunnerTest {
         assertEquals("fix.outcome.editGone", gone.reason().key());
     }
     @Test
+    void anOverrideTheToolIgnoredIsNotAppliedAndPutBack() throws IOException {
+        Path file = Files.writeString(dir.resolve("package.json"), "{ \"name\": \"t\" }\n");
+        Path lock = Files.writeString(dir.resolve("package-lock.json"), "{}\n");
+        Path ignoring = tool("ignoring", "exit 0");   // ends well, its lockfile untouched
+        var outcome = new ToolRunner(Duration.ofSeconds(30)).run(plan(new Step(
+                new PackageJsonMembers(file, List.of("overrides"), Map.of("minimist@1.2.5", "1.2.6"), lock),
+                List.of(ignoring.toString()), dir, Map.of(), List.of(file, lock))), _ -> { });
+        assertFalse(outcome.applied());
+        assertEquals("fix.outcome.unchanged", outcome.reason().key());
+        assertEquals("{ \"name\": \"t\" }\n", Files.readString(file), "the override taken back out");
+        // the tool that writes its lockfile: applied
+        Path writing = tool("writing", "printf '{\"v\":2}' > package-lock.json");
+        var applied = new ToolRunner(Duration.ofSeconds(30)).run(plan(new Step(
+                new PackageJsonMembers(file, List.of("overrides"), Map.of("minimist@1.2.5", "1.2.6"), lock),
+                List.of(writing.toString()), dir, Map.of(), List.of(file, lock))), _ -> { });
+        assertTrue(applied.applied(), applied.log());
+    }
+
+    @Test
     void anOverrideIsWrittenIntoTheFileAsAnEarlierFixLeftIt() throws IOException {
         // the direct upgrade's npm rewrites package.json; the override planned before is written into what it wrote
         Path file = Files.writeString(dir.resolve("package.json"), "{\n  \"dependencies\": {\n    \"lodash\": \"4.17.15\"\n  }\n}\n");

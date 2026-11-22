@@ -412,7 +412,8 @@ final class MainWindow extends JFrame {
         }
         setBusy(true);
         var dbFiles = databases.files();
-        Path mavenRepository = viewMenu.mavenTransitive() ? MavenRepository.locate(Path.of(System.getProperty("user.home"))) : null;
+        Path home = MavenRepository.locate(Path.of(System.getProperty("user.home")));
+        Path mavenRepository = viewMenu.mavenTransitive() && Files.isDirectory(home) ? home : null;
         var options = new ScanOptions(ignoreActions.choice(), scanMode(), viewMenu.dbMaxAge(), LocalDate.now(), vexDocuments.filesForScan(),
                 mavenRepository);
         new SwingWorker<ScanResult, Void>() {

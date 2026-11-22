@@ -1,6 +1,6 @@
 # Dependency Vulnerability Report
 
-- **Generated:** 2026-11-22 07:35 UTC
+- **Generated:** 2026-11-22 08:20 UTC
 - **Scanned directory:** `<samples>/projects`
 - **Database:** `advisory-database-main.zip` (OSV / GitHub advisories, 12 records (12 relevant), file dated 2026-11-21 05:55 UTC)
 - **Files scanned:** 2 pom.xml, 1 Gradle build files, 1 version catalogs, 3 package.json
@@ -101,6 +101,8 @@
 ## Notes and limitations
 
 - Maven results include the transitive dependencies, read from the poms of the local Maven repository `<samples>/m2`: a dependency whose pom is not there is checked, not what it brings (the scan says which). Gradle results cover **declared** dependencies only: run `gradle dependencies`, or enable Gradle dependency locking and re-scan.
+  - 3 pom(s) not in the local Maven repository <samples>/m2 (com.fasterxml.jackson.core:jackson-annotations:2.9.0, com.fasterxml.jackson.core:jackson-core:2.9.8, org.checkerframework:checker-qual:3.12.0): the dependencies they bring are unchecked; building the project once fills it
+  - 1 transitive Maven dependenc(ies) with a version range or a property this scan cannot resolve, unchecked (org.example:ranged:\[1.0,2.0))
 - npm results include transitive dependencies when a lockfile is present.
 - A match means the version is inside an advisory's affected range; whether the vulnerable code is reachable in your application still needs review.
 - *CVE name match ⚠* findings come from CVE List records that describe the product only by name (e.g. product `commons-text`, vendor `Apache Software Foundation`); check that they really refer to your package. The GitHub Advisory Database gives exact package matches.

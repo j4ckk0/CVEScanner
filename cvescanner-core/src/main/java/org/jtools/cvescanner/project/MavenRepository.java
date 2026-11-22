@@ -68,6 +68,7 @@ public final class MavenRepository {
         if (group == null || artifact == null || version == null || !safe(group) || !safe(artifact) || !safe(version))
             return Optional.empty();
         Path file = root.resolve(group.replace('.', '/')).resolve(artifact).resolve(version).resolve(artifact + "-" + version + ".pom");
+        if (!file.normalize().startsWith(root.normalize())) return Optional.empty();   // never a file outside the repository
         return read.computeIfAbsent(file, f -> {
             if (!Files.isRegularFile(f)) return Optional.empty();
             try {
@@ -78,8 +79,9 @@ public final class MavenRepository {
         });
     }
 
-    /** A coordinate that stays one folder: no separator, no "..", nothing unresolved. */
+    /** A coordinate that stays inside the repository: no separator, no dot at an end nor two together, nothing unresolved. */
     private static boolean safe(String part) {
-        return !part.isBlank() && !part.contains("/") && !part.contains("\\") && !part.equals("..") && !part.contains("${");
+        return !part.isBlank() && !part.contains("/") && !part.contains("\\") && !part.contains("..") && !part.startsWith(".")
+                && !part.endsWith(".") && !part.contains("${") && !part.contains(":");
     }
 }

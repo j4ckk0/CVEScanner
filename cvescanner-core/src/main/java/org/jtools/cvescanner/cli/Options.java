@@ -218,10 +218,12 @@ public final class Options {
     }
 
     /** How Engine.scan runs: the ignore file, the mode, the databases' age limit, today, the VEX documents, the Maven repository. */
-    /** The local Maven repository a scan reads: --maven-repo's, else the home folder's; null with --no-transitive. */
+    /** The local Maven repository a scan reads: --maven-repo's, else the home folder's if there is one; null with --no-transitive. */
     public Path mavenRepository() {
         if (noTransitive) return null;
-        return mavenRepository != null ? mavenRepository : MavenRepository.locate(Path.of(System.getProperty("user.home")));
+        if (mavenRepository != null) return mavenRepository;
+        Path home = MavenRepository.locate(Path.of(System.getProperty("user.home")));
+        return java.nio.file.Files.isDirectory(home) ? home : null;   // no Maven here: none read, the reports saying so
     }
 
     public ScanOptions scanOptions() {

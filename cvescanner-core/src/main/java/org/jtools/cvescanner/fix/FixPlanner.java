@@ -321,14 +321,14 @@ public final class FixPlanner {
                     var members = new LinkedHashMap<String, String>();
                     for (String spec : found.descriptors()) members.put(spec, "npm:" + r.to());
                     if (members.isEmpty()) members.put(r.pkg() + "@npm:" + r.from(), "npm:" + r.to());
-                    step = new Step(new PackageJsonMembers(packageJson, List.of("resolutions"), members),
+                    step = new Step(new PackageJsonMembers(packageJson, List.of("resolutions"), members, lockfile),
                             List.of(yarn.get().toString(), "install"), dir, YARN_BERRY_OFFLINE, touched);
                 } else {
                     var others = new java.util.TreeSet<>(found.locked());
                     others.remove(r.from());
                     if (!others.isEmpty())
                         return new Override(null, Phrase.of("fix.reason.yarn1Override", r.pkg(), String.join(", ", others)), false);
-                    step = new Step(new PackageJsonMembers(packageJson, List.of("resolutions"), Map.of(r.pkg(), r.to())),
+                    step = new Step(new PackageJsonMembers(packageJson, List.of("resolutions"), Map.of(r.pkg(), r.to()), lockfile),
                             List.of(yarn.get().toString(), "install", "--offline", "--ignore-scripts"), dir, Map.of(), touched);
                 }
             }
@@ -338,8 +338,8 @@ public final class FixPlanner {
                 Path workspace = dir.resolve("pnpm-workspace.yaml");
                 // pnpm 10 and later read overrides from pnpm-workspace.yaml; a project still using package.json's "pnpm" keeps it
                 Step.Edit edit = json.get("pnpm") instanceof Map<?, ?>
-                        ? new PackageJsonMembers(packageJson, List.of("pnpm", "overrides"), Map.of(selector, r.to()))
-                        : new PnpmWorkspaceOverride(workspace, selector, r.to());
+                        ? new PackageJsonMembers(packageJson, List.of("pnpm", "overrides"), Map.of(selector, r.to()), lockfile)
+                        : new PnpmWorkspaceOverride(workspace, selector, r.to(), lockfile);
                 step = new Step(edit, List.of(pnpm.get().toString(), "install", "--offline", "--ignore-scripts", "--no-frozen-lockfile"),
                         dir, Map.of(), List.of(packageJson, lockfile, workspace));
             }
@@ -348,7 +348,7 @@ public final class FixPlanner {
                 if (npm.isEmpty()) return new Override(null, Phrase.of("fix.reason.notInstalled", "npm"), false);
                 if (!NodeEngines.tarballCached(machine, r.pkg(), r.to()))
                     return new Override(null, Phrase.of("fix.reason.notCachedNpm", r.to()), false);
-                step = new Step(new PackageJsonMembers(packageJson, List.of("overrides"), Map.of(selector, r.to())),
+                step = new Step(new PackageJsonMembers(packageJson, List.of("overrides"), Map.of(selector, r.to()), lockfile),
                         List.of(npm.get().toString(), "install", "--offline", "--ignore-scripts"), dir, NPM_OFFLINE,
                         List.of(packageJson, lockfile, dir.resolve("npm-shrinkwrap.json")));
             }

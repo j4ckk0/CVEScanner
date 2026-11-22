@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-22 07:35 UTC",
+  "generated": "2026-11-22 08:20 UTC",
   "scanned_directory": "<samples>/projects",
   "databases": {
     "advisory-database-main.zip": "OSV / GitHub advisories, 12 records (12 relevant), file dated 2026-11-21 05:55 UTC"
@@ -12,6 +12,11 @@
     "integrity_requirement": "X",
     "availability_requirement": "X"
   },
+  "maven_repository": "<samples>/m2",
+  "maven_unchecked": [
+    "3 pom(s) not in the local Maven repository <samples>/m2 (com.fasterxml.jackson.core:jackson-annotations:2.9.0, com.fasterxml.jackson.core:jackson-core:2.9.8, org.checkerframework:checker-qual:3.12.0): the dependencies they bring are unchecked; building the project once fills it",
+    "1 transitive Maven dependenc(ies) with a version range or a property this scan cannot resolve, unchecked (org.example:ranged:[1.0,2.0))"
+  ],
   "findings": [
     {
       "severity": "CRITICAL",

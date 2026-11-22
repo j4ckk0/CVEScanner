@@ -102,8 +102,15 @@ final class MavenModel {
 
     /** The dependency management in force: the chain's own entries first, the child's before its parents', then the BOMs it imports. */
     Map<String, Managed> managed() {
+        if (managed == null) managed = managed(new java.util.HashSet<>());
+        return managed;
+    }
+
+    /** @param importing the BOMs being read on the way here: one importing itself, or a cycle of them, read once */
+    private Map<String, Managed> managed(java.util.Set<MavenReader.Pom> importing) {
         if (managed != null) return managed;
-        managed = new LinkedHashMap<>();
+        var managed = new LinkedHashMap<String, Managed>();
+        importing.add(pom);
         var imports = new ArrayList<String[]>();
         for (MavenReader.Pom p : chain)
             for (MavenReader.PomDep d : p.managed) {
@@ -118,7 +125,8 @@ final class MavenModel {
                 missing.add(String.join(":", bom));
                 continue;
             }
-            new MavenModel(found, parentOf, find, missing).managed().forEach(managed::putIfAbsent);
+            if (importing.contains(found)) continue;
+            new MavenModel(found, parentOf, find, missing).managed(importing).forEach(managed::putIfAbsent);
         }
         return managed;
     }

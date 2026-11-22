@@ -210,6 +210,27 @@ class MavenTransitiveTest {
     }
 
     @Test
+    void aHostilePomImportingItselfOrACycleOfBomsIsReadOnce() throws IOException {
+        pom("g", "bom-a", "1", "<packaging>pom</packaging><dependencyManagement>" + deps(dep("g:bom-b:1", "<type>pom</type><scope>import</scope>"),
+                dep("g:x:2")) + "</dependencyManagement>");
+        pom("g", "bom-b", "1", "<packaging>pom</packaging><dependencyManagement>" + deps(dep("g:bom-a:1", "<type>pom</type><scope>import</scope>"))
+                + "</dependencyManagement>");
+        pom("g", "x", "2", "");
+        pom("g", "a", "1", "<dependencyManagement>" + deps(dep("g:bom-a:1", "<type>pom</type><scope>import</scope>"))
+                + "</dependencyManagement>" + deps(dep("g:x")));
+        String self = app("<dependencyManagement>" + deps(dep("com.example:app:1.0", "<type>pom</type><scope>import</scope>"))
+                + "</dependencyManagement>" + deps(dep("g:a:1")));
+        assertEquals("2 transitive via g:a", scan(".", self).get("g:x @pom.xml"));
+    }
+
+    @Test
+    void aCoordinateThatWouldLeaveTheRepositoryIsNotRead() throws IOException {
+        var found = scan(".", app(deps(dep(".etc:passwd:1"), dep("g..x:y:1"), dep("g:a:..%2F1"))));
+        assertEquals(3, found.size(), found.toString());   // the three declared, nothing read for them
+        assertTrue(warnings.stream().allMatch(w -> w.key().equals("warning.mavenPomsMissing")), warnings.toString());
+    }
+
+    @Test
     void withoutARepositoryOnlyTheDeclaredOnes() throws IOException {
         pom("g", "a", "1", deps(dep("g:c:1")));
         Path p = dir.resolve("project").resolve("pom.xml");

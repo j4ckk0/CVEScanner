@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
  * An override written into pnpm-workspace.yaml, where pnpm 10 and later read them: under its "overrides" key, made
  * when missing, the file made when there is none; the rest of the file left as written.
  */
-record PnpmWorkspaceOverride(Path file, String key, String value) implements Step.Edit {
+record PnpmWorkspaceOverride(Path file, String key, String value, Path proof) implements Step.Edit {
 
     private static final Pattern OVERRIDES = Pattern.compile("(?m)^overrides:[ \\t]*(\\{[ \\t]*\\})?[ \\t]*(\\r?\\n|$)");
 

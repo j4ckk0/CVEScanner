@@ -89,6 +89,11 @@ public final class Reports {
     private static final Pattern MARKDOWN_SPECIAL = Pattern.compile("[\\\\`*_\\[\\]<>|&!#~]");
 
     /** Text of a project or a database in a code span, where HTML is not read: no backquote to end it, no cell's pipe. */
+    /** What the transitive Maven resolution could not follow, as the scan warned of it. */
+    private static List<Phrase> mavenWarnings(ScanResult r) {
+        return r.warnings().stream().filter(w -> w.key().equals("warning.mavenPomsMissing") || w.key().equals("warning.mavenUnresolved")).toList();
+    }
+
     static String code(String s) {
         if (s == null) return "";
         return s.replaceAll("\\s+", " ").strip().replace('`', '\'').replace("|", "\\|");
@@ -196,6 +201,8 @@ public final class Reports {
         // the Maven line says whether the transitive dependencies were followed, from which local repository
         sb.append(r.mavenRepository() == null ? I18n.text(language, "markdown.notes.maven")
                 : I18n.text(language, "markdown.notes.mavenTransitive", "`" + code(r.mavenRepository().toString()) + "`")).append('\n');
+        // and what it could not follow: the poms not there, the versions not resolved
+        for (Phrase w : mavenWarnings(r)) sb.append("  - ").append(md(w.text(language))).append('\n');
         sb.append(I18n.text(language, "markdown.notes.text")).append('\n');
         // how components off-the-shelf are found and matched: said when the report holds some
         if (findings.stream().anyMatch(f -> f.ecosystem() == Ecosystem.COTS)
@@ -281,6 +288,10 @@ public final class Reports {
         scoring.put("integrity_requirement", env.integrity().code);
         scoring.put("availability_requirement", env.availability().code);
         root.put("scoring", scoring);
+        if (r.mavenRepository() != null) {
+            root.put("maven_repository", r.mavenRepository().toString());
+            root.put("maven_unchecked", mavenWarnings(r).stream().map(w -> w.text(I18nLanguage.ENGLISH)).toList());
+        }
         root.put("findings", findings.stream().map(Reports::json).toList());
         // in a fixed order, as every other object of the file: two scans of the same projects write the same JSON
         root.put("unresolved_dependencies", r.unresolved().stream().map(u -> {

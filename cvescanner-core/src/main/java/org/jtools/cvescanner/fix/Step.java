@@ -44,6 +44,14 @@ public record Step(Edit edit, List<String> command, Path directory, Map<String, 
 
         /** As a person reads it: the file, what changes. */
         String shown();
+
+        /**
+         * The file the tool must change for the step to have done anything, its lockfile: an override the tool
+         * ignores changes package.json and nothing else. Null when the edit is the change itself.
+         */
+        default Path proof() {
+            return null;
+        }
     }
 
     /** In this file, this exact text becomes that one. */

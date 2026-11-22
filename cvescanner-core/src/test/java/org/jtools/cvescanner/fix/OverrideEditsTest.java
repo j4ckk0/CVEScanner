@@ -76,7 +76,7 @@ class OverrideEditsTest {
 
     @Test
     void pnpmsWorkspaceFileGetsItsOverride() {
-        var edit = new PnpmWorkspaceOverride(Path.of("pnpm-workspace.yaml"), "minimist@1.2.5", "1.2.6");
+        var edit = new PnpmWorkspaceOverride(Path.of("pnpm-workspace.yaml"), "minimist@1.2.5", "1.2.6", null);
         assertEquals("overrides:\n  'minimist@1.2.5': 1.2.6\n", edit.apply(""));
         assertEquals("packages:\n  - 'a'\noverrides:\n  'minimist@1.2.5': 1.2.6\n", edit.apply("packages:\n  - 'a'\n"));
         assertEquals("overrides:\n    'minimist@1.2.5': 1.2.6\n    lodash: 4.17.21\nx: 1\n", edit.apply("overrides:\n    lodash: 4.17.21\nx: 1\n"));
