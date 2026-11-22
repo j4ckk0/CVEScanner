@@ -80,6 +80,22 @@ class CveListTest {
         assertNull(CveList.basis(maven("com.fasterxml.jackson.core:jackson-databind", "2.9.8"), placeholder));
     }
 
+    private static Dependency python(String name, String version) {
+        return new Dependency(Ecosystem.PYPI, name, version, "requirements.txt", "direct", false);
+    }
+
+    @Test
+    void aPythonPackageMatchesOnPyPIUnderItsPep503Name() {
+        var r = rule("{\"packageName\":\"Foo_Bar\",\"collectionURL\":\"https://pypi.org/simple\",\"product\":\"foo_bar\"}");
+        assertEquals(MatchBasis.CVE_PACKAGE, CveList.basis(python("foo-bar", "1.0"), r), "pypi.org's package, Foo_Bar as foo-bar");
+        assertTrue(r.keys().contains("foo-bar"), "indexed under the name a Python dependency asks for");
+        assertEquals(List.of("foo-bar"), CveList.keysFor(python("Foo.Bar", "1.0")));
+        assertNull(CveList.basis(npm("foo-bar", "1.0"), r), "npm's foo-bar is not pypi.org's Foo_Bar");
+        var onNpm = rule("{\"packageName\":\"foo-bar\",\"collectionURL\":\"https://www.npmjs.com\"}");
+        assertNull(CveList.basis(python("foo-bar", "1.0"), onNpm), "another registry's package");
+        assertEquals(MatchBasis.CVE_NAME, CveList.basis(python("py_yaml", "5.3"), rule("{\"vendor\":\"x\",\"product\":\"Py.YAML\"}")));
+    }
+
     @Test
     void anNpmProductMatchesByName() {
         assertEquals(MatchBasis.CVE_NAME, CveList.basis(npm("lodash", "4.17.15"), rule("{\"vendor\":\"lodash\",\"product\":\"lodash\"}")));

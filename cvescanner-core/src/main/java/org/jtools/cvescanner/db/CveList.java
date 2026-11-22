@@ -53,8 +53,12 @@ public final class CveList {
                 String defaultStatus, List<Map<String, Object>> versions) {
         List<String> keys() {
             var k = new ArrayList<String>();
-            if (meaningful(product)) k.add(normalize(product));
-            if (meaningful(packageName)) k.add(normalize(packageName));
+            // a Python name under its PEP 503 form too (Foo_Bar as foo-bar): basis() tells which ecosystem it fits
+            for (String s : new String[]{product, packageName})
+                if (meaningful(s)) {
+                    k.add(normalize(s));
+                    if (!k.contains(Ecosystem.pep503(s.strip()))) k.add(Ecosystem.pep503(s.strip()));
+                }
             return k;
         }
     }
@@ -73,6 +77,7 @@ public final class CveList {
     static List<String> keysFor(Dependency d) {
         String name = normalize(d.name());
         if (d.ecosystem() == Ecosystem.COTS) return List.copyOf(KnownProducts.products(Ecosystem.product(d.name())));
+        if (d.ecosystem() == Ecosystem.PYPI) return List.of(Ecosystem.pep503(name));
         if (d.ecosystem() != Ecosystem.MAVEN) return List.of(name);
         return List.of(name, name.replace(':', '/'), name.substring(name.indexOf(':') + 1));
     }
@@ -143,16 +148,16 @@ public final class CveList {
 
     /** Returns how this CVE affected-entry relates to the dependency, or null if it doesn't apply. */
     public static MatchBasis basis(Dependency d, Rule r) {
-        boolean maven = d.ecosystem() == Ecosystem.MAVEN;
-        String name = normalize(d.name());
+        boolean maven = d.ecosystem() == Ecosystem.MAVEN, python = d.ecosystem() == Ecosystem.PYPI;
+        String name = python ? Ecosystem.pep503(normalize(d.name())) : normalize(d.name());
         if (meaningful(r.packageName())) {
-            String pn = normalize(r.packageName());
+            String pn = python ? Ecosystem.pep503(normalize(r.packageName())) : normalize(r.packageName());
             String url = Objects.requireNonNullElse(r.collectionUrl(), "").toLowerCase(Locale.ROOT);
-            boolean registryOk = url.isEmpty() || (maven ? url.contains("maven") : url.contains("npm"));
+            boolean registryOk = url.isEmpty() || url.contains(maven ? "maven" : python ? "pypi" : "npm");
             return registryOk && (pn.equals(name) || (maven && pn.equals(name.replace(':', '/')))) ? MatchBasis.CVE_PACKAGE : null;
         }
         if (!meaningful(r.product())) return null;
-        String product = normalize(r.product());
+        String product = python ? Ecosystem.pep503(normalize(r.product())) : normalize(r.product());
         if (d.ecosystem() == Ecosystem.COTS) {
             // the record's vendor is free text ("The OpenSSL Project"): a word of it in the component's CPE vendor will do
             if (!KnownProducts.products(Ecosystem.product(d.name())).contains(product)) return null;

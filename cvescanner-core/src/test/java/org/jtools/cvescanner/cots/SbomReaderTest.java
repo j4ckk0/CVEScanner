@@ -33,7 +33,7 @@ import org.jtools.cvescanner.project.DependencyCollector;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/** What an SBOM names: Maven and npm packages by their purl, components off-the-shelf by their CPE or their name. */
+/** What an SBOM names: Maven, npm and PyPI packages by their purl, components off-the-shelf by their CPE or their name. */
 class SbomReaderTest {
 
     @TempDir
@@ -68,12 +68,13 @@ class SbomReaderTest {
                  "components":[
                   {"name":"log4j-core","version":"2.14.1","purl":"pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1"},
                   {"name":"core","purl":"pkg:npm/%40scope/core@1.0.0"},
+                  {"name":"Jinja2","version":"2.11.2","purl":"pkg:pypi/jinja2@2.11.2"},
                   {"name":"libpng","cpe":"cpe:2.3:a:libpng:libpng:1.6.37:*:*:*:*:*:*:*",
                    "components":[{"name":"zlib","version":"1.2.11"}]},
                   {"name":"<b>x</b>"}]}
                 """, warnings);
         assertEquals(new TreeSet<>(Set.of(
-                "Maven org.apache.logging.log4j:log4j-core 2.14.1 sbom", "npm @scope/core 1.0.0 sbom",
+                "Maven org.apache.logging.log4j:log4j-core 2.14.1 sbom", "npm @scope/core 1.0.0 sbom", "PyPI jinja2 2.11.2 sbom",
                 "COTS libpng:libpng 1.6.37 sbom", "COTS zlib:zlib 1.2.11 sbom", "COTS <b>x</b> unchecked")), found);
         assertEquals(List.of(), warnings);
     }
@@ -84,9 +85,11 @@ class SbomReaderTest {
                 {"spdxVersion":"SPDX-2.3","packages":[
                   {"name":"FFmpeg","versionInfo":"4.4.2","externalRefs":[{"referenceType":"cpe23Type","referenceLocator":"cpe:2.3:a:ffmpeg:ffmpeg:4.4.2:*:*:*:*:*:*:*"}]},
                   {"name":"lodash","versionInfo":"4.17.15","externalRefs":[{"referenceType":"purl","referenceLocator":"pkg:npm/lodash@4.17.15"}]},
+                  {"name":"PyYAML","versionInfo":"5.3","externalRefs":[{"referenceType":"purl","referenceLocator":"pkg:pypi/pyyaml@5.3"}]},
                   {"name":"something","versionInfo":"NOASSERTION"}]}
                 """, new ArrayList<>());
-        assertEquals(new TreeSet<>(Set.of("COTS ffmpeg:ffmpeg 4.4.2 sbom", "npm lodash 4.17.15 sbom", "COTS something unchecked")), found);
+        assertEquals(new TreeSet<>(Set.of("COTS ffmpeg:ffmpeg 4.4.2 sbom", "npm lodash 4.17.15 sbom", "PyPI pyyaml 5.3 sbom",
+                "COTS something unchecked")), found);
     }
 
     @Test

@@ -333,7 +333,7 @@ public final class VulnDb {
         var m = p.matcher(text);
         while (m.find()) {
             String v = normalize ? CveList.normalize(m.group(1)) : m.group(1);
-            if (keys.contains(v) || (!normalize && keys.contains(Ecosystem.pep503(v)))) return true;   // a Python name, as written
+            if (keys.contains(v) || keys.contains(Ecosystem.pep503(v.strip()))) return true;   // a Python name, as written
         }
         return false;
     }

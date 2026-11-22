@@ -168,7 +168,7 @@ class NpmAndGradleTest {
     }
 
     @Test
-    void pnpmLocksParentsV9AndV6ThePeersSuffixCut(@TempDir Path dir) throws Exception {
+    void pnpmLocksParentsV9V6AndV5ThePeersSuffixCut(@TempDir Path dir) throws Exception {
         String pkg = "{\"dependencies\":{\"react-dom\":\"18.2.0\",\"react\":\"18.2.0\"}}";
         var expected = Map.of("react-dom@18.2.0", "direct ", "react@18.2.0", "direct ",
                 "scheduler@0.23.0", "transitive react-dom@18.2.0", "loose-envify@1.4.0", "transitive react@18.2.0");
@@ -239,6 +239,46 @@ class NpmAndGradleTest {
                     dependencies:
                       loose-envify: 1.4.0
                 """));
+        assertEquals(expected, parents(dir, pkg, "pnpm-lock.yaml", """
+                lockfileVersion: 5.4
+
+                specifiers:
+                  react: 18.2.0
+                  react-dom: 18.2.0
+
+                dependencies:
+                  react: 18.2.0
+                  react-dom: 18.2.0_react@18.2.0
+
+                packages:
+
+                  /loose-envify/1.4.0:
+                    resolution: {integrity: sha512-x}
+                    hasBin: true
+                    dev: false
+
+                  /react-dom/18.2.0_react@18.2.0:
+                    resolution: {integrity: sha512-x}
+                    peerDependencies:
+                      react: ^18.2.0
+                    dependencies:
+                      loose-envify: 1.4.0
+                      react: 18.2.0
+                      scheduler: 0.23.0
+                    dev: false
+
+                  /react/18.2.0:
+                    resolution: {integrity: sha512-x}
+                    dependencies:
+                      loose-envify: 1.4.0
+                    dev: false
+
+                  /scheduler/0.23.0:
+                    resolution: {integrity: sha512-x}
+                    dependencies:
+                      loose-envify: 1.4.0
+                    dev: false
+                """), "5.x: its peers after an underscore");
     }
 
     /** A workspace: the root's package.json and a member's, one lockfile; each package's scope and parents. */

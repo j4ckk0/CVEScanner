@@ -52,8 +52,9 @@ final class NpmDependents {
     record Found(Set<String> locked, List<Asked> asked, boolean rangesKnown, List<String> descriptors) {}
 
     private static final Pattern YARN_VERSION = Pattern.compile("^\\s+version:?\\s+\"?([^\"\\s]+)\"?\\s*$");
-    private static final Pattern PNPM_KEY = Pattern.compile("^  '?/?((?:@[^/@\\s]+/)?[^/@\\s(]+)[@/]([^(:'\\s]+)(?:\\([^:]*\\))?'?:\\s*(\\{\\})?\\s*$");
-    private static final Pattern PNPM_DEP = Pattern.compile("^      '?((?:@[^/@\\s]+/)?[^:'\\s]+)'?:\\s*'?([^('\\s]+)");
+    /** A pnpm package key's name and version, its peers' suffix cut: 5.x's "_react@18.2.0", 6.0 on "(react@18.2.0)". */
+    private static final Pattern PNPM_KEY = Pattern.compile("^  '?/?((?:@[^/@\\s]+/)?[^/@\\s(]+)[@/]([^(:_'\\s]+)(_[^(:'\\s]*)?(\\([^:]*\\))?'?:\\s*(\\{\\})?\\s*$");
+    private static final Pattern PNPM_DEP = Pattern.compile("^      '?((?:@[^/@\\s]+/)?[^:'\\s]+)'?:\\s*'?([^(_'\\s]+)");
 
     private NpmDependents() {}
 
@@ -181,8 +182,9 @@ final class NpmDependents {
     // ------------------------------------------------------------------------------- pnpm-lock.yaml
     private static Found pnpm(String text, String pkg, String from, Path project) throws IOException {
         var locked = new LinkedHashSet<String>();
-        var dependents = new LinkedHashSet<String>();   // "name@version" of the entries depending on pkg@from
-        String section = "", entry = null;
+        var dependents = new LinkedHashSet<List<String>>();   // [name, version, peers] of the entries depending on pkg@from
+        List<String> entry = null;
+        String section = "";
         boolean inDeps = false;
         for (String line : text.split("\\R")) {
             if (!line.isEmpty() && !Character.isWhitespace(line.charAt(0))) {
@@ -193,7 +195,8 @@ final class NpmDependents {
             if (!section.equals("packages:") && !section.equals("snapshots:")) continue;
             Matcher k = PNPM_KEY.matcher(line);
             if (k.matches()) {
-                entry = k.group(1) + "@" + k.group(2);
+                String peers = k.group(3) != null ? k.group(3) : k.group(4) != null ? k.group(4) : "";
+                entry = List.of(k.group(1), k.group(2), peers);
                 if (k.group(1).equals(pkg)) locked.add(k.group(2));
                 inDeps = false;
                 continue;
@@ -208,17 +211,28 @@ final class NpmDependents {
         }
         var asked = new ArrayList<Asked>();
         boolean known = true;
-        for (String dependent : dependents) {
-            int at = dependent.lastIndexOf('@');
-            String name = dependent.substring(0, at), version = dependent.substring(at + 1);
-            Path manifest = project.resolve("node_modules").resolve(".pnpm").resolve(name.replace('/', '+') + "@" + version)
-                    .resolve("node_modules").resolve(name).resolve("package.json");
-            String range = Files.isRegularFile(manifest)
-                    ? requested(Json.obj(Json.parse(ProjectFiles.readText(manifest))), "dependencies", "optionalDependencies", "peerDependencies", pkg)
-                    : null;
+        for (var dependent : dependents) {
+            String name = dependent.get(0), version = dependent.get(1);
+            String range = null;
+            for (String folder : List.of(storeFolder(name, version, dependent.get(2)), storeFolder(name, version, ""))) {
+                Path manifest = project.resolve("node_modules").resolve(".pnpm").resolve(folder)
+                        .resolve("node_modules").resolve(name).resolve("package.json");
+                if (range == null && Files.isRegularFile(manifest))
+                    range = requested(Json.obj(Json.parse(ProjectFiles.readText(manifest))), "dependencies", "optionalDependencies", "peerDependencies", pkg);
+            }
+            var a = new Asked(name + "@" + version, range);
             if (range == null) known = false;
-            else asked.add(new Asked(dependent, range));
+            else if (!asked.contains(a)) asked.add(a);
         }
         return new Found(locked, asked, known, List.of());
+    }
+
+    /**
+     * The folder of node_modules/.pnpm a package is installed in, as pnpm names it: "react-dom@18.2.0_react@18.2.0"
+     * for 5.x's "_react@18.2.0" and 6.0 on's "(react@18.2.0)", a scope's slash written "+".
+     */
+    static String storeFolder(String name, String version, String peers) {
+        String suffix = peers.startsWith("(") ? peers.replace(")(", "_").replace("(", "_").replaceFirst("\\)$", "") : peers;
+        return (name + "@" + version + suffix).replace('/', '+');
     }
 }

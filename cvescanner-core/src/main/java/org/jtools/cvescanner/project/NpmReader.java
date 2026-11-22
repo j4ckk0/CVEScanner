@@ -48,7 +48,8 @@ public final class NpmReader {
     private static final Pattern YARN_VERSION = Pattern.compile("\\s+version:?\\s+\"?([^\"\\s]+)\"?");
     /** A need of a yarn.lock entry: v1's `name "range"`, berry's `name: "npm:range"`; the name quoted when scoped. */
     private static final Pattern YARN_NEED = Pattern.compile("\\s+\"?((?:@[^/\"\\s]+/)?[^\"\\s:]+)\"?:?\\s+\"?([^\"]*?)\"?\\s*");
-    private static final Pattern PNPM_KEY = Pattern.compile("^ {2}['\"]?/?((?:@[^/@\\s'\"]+/)?[^/@\\s'\"]+)[@/](\\d[^:()\\s'\"]*)");
+    /** A pnpm package key's name and version, its peers' suffix cut: 5.x's "_react@18.2.0", 6.0 on "(react@18.2.0)". */
+    private static final Pattern PNPM_KEY = Pattern.compile("^ {2}['\"]?/?((?:@[^/@\\s'\"]+/)?[^/@\\s'\"]+)[@/](\\d[^:()_\\s'\"]*)");
 
     /** @param parents the packages that bring it, "name@version", the declared one first; null when the lock does not say */
     record LockEntry(String name, String version, boolean dev, boolean direct, List<String> parents) {}

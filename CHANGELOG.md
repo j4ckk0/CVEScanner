@@ -21,6 +21,12 @@ checksums.
 - **Fixed**: in a `yarn.lock` or `pnpm-lock.yaml`, another version of a declared package (debug 2.6.9 under express,
   debug 4.3.1 declared) was said direct; yarn berry's entry of the project itself was listed as a package.
 
+- **Fixed**: a Python package is matched against the CVE List by its pypi.org registry and its PEP 503 name (`Foo_Bar`
+  is `foo-bar`); it was matched only when the record named no registry. An SBOM's `pkg:pypi` components are checked as
+  Python packages, no longer as components off-the-shelf by their name. In the `pnpm-lock.yaml` of pnpm 6 and 7
+  (lockfile 5.x), a package with peers is read at its version (`18.2.0_react@18.2.0` was unresolved), and Apply fixes
+  reads the range a dependent installed with its peers asks.
+
 - **Gradle transitive dependencies**: a build's `gradle.lockfile` gives the versions Gradle resolved, the transitive
   ones included; a build without one gets them from the poms of Gradle's cache, resolved as Gradle does (the highest
   version asked wins, a declared one raised; `platform()` and `enforcedPlatform()`; `exclude` blocks; catalog

@@ -35,8 +35,8 @@ import org.jtools.cvescanner.project.ProjectFiles;
 
 /**
  * The components a software bill of materials lists: CycloneDX JSON (bom.json, *.cdx.json, its components and theirs)
- * and SPDX JSON (*.spdx.json, its packages). A component with a Maven or npm package URL (purl) is checked as the
- * project's own Maven or npm dependencies are; one with a CPE, or with a name only, as a component off-the-shelf.
+ * and SPDX JSON (*.spdx.json, its packages). A component with a Maven, npm or PyPI package URL (purl) is checked as a
+ * project's own dependencies are; one with a CPE, or with a name only, as a component off-the-shelf.
  */
 public final class SbomReader {
 
@@ -77,13 +77,17 @@ public final class SbomReader {
         component(text(p.get("name")), version.equals("NOASSERTION") ? "" : version, purl, cpe, file, col);
     }
 
-    /** A component, its identity from its purl first (Maven, npm), then its CPE, then its name. */
+    /** A component, its identity from its purl first (Maven, npm, PyPI), then its CPE, then its name. */
     private static void component(String name, String version, String purl, String cpe, Path file, DependencyCollector col) {
-        if (purl.startsWith("pkg:maven/") || purl.startsWith("pkg:npm/")) {
+        if (purl.startsWith("pkg:maven/") || purl.startsWith("pkg:npm/") || purl.startsWith("pkg:pypi/")) {
             Purl p = Purl.parse(purl);
             String v = version.isEmpty() ? p.version() : version;
-            Ecosystem ecosystem = p.type().equals("maven") ? Ecosystem.MAVEN : Ecosystem.NPM;
-            String id = p.type().equals("maven") ? p.namespace() + ":" + p.name()
+            Ecosystem ecosystem = switch (p.type()) {
+                case "maven" -> Ecosystem.MAVEN;
+                case "pypi" -> Ecosystem.PYPI;
+                default -> Ecosystem.NPM;
+            };
+            String id = ecosystem == Ecosystem.MAVEN ? p.namespace() + ":" + p.name()
                     : p.namespace().isEmpty() ? p.name() : p.namespace() + "/" + p.name();
             if (v.isEmpty()) col.miss(ecosystem, id, "", file, Phrase.of("reason.noVersion"));
             else col.add(ecosystem, id, v, file, "sbom", false);
