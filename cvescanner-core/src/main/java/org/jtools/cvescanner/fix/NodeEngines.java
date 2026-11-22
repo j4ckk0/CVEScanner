@@ -92,7 +92,7 @@ final class NodeEngines {
             if (!Files.isRegularFile(content)) return Optional.empty();
             byte[] data = Files.readAllBytes(content);
             if (data.length > 1 && (data[0] & 0xff) == 0x1f && (data[1] & 0xff) == 0x8b)
-                try (var in = new GZIPInputStream(Files.newInputStream(content))) { data = in.readAllBytes(); }
+                try (var raw = Files.newInputStream(content); var in = new GZIPInputStream(raw)) { data = in.readAllBytes(); }
             return Optional.of(Json.obj(Json.parse(new String(data, StandardCharsets.UTF_8))));
         } catch (IOException | RuntimeException | NoSuchAlgorithmException _) {
             return Optional.empty();

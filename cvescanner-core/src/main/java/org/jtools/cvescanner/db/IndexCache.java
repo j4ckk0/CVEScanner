@@ -66,7 +66,8 @@ final class IndexCache {
     static Cached read(Path cacheDir, Path db) {
         Path file = cacheDir.resolve(name(db));
         if (!Files.isRegularFile(file)) return null;
-        try (InputStream in = new GZIPInputStream(Files.newInputStream(file))) {
+        // the file's stream a resource of its own: closed even when it is no gzip, else Windows could not replace it
+        try (InputStream raw = Files.newInputStream(file); InputStream in = new GZIPInputStream(raw)) {
             var doc = Json.obj(Json.parse(new String(in.readAllBytes(), StandardCharsets.UTF_8)));
             if (!Long.valueOf(FORMAT).equals(doc.get("format")) || !String.valueOf(version()).equals(doc.get("program"))
                     || !db.toAbsolutePath().normalize().toString().equals(doc.get("file")) || !fingerprint(db).equals(doc.get("fingerprint")))
@@ -98,11 +99,15 @@ final class IndexCache {
             }
             // written whole, then moved into place: a scan stopped halfway, or two at once, leave no half file
             Path tmp = Files.createTempFile(cacheDir, "index", ".tmp");
-            Files.write(tmp, bytes.toByteArray());
             try {
-                Files.move(tmp, cacheDir.resolve(name(db)), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-            } catch (AtomicMoveNotSupportedException _) {
-                Files.move(tmp, cacheDir.resolve(name(db)), StandardCopyOption.REPLACE_EXISTING);
+                Files.write(tmp, bytes.toByteArray());
+                try {
+                    Files.move(tmp, cacheDir.resolve(name(db)), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                } catch (AtomicMoveNotSupportedException _) {
+                    Files.move(tmp, cacheDir.resolve(name(db)), StandardCopyOption.REPLACE_EXISTING);
+                }
+            } finally {
+                Files.deleteIfExists(tmp);   // left only when the move failed
             }
         } catch (IOException | RuntimeException _) {
             // no cache: the next scan reads the zip, as this one did
