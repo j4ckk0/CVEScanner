@@ -3,12 +3,14 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
-## Unreleased
+## 1.7.2 — 2026-11-22
 
 - The window's *Base score* is named **CVSS base score** (*Score CVSS de base*): the findings' column, the details,
   the header's tooltip, the environment's help.
 - **Fixed**: *Clear the preferences* leaves an empty file, so that an older `cvescanner.properties` beside the program
   is not taken over again at the next start.
+- The README, the examples' README, the manual (`cvescanner.1`) and the database folder's README checked against
+  the program and corrected where they had fallen behind it.
 
 ## 1.7.1 — 2026-11-22
 
