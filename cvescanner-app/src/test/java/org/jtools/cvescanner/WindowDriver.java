@@ -65,7 +65,8 @@ import org.jtools.cvescanner.cli.Options;
  */
 final class WindowDriver implements AutoCloseable {
 
-    private static final Duration WAIT = Duration.ofSeconds(60);
+    /** How long a step may take: a scan of real databases takes minutes (-Dcvescanner.windowWait, in seconds). */
+    private static final Duration WAIT = Duration.ofSeconds(Integer.getInteger("cvescanner.windowWait", 60));
 
     private final Robot robot;
     final MainWindow window;

@@ -31,6 +31,7 @@ scripts/setup.sh      # once: external/jdk and external/maven
 scripts/build.sh      # build + tests (extra arguments go to mvn)
 scripts/ci.sh         # clean build with every test, the window test under xvfb-run; run by .githooks/pre-push
 scripts/window-check.sh  # the window test alone (WindowChecklistTest), on a virtual display
+scripts/screenshots.sh DB...  # the README's pictures, English and French, the examples scanned with real databases
 scripts/run.sh        # the window (or: scripts/run.sh --no-gui -d DIR --db ZIP ...)
 scripts/package.sh    # releases/cvescanner-<version>-linux.tar.gz
 ```

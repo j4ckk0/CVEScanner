@@ -64,6 +64,7 @@ final class DatabaseChoice {
         if (!given.isEmpty()) files.addAll(given);
         else restore();
         field.setEditable(false);
+        field.setName("databases");   // for the window test and the README's pictures (WindowDriver)
         labels.text(clearButton, "toolbar.clearDatabase");
         clearButton.addActionListener(_ -> set(List.of()));
         labels.on(this::updateField);

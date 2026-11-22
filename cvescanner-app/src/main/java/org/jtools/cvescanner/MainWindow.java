@@ -260,6 +260,9 @@ final class MainWindow extends JFrame {
         useSwingLocale();
         labels.relabel();
         languageBox.show(chosen);
+        // a combo box keeps the width its texts had: measured again in the new language, as after a change of look
+        SwingUtilities.updateComponentTreeUI(this);
+        showSeverityColors();
     }
 
     /** Swing's own dialogs (the file chooser's buttons, a message's OK) in the language in use. */

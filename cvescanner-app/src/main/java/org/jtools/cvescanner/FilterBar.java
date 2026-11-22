@@ -67,6 +67,7 @@ final class FilterBar {
         var searchTimer = new Timer(200, _ -> changed.run());
         searchTimer.setRepeats(false);
         cveOnlyBox.setSelected(cveOnly);
+        ecosystemCombo.setName("ecosystem");   // for the window test and the README's pictures (WindowDriver)
         panel.setBorder(BorderFactory.createEmptyBorder(6, 8, 2, 8));
         labels.bind(searchField::setHint, "filter.searchHint");
         searchField.getDocument().addDocumentListener(new DocumentListener() {

@@ -159,7 +159,7 @@ on the right of the menus. The choices are kept in `cvescanner.properties`, besi
 
 ![Packages to upgrade: one row per package version and the version that fixes its findings, three ticked for Apply fixes](docs/images/packages.png)
 
-![The components off-the-shelf of the examples (FFmpeg, curl, OpenSSL…) matched against NVD, in a dark look](docs/images/cots-dark.png)
+![The components off-the-shelf of the examples (FFmpeg, curl, OpenSSL…) matched against NVD, in a dark look: 385 of the 668 findings](docs/images/cots-dark.png)
 
 ## The command line
 
@@ -241,6 +241,8 @@ named by package URL (`pkg:maven/…`, `pkg:npm/…`, `pkg:pypi/…`, `pkg:gener
 `resolved` statement sets nothing aside (the scan still finds the version said to be fixed); `in_triage` and
 `exploitable` ones are shown with the finding. *Stop ignoring* does not apply to them: the document is the product
 team's, to change there. The SBOM CVEScanner writes, `bom.cdx.json`, is read back as one when renamed `*.vex.json`.
+
+![The samples with their VEX document: two findings set aside in the Ignored tab, lodash's not_affected statement in its details](docs/images/vex.png)
 
 ## Applying fixes
 
@@ -358,6 +360,18 @@ air-gapped system. The CVSS 4.0 scoring is ported from the FIRST/Red Hat referen
 NOTICE).
 
 ## Languages
+
+**En français** — la fenêtre, la ligne de commande et `report.md` parlent aussi français (*Français* à droite des
+menus, ou `--lang fr`) :
+
+![Les exemples analysés pour un environnement exposé à Internet : 668 résultats, Log4Shell sélectionné](docs/images/fr/findings.png)
+
+![Les paquets à mettre à jour, trois cochés pour Appliquer les correctifs](docs/images/fr/packages.png)
+
+![Les composants sur étagère des exemples, rapprochés de la NVD, dans un thème sombre](docs/images/fr/cots-dark.png)
+
+![Les échantillons avec leur document VEX : deux résultats mis de côté dans l'onglet Ignorés](docs/images/fr/vex.png)
+
 
 Every text a user reads is in a `messages_<code>.properties` file of its module, one per language, the same keys in
 each: the scan's in `cvescanner-core/…/i18n/texts/`, the window's in `cvescanner-app/…/texts/`. `I18n` finds each
