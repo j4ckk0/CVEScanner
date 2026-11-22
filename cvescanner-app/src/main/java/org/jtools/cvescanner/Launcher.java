@@ -79,6 +79,8 @@ public final class Launcher {
             System.exit(1);
             return;
         }
+        // the databases' index kept between scans, beside the program as its settings are
+        if (opts.cacheDir == null && settings.folder() != null) opts.cacheDir = settings.folder().resolve("cache");
         if (opts.help) {
             System.out.println(Options.usage());
             return;

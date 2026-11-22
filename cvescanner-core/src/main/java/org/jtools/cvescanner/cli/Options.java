@@ -90,6 +90,10 @@ public final class Options {
     public Path mavenRepository;
     /** --gradle-cache DIR: Gradle's cache (files-2.1) read for the builds' transitive dependencies; null for the home folder's. */
     public Path gradleCache;
+    /** --cache-dir DIR: where the databases' index is kept between scans; set by the launcher to the program's folder. */
+    public Path cacheDir;
+    /** --no-cache: the databases read from their zips at every scan. */
+    public boolean noCache;
     /** --no-transitive: neither the local Maven repository nor Gradle's cache read, the declared dependencies only. */
     public boolean noTransitive;
     /** The day the scan counts from: today, a fixed one in the tests. */
@@ -126,6 +130,8 @@ public final class Options {
                 case "--maven-repo" -> o.mavenRepository = Path.of(value(args, ++i, a));
                 case "--no-transitive" -> o.noTransitive = true;
                 case "--gradle-cache" -> o.gradleCache = Path.of(value(args, ++i, a));
+                case "--cache-dir" -> o.cacheDir = Path.of(value(args, ++i, a));
+                case "--no-cache" -> o.noCache = true;
                 case "--installed" -> o.installed = true;
                 case "--min-severity" -> {
                     o.minSeverity = Severity.fromRating(value(args, ++i, a));
@@ -243,8 +249,13 @@ public final class Options {
         return java.nio.file.Files.isDirectory(home) ? home : null;
     }
 
+    /** Where the databases' index is kept between scans: --cache-dir's, or the launcher's; null with --no-cache. */
+    public Path cacheDir() {
+        return noCache ? null : cacheDir;
+    }
+
     public ScanOptions scanOptions() {
-        return new ScanOptions(ignoreChoice(), mode(), dbMaxAgeDays, today, vexFiles, mavenRepository(), gradleCache());
+        return new ScanOptions(ignoreChoice(), mode(), dbMaxAgeDays, today, vexFiles, mavenRepository(), gradleCache(), cacheDir());
     }
 
     public ScanMode mode() {

@@ -90,6 +90,63 @@ public final class VulnDb {
             }
             return new Wanted(by, all, keys, products, artifacts);
         }
+
+        /** What either wants. */
+        public Wanted union(Wanted o) {
+            var by = new HashMap<String, Set<String>>();
+            byEcosystem.forEach((k, v) -> by.computeIfAbsent(k, _ -> new HashSet<>()).addAll(v));
+            o.byEcosystem.forEach((k, v) -> by.computeIfAbsent(k, _ -> new HashSet<>()).addAll(v));
+            return new Wanted(by, union(allNames, o.allNames), union(cveKeys, o.cveKeys), union(cotsProducts, o.cotsProducts),
+                    union(mavenArtifacts, o.mavenArtifacts));
+        }
+
+        private static Set<String> union(Set<String> a, Set<String> b) {
+            var out = new HashSet<>(a);
+            out.addAll(b);
+            return out;
+        }
+
+        /** Whether everything this wants, that wanted too: a part read for it holds all this needs. */
+        public boolean within(Wanted other) {
+            for (var e : byEcosystem.entrySet())
+                if (!other.byEcosystem.getOrDefault(e.getKey(), Set.of()).containsAll(e.getValue())) return false;
+            return other.cveKeys.containsAll(cveKeys) && other.cotsProducts.containsAll(cotsProducts)
+                    && other.mavenArtifacts.containsAll(mavenArtifacts);
+        }
+    }
+
+    /**
+     * One database file read for some names: its records for them, and what the file holds whatever the names (its
+     * kind, its record count, its newest record's date). Read from the zip, or from the index cache (IndexCache).
+     */
+    static final class Part {
+        final Map<String, Map<String, List<Osv.Match>>> osv = new HashMap<>();
+        final Map<String, List<CveList.Rule>> cve = new HashMap<>();
+        final Map<String, List<NvdFeed.Rule>> nvd = new HashMap<>();
+        String kind;
+        int records;
+        String newest;   // yyyy-MM-dd, null when its records are not dated
+        boolean nvdFeed;
+
+        /** How many of its records these names use: an OSV record, a CVE List record, an NVD record, once each. */
+        int used(Wanted w) {
+            var ids = new HashSet<String>();
+            osv.forEach((eco, byName) -> byName.forEach((name, matches) -> {
+                boolean wanted = w.byEcosystem().getOrDefault(eco, Set.of()).contains(name)
+                        || (eco.equals(Ecosystem.MAVEN.id()) && w.mavenArtifacts().contains(name));
+                if (wanted) matches.forEach(m -> ids.add("osv " + Json.str(m.vuln(), "id")));
+            }));
+            cve.forEach((key, rules) -> { if (w.cveKeys().contains(key)) rules.forEach(r -> ids.add("cve " + r.info().id())); });
+            nvd.forEach((product, rules) -> { if (w.cotsProducts().contains(product)) rules.forEach(r -> ids.add("nvd " + r.info().id())); });
+            return ids.size();
+        }
+
+        void addTo(Index index) {
+            osv.forEach((eco, byName) -> byName.forEach((name, matches) ->
+                    index.osv.computeIfAbsent(eco, _ -> new HashMap<>()).computeIfAbsent(name, _ -> new ArrayList<>()).addAll(matches)));
+            cve.forEach((k, rules) -> index.cve.computeIfAbsent(k, _ -> new ArrayList<>()).addAll(rules));
+            nvd.forEach((k, rules) -> index.nvd.computeIfAbsent(k, _ -> new ArrayList<>()).addAll(rules));
+        }
     }
 
     public static final class Index {
@@ -122,7 +179,7 @@ public final class VulnDb {
     }
 
     private static final class Counts {
-        int osv, cve, nvd, osvUsed, cveUsed, nvdUsed, entries;
+        int osv, cve, nvd, entries;
         String newest;   // yyyy-MM-dd, compared as text
 
         void dated(Pattern date, String text) {
@@ -160,59 +217,91 @@ public final class VulnDb {
     private VulnDb() {}
 
     public static Index load(List<Path> files, Wanted wanted, ScanListener l) throws IOException {
+        return load(files, wanted, l, null);
+    }
+
+    /**
+     * The index of these database files for the names wanted.
+     *
+     * @param cacheDir where each file's part is kept between scans (IndexCache); null for none
+     */
+    public static Index load(List<Path> files, Wanted wanted, ScanListener l, Path cacheDir) throws IOException {
         var index = new Index();
         int total = 0;
         for (Path file : files) {
             if (!Files.isRegularFile(file)) throw new IOException(I18n.text("error.dbNotFound", file));
-            long size = Math.max(1, Files.size(file));
-            var counts = new Counts();
-            l.status(I18n.text("status.reading", file.getFileName()));
-            l.progress(0);
-            try (var in = new CountingInputStream(new BufferedInputStream(Files.newInputStream(file), 1 << 16))) {
-                // the bar moves every 500 records; the count is said every 5,000, a line each on the command line
-                Runnable onEntry = () -> {
-                    if (++counts.entries % 500 == 0) l.progress((double) in.count / size);
-                    if (counts.entries % 5000 == 0) l.status(I18n.text("status.readingCount", file.getFileName(), counts.entries));
-                };
-                readZip(in, entry -> {
-                    // an NVD feed is one JSON file of the whole year: read as a stream, a record at a time
-                    var head = new BufferedInputStream(entry, 1 << 16);
-                    head.mark(4096);
-                    String start = new String(head.readNBytes(2048), UTF_8);
-                    head.reset();
-                    if (start.contains("\"NVD_CVE\"")) {
-                        counts.dated(FEED_DATE, start);
-                        var used = new HashSet<String>();
-                        counts.nvd += NvdFeed.read(new InputStreamReader(head, UTF_8), wanted.cotsProducts(),
-                                rule -> index.nvd.computeIfAbsent(rule.product(), _ -> new ArrayList<>()).add(rule), used, onEntry);
-                        counts.nvdUsed += used.size();
-                    } else {
-                        indexRecord(head.readAllBytes(), wanted, index, counts);
-                        onEntry.run();
-                    }
-                }, 0);
-            } catch (ZipException e) {
-                throw new IOException(I18n.text("error.notZip", file.getFileName(), e.getMessage()), e);
+            Part part = null;
+            Wanted covered = null;
+            if (cacheDir != null) {
+                var cached = IndexCache.read(cacheDir, file);
+                if (cached != null && wanted.within(cached.covered())) part = cached.part();
+                else if (cached != null) covered = cached.covered();
             }
-            Phrase kind = Phrase.of(counts.nvd > 0 ? "database.kind.nvd"
-                    : counts.osv > 0 && counts.cve > 0 ? "database.kind.both"
-                    : counts.cve > 0 ? "database.kind.cve" : "database.kind.osv");
-            int records = counts.osv + counts.cve + counts.nvd;
-            total += records;
-            if (records == 0)
+            if (part == null) {
+                // read for the names wanted and those the cache had: a project scanned before stays served
+                Wanted reading = covered == null ? wanted : covered.union(wanted);
+                part = read(file, reading, l);
+                // a file read to no record at all is no database, or a damaged one: nothing kept of it
+                if (cacheDir != null && part.records > 0) IndexCache.write(cacheDir, file, reading, part);
+            } else {
+                l.status(I18n.text("status.reading", file.getFileName()));
+            }
+            part.addTo(index);
+            total += part.records;
+            if (part.records == 0)
                 l.warn(Phrase.of("warning.noRecords", file.getFileName().toString()));
             String name = file.getFileName().toString();
             String fileDate = ScanResult.TIMESTAMP_UTC.format(Files.getLastModifiedTime(file).toInstant());
-            int used = counts.osvUsed + counts.cveUsed + counts.nvdUsed;
-            LocalDate newest = date(counts.newest);
+            int used = part.used(wanted);
+            LocalDate newest = date(part.newest);
             if (newest != null) index.newest.put(name, newest);
-            if (counts.nvd > 0) index.nvdFeeds.add(name);
-            index.sources.put(name, newest == null ? Phrase.of("database.description", kind, records, used, fileDate)
-                    : Phrase.of("database.descriptionNewest", kind, records, used, fileDate, newest.toString()));
+            if (part.nvdFeed) index.nvdFeeds.add(name);
+            Phrase kind = Phrase.of(part.kind);
+            index.sources.put(name, newest == null ? Phrase.of("database.description", kind, part.records, used, fileDate)
+                    : Phrase.of("database.descriptionNewest", kind, part.records, used, fileDate, newest.toString()));
         }
         if (total == 0)
             throw new IOException(I18n.text("error.noRecordsAtAll"));
         return index;
+    }
+
+    /** A database file read from its zip, for the names wanted. */
+    private static Part read(Path file, Wanted wanted, ScanListener l) throws IOException {
+        var part = new Part();
+        long size = Math.max(1, Files.size(file));
+        var counts = new Counts();
+        l.status(I18n.text("status.reading", file.getFileName()));
+        l.progress(0);
+        try (var in = new CountingInputStream(new BufferedInputStream(Files.newInputStream(file), 1 << 16))) {
+            // the bar moves every 500 records; the count is said every 5,000, a line each on the command line
+            Runnable onEntry = () -> {
+                if (++counts.entries % 500 == 0) l.progress((double) in.count / size);
+                if (counts.entries % 5000 == 0) l.status(I18n.text("status.readingCount", file.getFileName(), counts.entries));
+            };
+            readZip(in, entry -> {
+                // an NVD feed is one JSON file of the whole year: read as a stream, a record at a time
+                var head = new BufferedInputStream(entry, 1 << 16);
+                head.mark(4096);
+                String start = new String(head.readNBytes(2048), UTF_8);
+                head.reset();
+                if (start.contains("\"NVD_CVE\"")) {
+                    counts.dated(FEED_DATE, start);
+                    counts.nvd += NvdFeed.read(new InputStreamReader(head, UTF_8), wanted.cotsProducts(),
+                            rule -> part.nvd.computeIfAbsent(rule.product(), _ -> new ArrayList<>()).add(rule), new HashSet<>(), onEntry);
+                } else {
+                    indexRecord(head.readAllBytes(), wanted, part, counts);
+                    onEntry.run();
+                }
+            }, 0);
+        } catch (ZipException e) {
+            throw new IOException(I18n.text("error.notZip", file.getFileName(), e.getMessage()), e);
+        }
+        part.kind = counts.nvd > 0 ? "database.kind.nvd" : counts.osv > 0 && counts.cve > 0 ? "database.kind.both"
+                : counts.cve > 0 ? "database.kind.cve" : "database.kind.osv";
+        part.records = counts.osv + counts.cve + counts.nvd;
+        part.newest = counts.newest;
+        part.nvdFeed = counts.nvd > 0;
+        return part;
     }
 
     private static LocalDate date(String text) {
@@ -260,7 +349,7 @@ public final class VulnDb {
         return false;
     }
 
-    private static void indexRecord(byte[] data, Wanted wanted, Index index, Counts counts) {
+    private static void indexRecord(byte[] data, Wanted wanted, Part index, Counts counts) {
         String text = new String(data, UTF_8);
         if (text.contains("\"cveMetadata\"")) {                               // CVE List record
             counts.cve++;
@@ -268,14 +357,9 @@ public final class VulnDb {
             if (!mentions(CVE_NAME, text, wanted.cveKeys(), true)) return;
             Map<String, Object> rec;
             try { rec = Json.obj(Json.parse(text)); } catch (IllegalArgumentException _) { return; }
-            boolean used = false;
             for (var rule : CveList.rules(rec))
                 for (String key : rule.keys())
-                    if (wanted.cveKeys().contains(key)) {
-                        index.cve.computeIfAbsent(key, _ -> new ArrayList<>()).add(rule);
-                        used = true;
-                    }
-            if (used) counts.cveUsed++;
+                    if (wanted.cveKeys().contains(key)) index.cve.computeIfAbsent(key, _ -> new ArrayList<>()).add(rule);
         } else if (text.contains("\"affected\"") && text.contains("\"ecosystem\"")) {   // OSV / GitHub advisory
             counts.osv++;
             counts.dated(RECORD_DATE, text);
@@ -283,7 +367,6 @@ public final class VulnDb {
             Map<String, Object> vuln;
             try { vuln = Json.obj(Json.parse(text)); } catch (IllegalArgumentException _) { return; }
             if (vuln.get("withdrawn") != null || Json.str(vuln, "id") == null) return;
-            boolean used = false;
             for (Object a : Json.arr(vuln.get("affected"))) {
                 var aff = Json.obj(a);
                 var pkg = Json.obj(aff.get("package"));
@@ -293,17 +376,14 @@ public final class VulnDb {
                 if (name != null && wanted.byEcosystem().getOrDefault(eco, Set.of()).contains(name)) {
                     index.osv.computeIfAbsent(eco, _ -> new HashMap<>()).computeIfAbsent(name, _ -> new ArrayList<>())
                             .add(new Osv.Match(vuln, aff));
-                    used = true;
                 }
                 // a jar known by its artifactId alone: the advisory of any group:artifactId, under that artifactId
                 String artifact = name != null && Ecosystem.MAVEN.id().equals(eco) ? name.substring(name.indexOf(':') + 1) : null;
                 if (artifact != null && name.contains(":") && wanted.mavenArtifacts().contains(artifact)) {
                     index.osv.computeIfAbsent(eco, _ -> new HashMap<>()).computeIfAbsent(artifact, _ -> new ArrayList<>())
                             .add(new Osv.Match(vuln, aff));
-                    used = true;
                 }
             }
-            if (used) counts.osvUsed++;
         }
     }
 }

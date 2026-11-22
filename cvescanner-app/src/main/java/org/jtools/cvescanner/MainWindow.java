@@ -417,7 +417,7 @@ final class MainWindow extends JFrame {
         Path m2 = MavenRepository.locate(userHome), gradle = GradleCache.locate(userHome, System.getenv("GRADLE_USER_HOME"));
         boolean transitive = viewMenu.mavenTransitive();
         var options = new ScanOptions(ignoreActions.choice(), scanMode(), viewMenu.dbMaxAge(), LocalDate.now(), vexDocuments.filesForScan(),
-                transitive && Files.isDirectory(m2) ? m2 : null, transitive && Files.isDirectory(gradle) ? gradle : null);
+                transitive && Files.isDirectory(m2) ? m2 : null, transitive && Files.isDirectory(gradle) ? gradle : null, opts.cacheDir());
         new SwingWorker<ScanResult, Void>() {
             @Override
             protected ScanResult doInBackground() throws Exception {

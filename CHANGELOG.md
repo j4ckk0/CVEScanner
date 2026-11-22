@@ -23,6 +23,11 @@ checksums.
   path or a VCS source is listed among the unchecked. A virtual environment (a folder holding `pyvenv.cfg`) is passed
   over.
 
+- **Scans that read the databases once**: each database file's records for the package names scanned are kept
+  between scans in `cache/` beside the program, the zip read again only when it changes or a scan meets a name not
+  covered yet. The examples against the full OSV and NVD exports: about 100 seconds, then 1.4 seconds, the same
+  findings. `--cache-dir DIR`, `--no-cache`.
+
 ## 1.4 — 2026-11-22
 
 - **Apply fixes for transitive npm packages**: a package the project has only through others is overridden, its

@@ -84,6 +84,11 @@ final class Settings {
         return folder == null ? new Settings(null) : in(folder);
     }
 
+    /** The folder the settings are kept in, the program's; null when none is kept (run from its classes). */
+    Path folder() {
+        return file == null ? null : file.getParent();
+    }
+
     /** The settings kept in this folder. */
     static Settings in(Path folder) {
         return new Settings(folder.resolve(FILE));

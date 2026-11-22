@@ -76,7 +76,8 @@ to install, a Java runtime is inside: unpack it anywhere, drop a database zip in
 
 The program reads the folder it scans, the database zips it is given and, for the transitive dependencies of Maven and
 Gradle projects, the poms of the local Maven repository (`~/.m2`) and of Gradle's cache (`~/.gradle/caches`;
-`--no-transitive` or *View ▸ Transitive dependencies* turns both off); it writes its reports and its settings beside it — and the ignore file, when you ask the window to
+`--no-transitive` or *View ▸ Transitive dependencies* turns both off); it writes its reports, and beside it its
+settings and its `cache/` folder (the databases' index kept between scans; `--no-cache` reads the zips every time) — and the ignore file, when you ask the window to
 ignore a finding; that is all. No download, no update
 check, no browser, no file manager: a link is copied to the clipboard, to open elsewhere, and after an export the
 folder's path is offered to copy. **The one program it starts** is the scanned project's own build tool, when you
@@ -188,6 +189,8 @@ cvescanner-cli.bat --no-gui -d C:\src\my-app --fail-on HIGH               (Windo
 | `--maven-repo DIR` | the local Maven repository read for the transitive dependencies of the poms (default: the one `~/.m2/settings.xml` names, else `~/.m2/repository`) |
 | `--gradle-cache DIR` | Gradle's cache (its `files-2.1` folder) read for the transitive dependencies of builds without a lockfile (default: under `GRADLE_USER_HOME`, else `~/.gradle`) |
 | `--no-transitive` | read neither the local Maven repository nor Gradle's cache: the declared dependencies only |
+| `--cache-dir DIR` | keep the databases' index between scans in DIR (the launchers: `cache/` beside the program) |
+| `--no-cache` | read the databases from their zips at every scan |
 | `--installed` | scan an installed product from what it ships, rather than source projects (see [Installed products](#installed-products)) |
 | `--min-severity LEVEL`, `--ecosystem LIST`, `--hide-approximate`, `--hide-name-matches`, `--search "WORDS"` | the window's filters: the reports, the counts and `--fail-on` keep only what they keep, and `report.md` says them |
 | `--apply-fixes` [`--yes`] [`--allow-major`] [`--fix-packages LIST`] | the window's *Apply fixes* (see [Applying fixes](#applying-fixes)): the plan of each package the report keeps is said, and nothing changes without `--yes`; then the folder is scanned again before the reports are written |

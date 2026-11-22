@@ -131,7 +131,7 @@ public final class Engine {
         if (!col.deps.isEmpty()) {
             if (dbFiles.isEmpty())
                 throw new IOException(I18n.text("error.noDatabase"));
-            index = VulnDb.load(dbFiles, wanted, l);
+            index = VulnDb.load(dbFiles, wanted, l, options.cacheDir());
         }
         // how old each database is: the NVD feeds as one, by their newest record (a fresh 2003 feed may not have changed for weeks)
         var ages = new LinkedHashMap<Object, LocalDate>();
