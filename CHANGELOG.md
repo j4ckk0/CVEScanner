@@ -3,7 +3,7 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
-## Unreleased
+## 1.11 — 2026-11-23
 
 - **`download-databases.sh`** (Linux) and **`download-databases.bat`** (Windows), beside the program in the
   archives: download the databases into its `database` folder, or the folder `--dir` names. They say what they will
