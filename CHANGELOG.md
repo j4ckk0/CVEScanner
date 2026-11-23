@@ -3,7 +3,7 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
-## Unreleased
+## 1.10 — 2026-11-23
 
 - **The databases in a list with tick boxes**: *Choose databases ▾* drops down every database zip known (those of
   the `database` folder, those named with `--db`, those added in the window), each listed once. A scan reads the
