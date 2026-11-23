@@ -3,7 +3,7 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
-## Unreleased
+## 1.9 — 2026-11-23
 
 - **An analysis moved to another computer**: *File ▸ Export analysis…* (or `--export-analysis FILE`) keeps the scan
   in a `.cvescan` file: its dependencies, the findings with their CVSS vectors, the ignore entries and VEX statements,
