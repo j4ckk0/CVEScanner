@@ -5,7 +5,8 @@ rem
 rem   scripts\run.bat
 rem   scripts\run.bat --rebuild                force a rebuild first
 rem
-rem Any other argument is passed to the program.
+rem Any other argument is passed to the program. The zips of database\ (scripts\download-databases.bat) are
+rem loaded, as the launchers load theirs; a --db-dir given replaces that folder.
 rem
 setlocal EnableDelayedExpansion
 
@@ -16,6 +17,7 @@ rem (setup done? it is offered otherwise; the externals first; sets JAR)
 
 set "REBUILD=0"
 set "ARGS="
+if exist database\ set "ARGS=--db-dir "%CD%\database""
 for %%a in (%*) do (
   if /i "%%~a"=="--rebuild" (
     set "REBUILD=1"

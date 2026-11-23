@@ -116,6 +116,12 @@ cvescanner.sh --no-gui -d ~/src/my-app --db ~/cve-db/2026-11-19_all_CVEs_at_midn
 | OSV.dev exports (optional) | `https://osv-vulnerabilities.storage.googleapis.com/Maven/all.zip`, `…/npm/all.zip` and, for Python packages, `…/PyPI/all.zip` | as the GitHub Advisory Database (which holds Python's too) |
 | NVD CVE feeds, for components off-the-shelf | `https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-YYYY.json.zip`, one per year from 2002 (about 25 MB each), and `nvdcve-2.0-modified.json.zip` | GDAL, FFmpeg, OpenSSL… by their CPE: vendor, product and version ranges (see [Components off-the-shelf](#components-off-the-shelf)) |
 
+From a clone of this repository, `scripts/download-databases.sh` (`.bat` on Windows) downloads them in one go, on a
+computer with internet access: the GitHub Advisory Database and NVD's feeds by default, about 700 MB; `all` adds
+OSV.dev's exports and the CVE List (about 1.6 GB in all); `--dir DIR` writes them elsewhere, a USB stick's folder for
+instance, than the project's `database/`. Run again, it downloads only what the servers have changed since, and a
+newer CVE List replaces the older one. The program itself never downloads anything.
+
 When several are loaded, a CVE already covered by an advisory is reported once. To update, download fresh files and
 delete the old ones; each report says which files it used and **the date of each one's newest record**, which is how
 old its data is (a file copied yesterday may hold last year's). A scan warns of a database whose newest record is more
@@ -501,7 +507,8 @@ scripts\setup.bat, scripts\run.bat    # same, on Windows
 |---|---|
 | `scripts/setup.sh` / `.bat` | deploys the externals; `--force` downloads and deploys everything again |
 | `scripts/build.sh` / `.bat` | builds the jar and runs the tests; what follows goes to Maven (`-DskipTests`) |
-| `scripts/run.sh` / `.bat` | builds the jar if a source is newer, then runs it; `--rebuild` forces the build, the other arguments go to the program |
+| `scripts/run.sh` / `.bat` | builds the jar if a source is newer, then runs it, with the zips of `database/`; `--rebuild` forces the build, the other arguments go to the program |
+| `scripts/download-databases.sh` / `.bat` | downloads the databases into `database/` (or `--dir DIR`): the GitHub Advisory Database and NVD's feeds, or those named (`ghsa`, `osv`, `nvd`, `cvelist`, `all`); run again, it updates them (see [The databases](#the-databases)) |
 | `scripts/package.sh` / `.bat` | builds the distribution into `releases/` (see "Packaging") |
 | `scripts/ci.sh` | a clean build with every test, run by `.githooks/pre-push` |
 | `scripts/release.sh` | by hand, the GitHub release of a pushed tag (the release workflow does it on its own, see PUBLISHING.md) |

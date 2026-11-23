@@ -5,7 +5,8 @@
 #   scripts/run.sh
 #   scripts/run.sh --rebuild                # force a rebuild first
 #
-# Any other argument is passed to the program.
+# Any other argument is passed to the program. The zips of database/ (scripts/download-databases.sh) are loaded, as
+# the launchers load theirs; a --db-dir given replaces that folder.
 #
 set -euo pipefail
 
@@ -15,6 +16,7 @@ JAR=$jar   # the program's jar (scripts/externals.sh)
 
 rebuild=false
 args=()
+[ -d database ] && args=(--db-dir "$PWD/database")
 for a in "$@"; do
   case "$a" in
     --rebuild) rebuild=true ;;

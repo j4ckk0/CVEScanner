@@ -3,6 +3,13 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
+## Unreleased
+
+- **`scripts/download-databases.sh`** (and `.bat`), for a clone of the repository: downloads the databases into
+  `database/` or the folder `--dir` names — the GitHub Advisory Database and NVD's feeds, or those named (`ghsa`,
+  `osv`, `nvd`, `cvelist`, `all`); run again, only what the servers have changed. `scripts/run.sh` and `.bat` load the
+  zips of `database/`, as the launchers load theirs.
+
 ## 1.10 — 2026-11-23
 
 - **The databases in a list with tick boxes**: *Choose databases ▾* drops down every database zip known (those of

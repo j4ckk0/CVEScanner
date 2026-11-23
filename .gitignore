@@ -13,3 +13,5 @@ target/
 # your mirror and its credentials (setup reads it on top of externals.conf)
 /externals.local.conf
 tmp/
+# the databases scripts/download-databases.sh downloads, which scripts/run.sh loads
+/database/
