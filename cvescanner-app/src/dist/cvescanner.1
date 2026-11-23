@@ -39,8 +39,9 @@ Where \fB\-\-no\-gui\fR writes its reports (default: ./cve-report; the launcher:
 Load every *.zip of \fIDIR\fR as a database (the launcher: database/).
 .TP
 \fB\-\-db\fR \fIFILE\fR
-Load a database from a zip file (repeatable): the GitHub Advisory Database, the CVE List (cvelistV5), an OSV.dev
-ecosystem export or one of NVD's CVE feeds (JSON 2.0).
+Load a database from a zip file, as downloaded: the GitHub Advisory Database, the CVE List (cvelistV5), an OSV.dev
+ecosystem export or one of NVD's CVE feeds (JSON 2.0). Repeat it to read several at once, of any of these kinds;
+\fB\-\-db\fR and \fB\-\-db\-dir\fR add up. A CVE found in several databases is reported once.
 .TP
 \fB\-\-ignore\fR \fIFILE\fR
 The ignore file of the findings reviewed (default: cvescanner-ignore.csv in \fIDIR\fR, when there is one); its
@@ -225,6 +226,15 @@ On Windows, cvescanner\-cli.bat takes the same options:
 .RS
 .nf
 cvescanner\-cli.bat \-\-no\-gui \-d C:\esrc\emy\-app \-\-db C:\ecve\-db\eMaven\-all.zip \-o C:\ecve\-reports
+.fi
+.RE
+.PP
+Several databases at once, of different kinds (the CVE List, GitHub's advisories, an NVD feed):
+.PP
+.RS
+.nf
+cvescanner.sh \-\-no\-gui \-d ~/src/my\-app \-\-db ~/cve\-db/2026\-11\-19_all_CVEs_at_midnight.zip.zip \e
+    \-\-db ~/cve\-db/advisory\-database\-main.zip \-\-db ~/cve\-db/nvdcve\-2.0\-2024.json.zip \-o ~/cve\-reports
 .fi
 .RE
 .PP

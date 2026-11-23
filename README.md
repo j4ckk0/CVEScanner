@@ -98,7 +98,14 @@ shipped, for what reaches the network, at every build; `HostileAdvisoryTest` and
 
 Download one or more of these files on a computer with internet access, and give them to CVEScanner **without
 extracting them**: drop them in the `database` folder beside the program (loaded at each start), or choose them in the
-window, or name them with `--db`.
+window, or name them with `--db`. Several are read together, of any kinds: in the window, *Choose database zip…* adds
+the zips selected (several at once with Ctrl-click) to those already chosen, and *Clear* empties the list; on the
+command line, repeat `--db`, and `--db-dir` adds every zip of a folder:
+
+```
+cvescanner.sh --no-gui -d ~/src/my-app --db ~/cve-db/2026-11-19_all_CVEs_at_midnight.zip.zip \
+    --db ~/cve-db/advisory-database-main.zip --db ~/cve-db/nvdcve-2.0-2024.json.zip -o ~/cve-reports
+```
 
 | Database | Download | Matches |
 |---|---|---|
@@ -145,7 +152,8 @@ Start `cvescanner.bat` or `CVEScanner.exe` (Windows), `cvescanner.sh` (Linux); g
 
 1. **Folder to analyze**: the folder of your project(s), its sub-folders scanned too; or drop the folder on the window.
    The ▾ beside it lists the folders scanned last.
-2. **Vulnerability database**: the zips of `database/` are already there; *Choose database zip…* for others.
+2. **Vulnerability database**: the zips of `database/` are already there; *Choose database zip…* adds others to
+   them, *Clear* empties the list.
 3. **Environment** (optional): where the scanned software runs, for the environmental score; changing it re-scores
    at once, without scanning again. *Customise…* sets the reach and the three requirements one by one (in expert
    mode they are on the row).
@@ -213,7 +221,7 @@ prints them too); on Linux `cvescanner.sh --man` shows the manual, `cvescanner.1
 |---|---|
 | `-d DIR` | the folder to scan |
 | `-o DIR` | the reports' folder (the launchers: `reports/` beside the program) |
-| `--db FILE`, `--db-dir DIR` | a database zip (repeatable), every zip of a folder (the launchers: `database/`) |
+| `--db FILE`, `--db-dir DIR` | a database zip (repeat it for several), every zip of a folder (the launchers: `database/`); they add up |
 | `--cve-only` | only the vulnerabilities that have a CVE ID |
 | `--env PRESET` | `none` (default), `internet`, `internal`, `airgapped`, `devci` |
 | `--reach R`, `--cr/--ir/--ar V` | the reach (`internet`, `internal`, `local`), the security requirements (`L`, `M`, `H`, `X`) |

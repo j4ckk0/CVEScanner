@@ -3,6 +3,12 @@
 What each version brought, newest first. The GitHub Releases carry the same notes with the downloads and their
 checksums.
 
+## Unreleased
+
+- *Choose database zip…* **adds** the zips selected to those already chosen, where it replaced them; a zip chosen
+  again is not listed twice, and *Clear* still empties the list. The help of the command line, its examples, the
+  manual and the README say how to read several databases at once (`--db` repeated, `--db-dir`).
+
 ## 1.9 — 2026-11-23
 
 - **An analysis moved to another computer**: *File ▸ Export analysis…* (or `--export-analysis FILE`) keeps the scan

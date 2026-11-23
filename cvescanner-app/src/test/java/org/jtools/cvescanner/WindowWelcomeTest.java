@@ -36,7 +36,7 @@ import org.junit.jupiter.api.io.TempDir;
 /**
  * The window opened without a folder: the welcome below the toolbar and the environment; its Scan, then the findings
  * with the search and the filters, the settings collapsed until ▾ shows them again; the folder among the recent ones;
- * Scan greyed until a folder and a database are given. Only with -Dcvescanner.windowTest=true, on a virtual display
+ * Scan greyed until a folder and a database are given; each database zip chosen added to those chosen before. Only with -Dcvescanner.windowTest=true, on a virtual display
  * (scripts/window-check.sh).
  */
 class WindowWelcomeTest {
@@ -93,5 +93,28 @@ class WindowWelcomeTest {
         w.type(folder, SAMPLES.resolve("projects").toString());
         w.waitUntil("the folder no longer outlined", () -> WindowDriver.onEdt(() -> folder.getClientProperty("JComponent.outline")) == null);
         assertTrue(WindowDriver.onEdt(() -> !welcomeScan.isEnabled()), "still no database");
+    }
+
+    private void chooseDatabase(String zip) throws Exception {
+        w.clickButton(I18n.text("toolbar.chooseDatabase"));
+        w.dialog(I18n.text("database.chooser.title"));
+        w.typeInFocus(SAMPLES.resolve("db").resolve(zip).toString());
+        w.key(java.awt.event.KeyEvent.VK_ENTER);
+        w.waitUntil("the chooser closed", () -> !w.dialogShowing());
+    }
+
+    @Test
+    void eachZipChosenIsAddedToThoseChosenBefore() throws Exception {
+        Assumptions.assumeTrue(Boolean.getBoolean("cvescanner.windowTest"), "the window test runs with -Dcvescanner.windowTest=true");
+        w = WindowDriver.start(settings);   // no database given, none kept
+        String ghsa = SAMPLES.resolve("db/advisory-database-main.zip").toString(), examples = SAMPLES.resolve("db/examples.zip").toString();
+        chooseDatabase("advisory-database-main.zip");
+        assertEquals(ghsa, w.text("databases"));
+        chooseDatabase("examples.zip");
+        assertEquals(ghsa + "  ;  " + examples, w.text("databases"), "the second added to the first");
+        chooseDatabase("advisory-database-main.zip");
+        assertEquals(ghsa + "  ;  " + examples, w.text("databases"), "one chosen again is not listed twice");
+        w.clickButton(I18n.text("toolbar.clearDatabase"));
+        w.waitUntil("the list emptied", () -> w.text("databases").equals(I18n.text("toolbar.database.none")));
     }
 }

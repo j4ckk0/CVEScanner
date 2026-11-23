@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -42,8 +43,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import org.jtools.cvescanner.i18n.I18n;
 
 /**
- * The database zips a scan reads: those the command line named (--db), else those chosen last time (Settings), chosen
- * again with a file chooser or cleared.
+ * The database zips a scan reads: those the command line named (--db), else those chosen last time (Settings); the
+ * file chooser adds to them, Clear empties the list.
  */
 final class DatabaseChoice {
 
@@ -67,7 +68,7 @@ final class DatabaseChoice {
         else restore();
         field.setEditable(false);
         field.setName("databases");   // for the window test and the README's pictures (WindowDriver)
-        labels.text(clearButton, "toolbar.clearDatabase");
+        labels.tip(labels.text(clearButton, "toolbar.clearDatabase"), "toolbar.clearDatabase.tip");
         clearButton.addActionListener(_ -> set(List.of()));
         labels.on(this::updateField);
     }
@@ -88,7 +89,7 @@ final class DatabaseChoice {
 
     /** Its row of the toolbar, columns 0 to 3 at the row the constraints are set to. */
     void addRow(JPanel rows, GridBagConstraints c) {
-        var choose = labels.text(new JButton(), "toolbar.chooseDatabase");
+        var choose = labels.tip(labels.text(new JButton(), "toolbar.chooseDatabase"), "toolbar.chooseDatabase.tip");
         choose.addActionListener(_ -> choose());
         c.gridx = 0;
         rows.add(labels.text(new JLabel(), "toolbar.database"), c);
@@ -105,7 +106,7 @@ final class DatabaseChoice {
     }
 
     private void choose() {
-        File start = !files.isEmpty() ? files.getFirst().toFile().getParentFile()
+        File start = !files.isEmpty() ? files.getLast().toFile().getParentFile()
                 : dbDir != null && Files.isDirectory(dbDir) ? dbDir.toFile() : new File(System.getProperty("user.home"));
         var chooser = new JFileChooser(start);
         chooser.setDialogTitle(I18n.text("database.chooser.title"));
@@ -115,7 +116,15 @@ final class DatabaseChoice {
         help.setVerticalAlignment(SwingConstants.TOP);
         chooser.setAccessory(help);
         if (chooser.showOpenDialog(owner) == JFileChooser.APPROVE_OPTION)
-            set(Arrays.stream(chooser.getSelectedFiles()).map(File::toPath).toList());
+            set(added(files, Arrays.stream(chooser.getSelectedFiles()).map(File::toPath).toList()));
+    }
+
+    /** The zips chosen before, then those just chosen that are not among them already. */
+    static List<Path> added(List<Path> before, List<Path> chosen) {
+        var all = new LinkedHashMap<Path, Path>();
+        for (Path p : before) all.putIfAbsent(p.toAbsolutePath().normalize(), p);
+        for (Path p : chosen) all.putIfAbsent(p.toAbsolutePath().normalize(), p);
+        return List.copyOf(all.values());
     }
 
     private void set(List<Path> chosen) {
