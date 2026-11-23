@@ -63,7 +63,7 @@ jre_version=$(sed -n 's/^JDK_LINUX=.*_\([0-9][0-9.]*\)_[0-9]*\.tar\.gz$/\1/p' ex
 [ -n "$jre_version" ] || jre_version=25
 
 body=$(
-  echo "CVEScanner $version — which known vulnerabilities apply to the dependencies of Maven, Gradle, npm and Python projects, to the components off-the-shelf they ship (GDAL, FFmpeg, OpenSSL…) and to an installed product read from its binaries (jars, node_modules, Python packages, native libraries), from vulnerability databases you download yourself (GitHub Advisory Database, CVE List, OSV.dev, NVD), scored with CVSS for the environment the software runs in, upgraded with the project's own build tool if you ask, and exported as a CycloneDX SBOM that VEX statements inform. Self-contained, and it never reaches the network."
+  echo "CVEScanner $version — which known vulnerabilities apply to the dependencies of Maven, Gradle, npm and Python projects, to the components off-the-shelf they ship (GDAL, FFmpeg, OpenSSL…) and to an installed product read from its binaries (jars, node_modules, Python packages, native libraries), from vulnerability databases you download yourself (GitHub Advisory Database, CVE List, OSV.dev, NVD), scored with CVSS for the environment the software runs in, upgraded with the project's own build tool if you ask, and exported as a CycloneDX SBOM that VEX statements inform. Self-contained, and it never reaches the network: \`download-databases\`, beside it, downloads the databases once you confirm."
   echo
   cat "$notes"
   echo
@@ -71,8 +71,8 @@ body=$(
   echo
   echo "| File | For |"
   echo "|---|---|"
-  echo "| \`$zip\` | Windows x64, no Java needed — unzip anywhere and start \`cvescanner.bat\` (the signed \`javaw.exe\`) or \`CVEScanner.exe\` |"
-  echo "| \`$tgz\` | Linux x64, no Java needed — untar anywhere and run \`cvescanner.sh\` |"
+  echo "| \`$zip\` | Windows x64, no Java needed — unzip anywhere and start \`cvescanner.bat\` (the signed \`javaw.exe\`) or \`CVEScanner.exe\`; \`download-databases.bat\` fetches the databases |"
+  echo "| \`$tgz\` | Linux x64, no Java needed — untar anywhere and run \`cvescanner.sh\`; \`download-databases.sh\` fetches the databases |"
   echo
   echo "Each archive carries a Java runtime linked from Eclipse Temurin $jre_version, redistributed under the GPLv2 with Classpath Exception (notices in \`jre/legal\`), and FlatLaf (Apache 2.0, in \`licenses/\`). CVEScanner itself is Apache 2.0."
   echo

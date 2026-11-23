@@ -14,6 +14,8 @@ scored with CVSS 3.x/4.0 for the environment the software runs in. `README.md` i
   the scanned project's build tool, on Apply fixes once the user confirms the commands, in its offline mode; only
   `fix/ToolRunner` may use `ProcessBuilder` (NoNetworkTest). Nothing is installed: a missing tool means no fix.
   Links are copied to the clipboard, a report's folder is shown, never opened. `NoNetworkTest` keeps it so.
+  Apart from the program, the archives ship `download-databases.sh` / `.bat` (src/dist), which download the databases
+  only once the user confirms (or `--accept`): the one part of the distribution that reaches the internet.
 - **Two modules**: `cvescanner-core` (the scan, the databases, CVSS, the reports, the command line; `java.xml` only,
   no `java.desktop`) and `cvescanner-app` (the window, the distributions).
 - **FlatLaf** (the version the parent pom names) is the only library shipped; the enforcer rule keeps any other out.

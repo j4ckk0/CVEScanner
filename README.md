@@ -116,11 +116,19 @@ cvescanner.sh --no-gui -d ~/src/my-app --db ~/cve-db/2026-11-19_all_CVEs_at_midn
 | OSV.dev exports (optional) | `https://osv-vulnerabilities.storage.googleapis.com/Maven/all.zip`, `…/npm/all.zip` and, for Python packages, `…/PyPI/all.zip` | as the GitHub Advisory Database (which holds Python's too) |
 | NVD CVE feeds, for components off-the-shelf | `https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-YYYY.json.zip`, one per year from 2002 (about 25 MB each), and `nvdcve-2.0-modified.json.zip` | GDAL, FFmpeg, OpenSSL… by their CPE: vendor, product and version ranges (see [Components off-the-shelf](#components-off-the-shelf)) |
 
-From a clone of this repository, `scripts/download-databases.sh` (`.bat` on Windows) downloads them in one go, on a
-computer with internet access: the GitHub Advisory Database and NVD's feeds by default, about 700 MB; `all` adds
-OSV.dev's exports and the CVE List (about 1.6 GB in all); `--dir DIR` writes them elsewhere, a USB stick's folder for
-instance, than the project's `database/`. Run again, it downloads only what the servers have changed since, and a
-newer CVE List replaces the older one. The program itself never downloads anything.
+**`download-databases.sh`** (Linux) or **`download-databases.bat`** (Windows), beside the program, downloads them
+in one go into its `database` folder, on a computer with internet access. It says what it will download, from where
+and how much, and asks before reaching the internet; `--accept` downloads without asking (a scheduled update). The
+GitHub Advisory Database and NVD's feeds by default, about 700 MB; `all` adds OSV.dev's exports and the CVE List
+(about 1.6 GB in all), or name them: `ghsa`, `osv`, `nvd`, `cvelist`. `--dir DIR` writes them elsewhere, a USB
+stick's folder for a computer without internet access. Run again, it downloads only what the servers have changed
+since, and a newer CVE List replaces the older one. The program itself never downloads anything.
+
+```
+./download-databases.sh                          # asks, then the GitHub Advisory Database and NVD's feeds
+./download-databases.sh all --accept             # every database, no question asked
+download-databases.bat --dir E:\database ghsa    (Windows)
+```
 
 When several are loaded, a CVE already covered by an advisory is reported once. To update, download fresh files and
 delete the old ones; each report says which files it used and **the date of each one's newest record**, which is how
@@ -508,7 +516,7 @@ scripts\setup.bat, scripts\run.bat    # same, on Windows
 | `scripts/setup.sh` / `.bat` | deploys the externals; `--force` downloads and deploys everything again |
 | `scripts/build.sh` / `.bat` | builds the jar and runs the tests; what follows goes to Maven (`-DskipTests`) |
 | `scripts/run.sh` / `.bat` | builds the jar if a source is newer, then runs it, with the zips of `database/`; `--rebuild` forces the build, the other arguments go to the program |
-| `scripts/download-databases.sh` / `.bat` | downloads the databases into `database/` (or `--dir DIR`): the GitHub Advisory Database and NVD's feeds, or those named (`ghsa`, `osv`, `nvd`, `cvelist`, `all`); run again, it updates them (see [The databases](#the-databases)) |
+| `scripts/download-databases.sh` / `.bat` | the distribution's `download-databases` (in `cvescanner-app/src/dist`), into the project's `database/`: asks, then downloads (see [The databases](#the-databases)) |
 | `scripts/package.sh` / `.bat` | builds the distribution into `releases/` (see "Packaging") |
 | `scripts/ci.sh` | a clean build with every test, run by `.githooks/pre-push` |
 | `scripts/release.sh` | by hand, the GitHub release of a pushed tag (the release workflow does it on its own, see PUBLISHING.md) |
@@ -532,8 +540,8 @@ Each system builds its own self-contained distribution into `releases/`: `script
 
 | Archive | Built by | Holds |
 |---|---|---|
-| `cvescanner-<version>-linux.tar.gz` | `scripts/package.sh` | `cvescanner.sh`, its manual `cvescanner.1` |
-| `cvescanner-<version>-windows.zip` | `scripts\package.bat` | `cvescanner.bat` (the signed `javaw.exe`, no console), `CVEScanner.exe` (not signed), `cvescanner-cli.bat` (the command line) |
+| `cvescanner-<version>-linux.tar.gz` | `scripts/package.sh` | `cvescanner.sh`, its manual `cvescanner.1`, `download-databases.sh` |
+| `cvescanner-<version>-windows.zip` | `scripts\package.bat` | `cvescanner.bat` (the signed `javaw.exe`, no console), `CVEScanner.exe` (not signed), `cvescanner-cli.bat` (the command line), `download-databases.bat` |
 
 Each holds `cvescanner.jar`, its runtime `jre/` — linked by `jlink` from the JDK that builds: the program's two
 modules, FlatLaf, the JDK's modules they need, the French and English locale data —, the `database/` folder, `README.md`, `LICENSE`,

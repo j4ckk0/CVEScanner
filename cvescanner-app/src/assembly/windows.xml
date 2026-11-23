@@ -27,6 +27,12 @@
       <lineEnding>crlf</lineEnding>
     </file>
     <file>
+      <!-- the databases downloaded into database\, once asked (or with accept): apart from the program, which never
+           reaches the network -->
+      <source>src/dist/download-databases.bat</source>
+      <lineEnding>crlf</lineEnding>
+    </file>
+    <file>
       <!-- the program's licence, and what it holds of others' -->
       <source>../LICENSE</source>
       <lineEnding>crlf</lineEnding>

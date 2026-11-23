@@ -18,7 +18,8 @@ cvescanner \- which known vulnerabilities apply to a project's dependencies, off
 CVEScanner tells which known vulnerabilities apply to the dependencies of Maven, Gradle, npm and Python projects, to
 the components off-the-shelf they ship (GDAL, FFmpeg, OpenSSL...) and to an installed product read from its binaries,
 from vulnerability databases downloaded beforehand (the GitHub Advisory Database, the CVE List, OSV.dev's exports,
-NVD's CVE feeds). It never reaches the network.
+NVD's CVE feeds). It never reaches the network; download\-databases.sh, beside it, downloads the databases once
+asked.
 .PP
 Without \fB\-\-no\-gui\fR it opens its window, scanning \fIDIR\fR at once when one is given. With \fB\-\-no\-gui\fR it
 scans \fIDIR\fR (the current directory by default) and writes its reports: report.md, findings.csv, dependencies.csv,
@@ -195,6 +196,11 @@ With \fB\-\-apply\-fixes \-\-yes\fR: a fix could not be applied.
 .TP
 .I database/
 The database zips the launcher loads.
+.TP
+.I download\-databases.sh
+Downloads the databases into \fIdatabase/\fR, after asking: the GitHub Advisory Database and NVD's CVE feeds, or
+those named (\fBghsa\fR, \fBosv\fR, \fBnvd\fR, \fBcvelist\fR, \fBall\fR); \fB\-\-dir\fR \fIDIR\fR
+writes them elsewhere, \fB\-\-accept\fR downloads without asking. Run again, only what the servers have changed.
 .TP
 .I reports/
 Where the launcher writes the reports of \fB\-\-no\-gui\fR.

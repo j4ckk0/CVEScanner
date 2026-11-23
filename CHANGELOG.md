@@ -5,10 +5,13 @@ checksums.
 
 ## Unreleased
 
-- **`scripts/download-databases.sh`** (and `.bat`), for a clone of the repository: downloads the databases into
-  `database/` or the folder `--dir` names — the GitHub Advisory Database and NVD's feeds, or those named (`ghsa`,
-  `osv`, `nvd`, `cvelist`, `all`); run again, only what the servers have changed. `scripts/run.sh` and `.bat` load the
-  zips of `database/`, as the launchers load theirs.
+- **`download-databases.sh`** (Linux) and **`download-databases.bat`** (Windows), beside the program in the
+  archives: download the databases into its `database` folder, or the folder `--dir` names. They say what they will
+  download, from where and how much, and ask before reaching the internet; `--accept` downloads without asking. The
+  GitHub Advisory Database and NVD's feeds by default, or those named (`ghsa`, `osv`, `nvd`, `cvelist`, `all`); run
+  again, only what the servers have changed. The program itself still never reaches the network.
+- From a clone, `scripts/download-databases.sh` and `.bat` download into the project's `database/`, which
+  `scripts/run.sh` and `.bat` now load, as the launchers load theirs.
 
 ## 1.10 — 2026-11-23
 
