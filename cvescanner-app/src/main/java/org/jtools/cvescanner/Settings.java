@@ -43,8 +43,10 @@ final class Settings {
     static final String LANGUAGE = "language";
     /** The folder analyzed last: the window's, the next time it opens without one. */
     static final String LAST_FOLDER = "lastFolder";
-    /** The database zips chosen, their paths separated by the system's path separator. */
+    /** The database zips added in the window, their paths separated by the system's path separator. */
     static final String DATABASES = "databases";
+    /** The database zips listed but unticked: left out of a scan, kept in the list. */
+    static final String DATABASES_UNTICKED = "databases.unticked";
     /** The environment: a preset's key, or "custom" with its four values below. */
     static final String ENVIRONMENT = "environment";
     static final String REACH = "env.reach";

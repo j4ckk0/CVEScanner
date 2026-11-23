@@ -5,9 +5,14 @@ checksums.
 
 ## Unreleased
 
-- *Choose database zip…* **adds** the zips selected to those already chosen, where it replaced them; a zip chosen
-  again is not listed twice, and *Clear* still empties the list. The help of the command line, its examples, the
-  manual and the README say how to read several databases at once (`--db` repeated, `--db-dir`).
+- **The databases in a list with tick boxes**: *Choose databases ▾* drops down every database zip known (those of
+  the `database` folder, those named with `--db`, those added in the window), each listed once. A scan reads the
+  ticked ones; an unticked zip stays in the list, unticked at the next start too. *Add database zips…* lists others,
+  ticked, and a zip listed already is ticked rather than listed twice; × removes one added in the window; *Tick all*
+  and *Untick all*. The field names the zips ticked, their paths in its tooltip. What is added or unticked is kept
+  even when the `database` folder holds zips, where the zips chosen used to be forgotten at the next start.
+- The help of the command line, its examples, the manual and the README say how to read several databases at once
+  (`--db` repeated, `--db-dir`).
 
 ## 1.9 — 2026-11-23
 

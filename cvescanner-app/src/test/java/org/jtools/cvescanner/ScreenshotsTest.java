@@ -119,7 +119,7 @@ class ScreenshotsTest {
             w.waitUntil("the window in " + language, () -> I18n.language() == language);
         }
         showFolder("~/CVEScanner/examples");
-        show("databases", "~/CVEScanner/database/  Maven-all.zip  ;  npm-all.zip  ;  PyPI-all.zip  ;  nvdcve-2.0-2002.json.zip … "
+        show("databases", "Maven-all.zip  ;  npm-all.zip  ;  PyPI-all.zip  ;  nvdcve-2.0-2002.json.zip … "
                 + "nvdcve-2.0-2026.json.zip  ;  nvdcve-2.0-modified.json.zip");
         w.named("tryExamples");
         var welcomeScan = w.named("welcomeScan");

@@ -97,9 +97,11 @@ shipped, for what reaches the network, at every build; `HostileAdvisoryTest` and
 ## The databases
 
 Download one or more of these files on a computer with internet access, and give them to CVEScanner **without
-extracting them**: drop them in the `database` folder beside the program (loaded at each start), or choose them in the
-window, or name them with `--db`. Several are read together, of any kinds: in the window, *Choose database zip…* adds
-the zips selected (several at once with Ctrl-click) to those already chosen, and *Clear* empties the list; on the
+extracting them**: drop them in the `database` folder beside the program (listed at each start), or add them in the
+window, or name them with `--db`. Several are read together, of any kinds. In the window, *Choose databases ▾* drops
+down the list of the zips known, each once with a tick box: a scan reads the ticked ones, an unticked zip stays listed
+for next time; *Add database zips…* lists others, ticked (several at once with Ctrl-click; one listed already is
+ticked, not listed twice), and × removes one added so. The field beside the button names the zips ticked. On the
 command line, repeat `--db`, and `--db-dir` adds every zip of a folder:
 
 ```
@@ -152,8 +154,8 @@ Start `cvescanner.bat` or `CVEScanner.exe` (Windows), `cvescanner.sh` (Linux); g
 
 1. **Folder to analyze**: the folder of your project(s), its sub-folders scanned too; or drop the folder on the window.
    The ▾ beside it lists the folders scanned last.
-2. **Vulnerability database**: the zips of `database/` are already there; *Choose database zip…* adds others to
-   them, *Clear* empties the list.
+2. **Vulnerability database**: the zips of `database/` are already listed, ticked; *Choose databases ▾* shows the
+   list, to untick one or add others.
 3. **Environment** (optional): where the scanned software runs, for the environmental score; changing it re-scores
    at once, without scanning again. *Customise…* sets the reach and the three requirements one by one (in expert
    mode they are on the row).
